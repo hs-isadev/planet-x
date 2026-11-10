@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-10T06:04:40.707Z",
+  "errors": [],
+  "checks": {
+    "share": {
+      "index": 118,
+      "detector": 6,
+      "ra": 133.79512916666667,
+      "dec": -7.245147222222222,
+      "fov": 8
+    },
+    "spectrum": {
+      "status": 200,
+      "total": 256,
+      "valid": 121,
+      "notes": [
+        "Quicklook aperture flux, not a calibrated or aperture-corrected source spectrum.",
+        "Native pixels and conservative flags are used; background is estimated in a local annulus. No resampled display pixels are measured.",
+        "Wavelength uses the approximate per-pixel WCS-WAVE mapping, not the precision CWAVE calibration.",
+        "Error bars include native variance and annulus background uncertainty; calibration and confusion systematics are omitted.",
+        "Observations are taken at different times. Variability can shape this wavelength plot."
+      ]
+    },
+    "gaia": {
+      "status": 200,
+      "markers": 149,
+      "motionApplied": 132,
+      "notes": [
+        "Markers are catalog predictions, not detections in SPHEREx pixels.",
+        "Gaia proper motions are applied where available; parallax displacement is not modeled.",
+        "AllWISE stationary-solution coordinates are not propagated; fast movers may be offset."
+      ]
+    },
+    "wise": {
+      "status": 200,
+      "markers": 306,
+      "motionApplied": 0,
+      "notes": [
+        "Markers are catalog predictions, not detections in SPHEREx pixels.",
+        "Gaia proper motions are applied where available; parallax displacement is not modeled.",
+        "AllWISE stationary-solution coordinates are not propagated; fast movers may be offset."
+      ]
+    },
+    "atlas": {
+      "status": "Coordinate grid ready. Observed DSS2 tiles require access to CDS; a blank survey means tiles are unavailable. Select or pan to fill coordinates.",
+      "canvasCount": 2
+    },
+    "mobile": {
+      "overflow": false,
+      "canvas": {
+        "x": 17,
+        "y": -193.234375,
+        "width": 356,
+        "height": 356
+      }
+    },
+    "tour": {
+      "done": true,
+      "seen": [
+        "Barnard’s Star",
+        "Epsilon Indi B",
+        "WISE 0855",
+        "RW Aurigae",
+        "R Draconis"
+      ]
+    }
+  },
+  "job": "f3cd6a45ee114933860733e363cf7adc"
+}

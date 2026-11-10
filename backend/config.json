@@ -1,0 +1,52 @@
+{
+  "tap_endpoint": "https://irsa.ipac.caltech.edu/TAP",
+  "sia_endpoint": "https://irsa.ipac.caltech.edu/SIA",
+  "origin": "https://irsa.ipac.caltech.edu/",
+  "artifact_table": "spherex.artifact",
+  "plane_table": "spherex.plane",
+  "releases": [
+    "qr3",
+    "qr2"
+  ],
+  "collections": [
+    "spherex_qr3",
+    "spherex_qr3_deep",
+    "spherex_qr2",
+    "spherex_qr2_deep"
+  ],
+  "timeout_seconds": 60,
+  "tap_max_records": 10000,
+  "concurrent_downloads": 2,
+  "min_request_interval_seconds": 0.4,
+  "query_ttl_seconds": 86400,
+  "cache_max_bytes": 2147483648,
+  "cache_max_age_days": 14,
+  "max_active_jobs": 4,
+  "pixel_scale_arcsec": 6.15,
+  "accepted_pixel_flags": [
+    0,
+    2097152
+  ],
+  "cache_directory": "cache",
+  "cloud_origin": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/",
+  "archive_browser_page_size": 60,
+  "analysis_wavelength_bin_um": 0.025,
+  "wise_motion_reference_mjd": 55400.0,
+  "wise_motion_documentation": "https://irsa.ipac.caltech.edu/data/WISE/docs/release/AllWISE/expsup/sec2_6.html",
+  "gaia_tap_endpoint": "https://gaia.aip.de/tap",
+  "gaia_table": "gaiadr3.gaia_source",
+  "catalog_limit": 1000,
+  "wise_cloud_bucket": "nasa-irsa-wise",
+  "wise_cloud_region": "us-west-2",
+  "wise_parquet_root": "wise/allwise/catalogs/p3as_psd/healpix_k5/wise-allwise.parquet",
+  "catalog_cache_seconds": 604800,
+  "gaia_tap_fallbacks": [
+    "https://gea.esac.esa.int/tap-server/tap"
+  ],
+  "simbad_tap_endpoint": "https://simbad.harvard.edu/simbad/sim-tap",
+  "simbad_servers": [
+    "simbad.harvard.edu",
+    "simbad.cds.unistra.fr"
+  ],
+  "wise_gaia_match_arcsec": 1.0
+}

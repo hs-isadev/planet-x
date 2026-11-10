@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "viewports": [
+    {
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "viewport": 320,
+      "content": 320
+    }
+  ],
+  "checks": [
+    "empty state",
+    "dark and light themes",
+    "field guide and Escape",
+    "no horizontal overflow",
+    "real network failure state",
+    "transport next/play/pause/keyboard on test-only fixture",
+    "colormap/stretch/grid controls"
+  ],
+  "pageErrors": []
+}

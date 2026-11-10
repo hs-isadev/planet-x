@@ -1,0 +1,111 @@
+{
+  "date": "2026-11-09",
+  "version": "1.0.0",
+  "stack": "FastAPI + plain HTML/CSS/ES modules; no app build step",
+  "tests": {
+    "offline_passed": 58,
+    "live_irsa_coverage_passed": 1,
+    "frontend_errors": 0,
+    "total_passed": 59
+  },
+  "presets": [
+    {
+      "name": "Barnard’s Star",
+      "archive_count": 364,
+      "real_cutouts_validated": 2,
+      "pass": true
+    },
+    {
+      "name": "Epsilon Indi B",
+      "archive_count": 449,
+      "real_cutouts_validated": 2,
+      "pass": true
+    },
+    {
+      "name": "WISE 0855",
+      "archive_count": 256,
+      "real_cutouts_validated": 2,
+      "pass": true
+    },
+    {
+      "name": "RW Aurigae",
+      "archive_count": 333,
+      "real_cutouts_validated": 2,
+      "pass": true
+    },
+    {
+      "name": "R Draconis",
+      "archive_count": 2483,
+      "real_cutouts_validated": 2,
+      "pass": true
+    }
+  ],
+  "wise_proof": {
+    "all_exposures_retrieved": 256,
+    "fov_arcmin": 4,
+    "d6_exposures_retrieved_at_8_arcmin": 43,
+    "motion_confirmed": false,
+    "candidate_westward_shift_arcsec": 6.9272562450446085,
+    "nominal_error_arcsec": 1.1728809213939395,
+    "first_epoch_snr": 4.155916123728871,
+    "warning": "Tentative candidate; not a confirmed astrometric detection."
+  },
+  "browser": {
+    "solar_bodies": 9,
+    "nearby_catalog_sources": 341,
+    "simultaneous_units": "AU for Solar System; separate pc scale for stars",
+    "checked_widths": [
+      1440,
+      888,
+      390,
+      320
+    ],
+    "horizontal_overflow": false,
+    "playback": true,
+    "split": true,
+    "difference": true,
+    "stack": true,
+    "spectrum": true,
+    "png": true,
+    "gif": true,
+    "url_restore": true,
+    "tour_targets_played": 5,
+    "tour_errors": 0,
+    "atlas_initialized": true,
+    "external_survey_tiles": "May be unavailable; missing tiles are explicitly noted.",
+    "url_restored_frame": 198,
+    "playback_waits_for_matching_pixels": true,
+    "slow_network_no_stale_pixels": true,
+    "angular_scale_bar_fraction": 0.16666666666666666,
+    "invalid_search_clears_derived_results": true
+  },
+  "overlays": {
+    "job": "5be185875d914c068fa1df8e16f97463",
+    "frame": 0,
+    "gaia": {
+      "status": 200,
+      "markers": 149,
+      "notes": [
+        "Markers are catalog predictions, not detections in SPHEREx pixels.",
+        "Gaia proper motions are applied where available; parallax displacement is not modeled.",
+        "AllWISE stationary-solution coordinates are not propagated; fast movers may be offset."
+      ]
+    },
+    "wise": {
+      "status": 200,
+      "markers": 306,
+      "notes": [
+        "Markers are catalog predictions, not detections in SPHEREx pixels.",
+        "Gaia proper motions are applied where available; parallax displacement is not modeled.",
+        "AllWISE stationary-solution coordinates are not propagated; fast movers may be offset."
+      ]
+    }
+  },
+  "limitations": [
+    "Public deployment not performed; Docker recipe not built here.",
+    "Approximate ephemerides; enlarged radii; illustrative globe orientation and some NASA appearance models.",
+    "Catalog sample is incomplete and capped; uncertain or missing distances are labeled/omitted.",
+    "Quicklook photometry and centroid uncertainties omit important systematics.",
+    "Physical touch devices and production load remain manual checks."
+  ]
+}

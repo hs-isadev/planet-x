@@ -1,0 +1,32 @@
+{
+  "milestone": 1,
+  "reviewed_at": "2026-11-09T08:59:57.161Z",
+  "acceptance": "blocked",
+  "production_build": "passed",
+  "offline_tests": {
+    "passed": 22,
+    "deselected_live": 1,
+    "warnings": 1
+  },
+  "browser_tests": {
+    "passed": true,
+    "widths": [
+      1440,
+      1024,
+      768,
+      390,
+      320
+    ],
+    "page_errors": 0,
+    "mobile_bottom_sheet": "passed"
+  },
+  "live_wise_smoke": {
+    "result": "failed",
+    "stage": "IRSA TAP discovery",
+    "reason": "ConnectionResetError 10054; no real images downloaded"
+  },
+  "simbad": "remote capabilities request failed for all four targets",
+  "visible_wise_motion": "not verified",
+  "public_deployment": "not deployed",
+  "later_milestones": "not started"
+}

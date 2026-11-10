@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-10",
+  "browser": {
+    "dynamicZoomDistance": 2.0479570558101945,
+    "wasdDistance": 1.996188173170139,
+    "departureAnimated": true,
+    "returnedToLocal": true,
+    "returnDistance": 4.402556075736004,
+    "javascriptErrors": [],
+    "passed": true
+  },
+  "candidateUnitTests": 3,
+  "real": {
+    "measured_terrain_samples": 37249,
+    "terrain_elevation_m": [
+      3486.98,
+      4199
+    ],
+    "constellation": "Ursa Minor",
+    "real_frames_available": 21,
+    "reference_dates": [
+      "2025-12-12T06:47:16.253Z",
+      "2025-11-10T23:26:52.022Z"
+    ],
+    "red_residual_pixels": 2,
+    "raw_arrays_unchanged": true,
+    "mask_preserved": true,
+    "note": "Red residuals are computed candidates, not confirmed moving sources. Similar bandpasses, not a PSF-matched subtraction."
+  },
+  "laya": "No available integration; deterministic algorithm used"
+}

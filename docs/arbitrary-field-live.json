@@ -1,0 +1,47 @@
+{
+  "ra": 0,
+  "dec": 0,
+  "fov": 8,
+  "real_catalog_sources_with_distance": 35,
+  "unknown_distance": 45,
+  "truncated": false,
+  "sample": [
+    {
+      "ra": 359.9990731024343,
+      "dec": -0.06538726216708188,
+      "ref_epoch": 2016.0,
+      "parallax": 0.44261553876887494,
+      "parallax_error": 0.020064668729901314,
+      "pmra": 11.34782635291023,
+      "pmdec": -8.313726455313322,
+      "phot_g_mean_mag": 9.94403076171875,
+      "ruwe": 1.2287211418151855,
+      "distance_gspphot": null,
+      "distance_gspphot_lower": null,
+      "distance_gspphot_upper": null,
+      "id": "2449957651830140160",
+      "name": "Gaia DR3 2449957651830140160",
+      "catalog": "Gaia DR3",
+      "provenance": "catalog",
+      "source": "https://gea.esac.esa.int/tap-server/tap",
+      "distance_pc": 2259.297092870886,
+      "distance_lower_pc": 2161.3200301044753,
+      "distance_upper_pc": 2366.5789633985746,
+      "distance_method": "parallax inversion (S/N \u2265 5)",
+      "distance_source": "Gaia DR3",
+      "xyz_pc": [
+        2259.295621332474,
+        -0.03654956140994142,
+        -2.5783612774531943
+      ],
+      "direction": [
+        0.999999348674233,
+        -1.61774038152273e-05,
+        -0.0011412227659607502
+      ],
+      "position_provenance": "computed from ICRS direction and catalog distance",
+      "uncertain": false,
+      "distance_note": "Catalog statistical interval; parallax zero-point and other systematics are not corrected."
+    }
+  ]
+}

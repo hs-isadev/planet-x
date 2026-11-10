@@ -1,0 +1,44 @@
+{
+  "id": "laya-prepare-44f3f8a5410de8458faabe20",
+  "status": "complete",
+  "frame": 0,
+  "message": "Laya reviewed 1 proposed regions",
+  "regions": [
+    {
+      "x": 0.7215189873417721,
+      "y": 0.5,
+      "radius": 0.10126582278481013,
+      "pixels": 2,
+      "choice": "uncertain",
+      "highlight_red": false,
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0873,
+          "disappeared or faded": 0.0718,
+          "shifted position": 0.0487,
+          "stable or no convincing change": 0.1375,
+          "artifact or missing data": 0.1785,
+          "uncertain": 0.4762
+        },
+        "confidence": 0.1724,
+        "action": {
+          "act_probability": 0.6446
+        }
+      }
+    }
+  ],
+  "reference": 1,
+  "dates": [
+    "2025-11-14T12:09:30.326Z",
+    "2025-12-13T00:41:57.091Z"
+  ],
+  "limited": false,
+  "model": {
+    "model": "thaitea/laya-vision",
+    "revision": "f2fe3c12cb6d04c59d8a190250bf3fb40fc828dc"
+  },
+  "provenance": "computed / experimental local AI review",
+  "note": "General visual model; scores are not calibrated for SPHEREx. Red rings = model favors a visible change; amber = other/uncertain. Not confirmed motion, a source identification, or a validated astronomical detection."
+}

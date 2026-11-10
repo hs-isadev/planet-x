@@ -1,0 +1,40 @@
+{
+  "job": "eaa4027ad46c4f3fa151d8027e820a4b",
+  "frames": 2,
+  "keys": [
+    "qr3/level2/2026W30_1B/l2b-v27-2026-222/1/level2_2026W30_1B_0001_1D1_spx_l2b-v27-2026-222.fits",
+    "qr3/level2/2026W30_1B/l2b-v27-2026-222/1/level2_2026W30_1B_0001_2D1_spx_l2b-v27-2026-222.fits"
+  ],
+  "groups": {
+    "groups": [
+      {
+        "id": "D1:36",
+        "detector": 1,
+        "band": "SPHEREx-D1",
+        "wavelength_min_um": 0.9,
+        "wavelength_max_um": 0.925,
+        "frames": [
+          0
+        ],
+        "stackable": true
+      },
+      {
+        "id": "D1:37",
+        "detector": 1,
+        "band": "SPHEREx-D1",
+        "wavelength_min_um": 0.925,
+        "wavelength_max_um": 0.95,
+        "frames": [
+          1
+        ],
+        "stackable": true
+      }
+    ],
+    "bin_width_um": 0.025,
+    "provenance": "computed"
+  },
+  "aperture_position": [
+    0.3,
+    0.3
+  ]
+}

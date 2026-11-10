@@ -1,0 +1,2922 @@
+{
+  "id": "laya-seq-bea8423da80d9e20739b5b98",
+  "status": "complete",
+  "total": 188,
+  "loaded": 188,
+  "reviewed": 188,
+  "batches_done": 118,
+  "batches": [
+    {
+      "group": "D3:94",
+      "frames": [
+        0,
+        244
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0662,
+          "disappeared or faded": 0.0761,
+          "shifted position": 0.0321,
+          "stable or no convincing change": 0.0881,
+          "artifact or missing data": 0.2492,
+          "uncertain": 0.4884
+        },
+        "confidence": 0.2207,
+        "action": {
+          "act_probability": 0.7883
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:198",
+      "frames": [
+        1,
+        137,
+        245
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.1731,
+          "disappeared or faded": 0.096,
+          "shifted position": 0.0514,
+          "stable or no convincing change": 0.1027,
+          "artifact or missing data": 0.3229,
+          "uncertain": 0.2539
+        },
+        "confidence": 0.0915,
+        "action": {
+          "act_probability": 0.9337
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D3:96",
+      "frames": [
+        2
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.1624,
+          "disappeared or faded": 0.1147,
+          "shifted position": 0.0647,
+          "stable or no convincing change": 0.115,
+          "artifact or missing data": 0.1762,
+          "uncertain": 0.3669
+        },
+        "confidence": 0.0828,
+        "action": {
+          "act_probability": 0.9654
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:199",
+      "frames": [
+        3
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0915,
+          "disappeared or faded": 0.1072,
+          "shifted position": 0.0659,
+          "stable or no convincing change": 0.1427,
+          "artifact or missing data": 0.366,
+          "uncertain": 0.2266
+        },
+        "confidence": 0.0961,
+        "action": {
+          "act_probability": 0.9732
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D3:88",
+      "frames": [
+        4,
+        238
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0696,
+          "disappeared or faded": 0.0807,
+          "shifted position": 0.0434,
+          "stable or no convincing change": 0.0844,
+          "artifact or missing data": 0.386,
+          "uncertain": 0.336
+        },
+        "confidence": 0.1811,
+        "action": {
+          "act_probability": 0.9535
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D6:194",
+      "frames": [
+        5,
+        239
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0727,
+          "disappeared or faded": 0.0691,
+          "shifted position": 0.0302,
+          "stable or no convincing change": 0.087,
+          "artifact or missing data": 0.2047,
+          "uncertain": 0.5362
+        },
+        "confidence": 0.2452,
+        "action": {
+          "act_probability": 0.8105
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:60",
+      "frames": [
+        6,
+        92,
+        250
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0785,
+          "disappeared or faded": 0.0764,
+          "shifted position": 0.0543,
+          "stable or no convincing change": 0.0914,
+          "artifact or missing data": 0.2368,
+          "uncertain": 0.4625
+        },
+        "confidence": 0.179,
+        "action": {
+          "act_probability": 0.926
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D5:171",
+      "frames": [
+        7,
+        93,
+        251
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0834,
+          "disappeared or faded": 0.0739,
+          "shifted position": 0.0557,
+          "stable or no convincing change": 0.1065,
+          "artifact or missing data": 0.4167,
+          "uncertain": 0.2637
+        },
+        "confidence": 0.1542,
+        "action": {
+          "act_probability": 0.9456
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D2:62",
+      "frames": [
+        8,
+        94,
+        252
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.114,
+          "disappeared or faded": 0.0977,
+          "shifted position": 0.0596,
+          "stable or no convincing change": 0.0826,
+          "artifact or missing data": 0.3225,
+          "uncertain": 0.3236
+        },
+        "confidence": 0.1188,
+        "action": {
+          "act_probability": 0.9639
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D5:173",
+      "frames": [
+        9,
+        95,
+        253
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0946,
+          "disappeared or faded": 0.0977,
+          "shifted position": 0.0579,
+          "stable or no convincing change": 0.1002,
+          "artifact or missing data": 0.2925,
+          "uncertain": 0.3572
+        },
+        "confidence": 0.1221,
+        "action": {
+          "act_probability": 0.889
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:63",
+      "frames": [
+        10,
+        96,
+        254
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0795,
+          "disappeared or faded": 0.079,
+          "shifted position": 0.0467,
+          "stable or no convincing change": 0.0884,
+          "artifact or missing data": 0.5822,
+          "uncertain": 0.1243
+        },
+        "confidence": 0.2558,
+        "action": {
+          "act_probability": 0.9795
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:174",
+      "frames": [
+        11,
+        97,
+        255
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.226,
+          "disappeared or faded": 0.0915,
+          "shifted position": 0.0473,
+          "stable or no convincing change": 0.1116,
+          "artifact or missing data": 0.2165,
+          "uncertain": 0.3071
+        },
+        "confidence": 0.0859,
+        "action": {
+          "act_probability": 0.8658
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:65",
+      "frames": [
+        12,
+        98
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0733,
+          "disappeared or faded": 0.0798,
+          "shifted position": 0.0403,
+          "stable or no convincing change": 0.1394,
+          "artifact or missing data": 0.3921,
+          "uncertain": 0.275
+        },
+        "confidence": 0.1518,
+        "action": {
+          "act_probability": 0.9318
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:176",
+      "frames": [
+        13
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.1502,
+          "disappeared or faded": 0.0833,
+          "shifted position": 0.0326,
+          "stable or no convincing change": 0.0985,
+          "artifact or missing data": 0.1059,
+          "uncertain": 0.5296
+        },
+        "confidence": 0.2153,
+        "action": {
+          "act_probability": 0.8592
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:51",
+      "frames": [
+        14,
+        80
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0788,
+          "disappeared or faded": 0.0971,
+          "shifted position": 0.0481,
+          "stable or no convincing change": 0.1034,
+          "artifact or missing data": 0.4949,
+          "uncertain": 0.1777
+        },
+        "confidence": 0.1839,
+        "action": {
+          "act_probability": 0.9744
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:161",
+      "frames": [
+        15,
+        81
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0879,
+          "disappeared or faded": 0.0795,
+          "shifted position": 0.0543,
+          "stable or no convincing change": 0.087,
+          "artifact or missing data": 0.5351,
+          "uncertain": 0.1562
+        },
+        "confidence": 0.2129,
+        "action": {
+          "act_probability": 0.9477
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D2:52",
+      "frames": [
+        16,
+        82
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0713,
+          "disappeared or faded": 0.0698,
+          "shifted position": 0.0398,
+          "stable or no convincing change": 0.0965,
+          "artifact or missing data": 0.1766,
+          "uncertain": 0.5459
+        },
+        "confidence": 0.2383,
+        "action": {
+          "act_probability": 0.8171
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D5:162",
+      "frames": [
+        17,
+        83
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.1134,
+          "disappeared or faded": 0.0771,
+          "shifted position": 0.0963,
+          "stable or no convincing change": 0.0965,
+          "artifact or missing data": 0.4669,
+          "uncertain": 0.1497
+        },
+        "confidence": 0.143,
+        "action": {
+          "act_probability": 0.9666
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D2:53",
+      "frames": [
+        18,
+        84
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0951,
+          "disappeared or faded": 0.0862,
+          "shifted position": 0.0487,
+          "stable or no convincing change": 0.1054,
+          "artifact or missing data": 0.3417,
+          "uncertain": 0.3229
+        },
+        "confidence": 0.1342,
+        "action": {
+          "act_probability": 0.8859
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:164",
+      "frames": [
+        19,
+        85
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.042,
+          "disappeared or faded": 0.034,
+          "shifted position": 0.0195,
+          "stable or no convincing change": 0.0337,
+          "artifact or missing data": 0.1979,
+          "uncertain": 0.6729
+        },
+        "confidence": 0.4272,
+        "action": {
+          "act_probability": 0.5641
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:54",
+      "frames": [
+        20
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0907,
+          "disappeared or faded": 0.09,
+          "shifted position": 0.0601,
+          "stable or no convincing change": 0.1279,
+          "artifact or missing data": 0.2565,
+          "uncertain": 0.3748
+        },
+        "confidence": 0.1164,
+        "action": {
+          "act_probability": 0.9697
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D5:165",
+      "frames": [
+        21,
+        87
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.1051,
+          "disappeared or faded": 0.059,
+          "shifted position": 0.032,
+          "stable or no convincing change": 0.0959,
+          "artifact or missing data": 0.1994,
+          "uncertain": 0.5085
+        },
+        "confidence": 0.2162,
+        "action": {
+          "act_probability": 0.7976
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:39",
+      "frames": [
+        22,
+        42
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0543,
+          "disappeared or faded": 0.0607,
+          "shifted position": 0.0373,
+          "stable or no convincing change": 0.0748,
+          "artifact or missing data": 0.1745,
+          "uncertain": 0.5984
+        },
+        "confidence": 0.2986,
+        "action": {
+          "act_probability": 0.8435
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:134",
+      "frames": [
+        23,
+        43
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0656,
+          "disappeared or faded": 0.0721,
+          "shifted position": 0.0369,
+          "stable or no convincing change": 0.0664,
+          "artifact or missing data": 0.2599,
+          "uncertain": 0.4991
+        },
+        "confidence": 0.237,
+        "action": {
+          "act_probability": 0.8762
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:40",
+      "frames": [
+        24,
+        44
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0709,
+          "disappeared or faded": 0.0599,
+          "shifted position": 0.035,
+          "stable or no convincing change": 0.0731,
+          "artifact or missing data": 0.3882,
+          "uncertain": 0.373
+        },
+        "confidence": 0.2187,
+        "action": {
+          "act_probability": 0.8987
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:138",
+      "frames": [
+        25
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.094,
+          "disappeared or faded": 0.0964,
+          "shifted position": 0.073,
+          "stable or no convincing change": 0.0969,
+          "artifact or missing data": 0.3113,
+          "uncertain": 0.3285
+        },
+        "confidence": 0.1104,
+        "action": {
+          "act_probability": 0.9755
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:41",
+      "frames": [
+        26,
+        46
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0796,
+          "disappeared or faded": 0.0861,
+          "shifted position": 0.0568,
+          "stable or no convincing change": 0.0875,
+          "artifact or missing data": 0.3415,
+          "uncertain": 0.3486
+        },
+        "confidence": 0.1501,
+        "action": {
+          "act_probability": 0.9722
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:141",
+      "frames": [
+        27,
+        47
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0519,
+          "disappeared or faded": 0.0566,
+          "shifted position": 0.0407,
+          "stable or no convincing change": 0.0592,
+          "artifact or missing data": 0.6503,
+          "uncertain": 0.1412
+        },
+        "confidence": 0.347,
+        "action": {
+          "act_probability": 0.9831
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D1:42",
+      "frames": [
+        28,
+        48
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0949,
+          "disappeared or faded": 0.0882,
+          "shifted position": 0.0456,
+          "stable or no convincing change": 0.1348,
+          "artifact or missing data": 0.3265,
+          "uncertain": 0.31
+        },
+        "confidence": 0.1197,
+        "action": {
+          "act_probability": 0.9371
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:145",
+      "frames": [
+        29,
+        49
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0761,
+          "disappeared or faded": 0.069,
+          "shifted position": 0.0426,
+          "stable or no convincing change": 0.0754,
+          "artifact or missing data": 0.3232,
+          "uncertain": 0.4137
+        },
+        "confidence": 0.1962,
+        "action": {
+          "act_probability": 0.8624
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:34",
+      "frames": [
+        30,
+        222
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.1059,
+          "disappeared or faded": 0.0789,
+          "shifted position": 0.0396,
+          "stable or no convincing change": 0.0849,
+          "artifact or missing data": 0.1598,
+          "uncertain": 0.5309
+        },
+        "confidence": 0.2161,
+        "action": {
+          "act_probability": 0.7986
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:114",
+      "frames": [
+        31
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0839,
+          "disappeared or faded": 0.0843,
+          "shifted position": 0.0497,
+          "stable or no convincing change": 0.1024,
+          "artifact or missing data": 0.1086,
+          "uncertain": 0.5711
+        },
+        "confidence": 0.241,
+        "action": {
+          "act_probability": 0.8577
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:35",
+      "frames": [
+        32,
+        226,
+        228
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.051,
+          "disappeared or faded": 0.061,
+          "shifted position": 0.0404,
+          "stable or no convincing change": 0.0542,
+          "artifact or missing data": 0.7523,
+          "uncertain": 0.0411
+        },
+        "confidence": 0.4669,
+        "action": {
+          "act_probability": 0.9565
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:117",
+      "frames": [
+        33
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0777,
+          "disappeared or faded": 0.0921,
+          "shifted position": 0.0539,
+          "stable or no convincing change": 0.1128,
+          "artifact or missing data": 0.2543,
+          "uncertain": 0.4092
+        },
+        "confidence": 0.1431,
+        "action": {
+          "act_probability": 0.9633
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:36",
+      "frames": [
+        34,
+        36,
+        230
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.091,
+          "disappeared or faded": 0.1163,
+          "shifted position": 0.0586,
+          "stable or no convincing change": 0.1275,
+          "artifact or missing data": 0.5142,
+          "uncertain": 0.0923
+        },
+        "confidence": 0.1856,
+        "action": {
+          "act_probability": 0.9769
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:120",
+      "frames": [
+        35
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.1238,
+          "disappeared or faded": 0.1074,
+          "shifted position": 0.0628,
+          "stable or no convincing change": 0.1202,
+          "artifact or missing data": 0.1259,
+          "uncertain": 0.4599
+        },
+        "confidence": 0.1378,
+        "action": {
+          "act_probability": 0.863
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:123",
+      "frames": [
+        37
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0946,
+          "disappeared or faded": 0.099,
+          "shifted position": 0.0618,
+          "stable or no convincing change": 0.2084,
+          "artifact or missing data": 0.2974,
+          "uncertain": 0.2387
+        },
+        "confidence": 0.0771,
+        "action": {
+          "act_probability": 0.9745
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D1:37",
+      "frames": [
+        38,
+        232
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0619,
+          "disappeared or faded": 0.0748,
+          "shifted position": 0.0402,
+          "stable or no convincing change": 0.0811,
+          "artifact or missing data": 0.3927,
+          "uncertain": 0.3494
+        },
+        "confidence": 0.2,
+        "action": {
+          "act_probability": 0.8956
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:127",
+      "frames": [
+        39
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0872,
+          "disappeared or faded": 0.122,
+          "shifted position": 0.0607,
+          "stable or no convincing change": 0.1062,
+          "artifact or missing data": 0.2438,
+          "uncertain": 0.3802
+        },
+        "confidence": 0.113,
+        "action": {
+          "act_probability": 0.9628
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:38",
+      "frames": [
+        40,
+        224,
+        234
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0955,
+          "disappeared or faded": 0.1009,
+          "shifted position": 0.0523,
+          "stable or no convincing change": 0.1099,
+          "artifact or missing data": 0.5347,
+          "uncertain": 0.1066
+        },
+        "confidence": 0.204,
+        "action": {
+          "act_probability": 0.9537
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:130",
+      "frames": [
+        41,
+        225
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0632,
+          "disappeared or faded": 0.0683,
+          "shifted position": 0.041,
+          "stable or no convincing change": 0.0694,
+          "artifact or missing data": 0.4427,
+          "uncertain": 0.3154
+        },
+        "confidence": 0.2194,
+        "action": {
+          "act_probability": 0.9471
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:137",
+      "frames": [
+        45
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0794,
+          "disappeared or faded": 0.0858,
+          "shifted position": 0.0526,
+          "stable or no convincing change": 0.1085,
+          "artifact or missing data": 0.1854,
+          "uncertain": 0.4883
+        },
+        "confidence": 0.1794,
+        "action": {
+          "act_probability": 0.904
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:43",
+      "frames": [
+        50
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0863,
+          "disappeared or faded": 0.0707,
+          "shifted position": 0.0443,
+          "stable or no convincing change": 0.0809,
+          "artifact or missing data": 0.1969,
+          "uncertain": 0.5209
+        },
+        "confidence": 0.2187,
+        "action": {
+          "act_probability": 0.849
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:149",
+      "frames": [
+        51
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0902,
+          "disappeared or faded": 0.1075,
+          "shifted position": 0.0657,
+          "stable or no convincing change": 0.1478,
+          "artifact or missing data": 0.1525,
+          "uncertain": 0.4363
+        },
+        "confidence": 0.1255,
+        "action": {
+          "act_probability": 0.9358
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:44",
+      "frames": [
+        52
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0962,
+          "disappeared or faded": 0.108,
+          "shifted position": 0.0689,
+          "stable or no convincing change": 0.121,
+          "artifact or missing data": 0.0877,
+          "uncertain": 0.5181
+        },
+        "confidence": 0.1853,
+        "action": {
+          "act_probability": 0.953
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:153",
+      "frames": [
+        53
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.1297,
+          "disappeared or faded": 0.1143,
+          "shifted position": 0.0693,
+          "stable or no convincing change": 0.1333,
+          "artifact or missing data": 0.2482,
+          "uncertain": 0.3052
+        },
+        "confidence": 0.0655,
+        "action": {
+          "act_probability": 0.9729
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:29",
+      "frames": [
+        54,
+        198
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0502,
+          "disappeared or faded": 0.0504,
+          "shifted position": 0.0344,
+          "stable or no convincing change": 0.0716,
+          "artifact or missing data": 0.2766,
+          "uncertain": 0.5167
+        },
+        "confidence": 0.2731,
+        "action": {
+          "act_probability": 0.8539
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:97",
+      "frames": [
+        55,
+        199
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.1074,
+          "disappeared or faded": 0.1213,
+          "shifted position": 0.0679,
+          "stable or no convincing change": 0.0933,
+          "artifact or missing data": 0.4771,
+          "uncertain": 0.1331
+        },
+        "confidence": 0.1512,
+        "action": {
+          "act_probability": 0.9613
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D1:31",
+      "frames": [
+        56,
+        216
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0799,
+          "disappeared or faded": 0.0809,
+          "shifted position": 0.0477,
+          "stable or no convincing change": 0.0954,
+          "artifact or missing data": 0.1806,
+          "uncertain": 0.5156
+        },
+        "confidence": 0.2046,
+        "action": {
+          "act_probability": 0.8682
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:102",
+      "frames": [
+        57
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0794,
+          "disappeared or faded": 0.0871,
+          "shifted position": 0.0689,
+          "stable or no convincing change": 0.0941,
+          "artifact or missing data": 0.5102,
+          "uncertain": 0.1604
+        },
+        "confidence": 0.1867,
+        "action": {
+          "act_probability": 0.9739
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D1:32",
+      "frames": [
+        58,
+        60,
+        218
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.2817,
+          "disappeared or faded": 0.1101,
+          "shifted position": 0.0527,
+          "stable or no convincing change": 0.0824,
+          "artifact or missing data": 0.3711,
+          "uncertain": 0.102
+        },
+        "confidence": 0.1286,
+        "action": {
+          "act_probability": 0.9351
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:105",
+      "frames": [
+        59
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0757,
+          "disappeared or faded": 0.0875,
+          "shifted position": 0.0517,
+          "stable or no convincing change": 0.1291,
+          "artifact or missing data": 0.2948,
+          "uncertain": 0.3612
+        },
+        "confidence": 0.1328,
+        "action": {
+          "act_probability": 0.9561
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:107",
+      "frames": [
+        61,
+        219
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0878,
+          "disappeared or faded": 0.1324,
+          "shifted position": 0.0488,
+          "stable or no convincing change": 0.1045,
+          "artifact or missing data": 0.1803,
+          "uncertain": 0.4462
+        },
+        "confidence": 0.144,
+        "action": {
+          "act_probability": 0.9405
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D1:33",
+      "frames": [
+        62,
+        220
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.1019,
+          "disappeared or faded": 0.086,
+          "shifted position": 0.0525,
+          "stable or no convincing change": 0.0696,
+          "artifact or missing data": 0.2341,
+          "uncertain": 0.456
+        },
+        "confidence": 0.173,
+        "action": {
+          "act_probability": 0.9256
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:110",
+      "frames": [
+        63,
+        221
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0722,
+          "disappeared or faded": 0.0599,
+          "shifted position": 0.0419,
+          "stable or no convincing change": 0.0702,
+          "artifact or missing data": 0.5829,
+          "uncertain": 0.1727
+        },
+        "confidence": 0.2767,
+        "action": {
+          "act_probability": 0.9644
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D1:30",
+      "frames": [
+        64
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0794,
+          "disappeared or faded": 0.0908,
+          "shifted position": 0.0597,
+          "stable or no convincing change": 0.1066,
+          "artifact or missing data": 0.2903,
+          "uncertain": 0.3732
+        },
+        "confidence": 0.1334,
+        "action": {
+          "act_probability": 0.967
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:99",
+      "frames": [
+        65
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0798,
+          "disappeared or faded": 0.1007,
+          "shifted position": 0.0645,
+          "stable or no convincing change": 0.1293,
+          "artifact or missing data": 0.3271,
+          "uncertain": 0.2986
+        },
+        "confidence": 0.1067,
+        "action": {
+          "act_probability": 0.9712
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D2:43",
+      "frames": [
+        66
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.1887,
+          "disappeared or faded": 0.1223,
+          "shifted position": 0.0568,
+          "stable or no convincing change": 0.0988,
+          "artifact or missing data": 0.3654,
+          "uncertain": 0.168
+        },
+        "confidence": 0.0898,
+        "action": {
+          "act_probability": 0.9642
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:152",
+      "frames": [
+        67
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0851,
+          "disappeared or faded": 0.0752,
+          "shifted position": 0.0445,
+          "stable or no convincing change": 0.1098,
+          "artifact or missing data": 0.1781,
+          "uncertain": 0.5074
+        },
+        "confidence": 0.1981,
+        "action": {
+          "act_probability": 0.8899
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:45",
+      "frames": [
+        68
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0747,
+          "disappeared or faded": 0.091,
+          "shifted position": 0.0576,
+          "stable or no convincing change": 0.1156,
+          "artifact or missing data": 0.3101,
+          "uncertain": 0.3509
+        },
+        "confidence": 0.1314,
+        "action": {
+          "act_probability": 0.9582
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D5:153",
+      "frames": [
+        69
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0402,
+          "disappeared or faded": 0.049,
+          "shifted position": 0.0314,
+          "stable or no convincing change": 0.0644,
+          "artifact or missing data": 0.5458,
+          "uncertain": 0.2692
+        },
+        "confidence": 0.3045,
+        "action": {
+          "act_probability": 0.94
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D2:46",
+      "frames": [
+        70
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.1466,
+          "disappeared or faded": 0.0962,
+          "shifted position": 0.0599,
+          "stable or no convincing change": 0.1318,
+          "artifact or missing data": 0.2073,
+          "uncertain": 0.3581
+        },
+        "confidence": 0.0866,
+        "action": {
+          "act_probability": 0.9664
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D5:155",
+      "frames": [
+        71
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0664,
+          "disappeared or faded": 0.0651,
+          "shifted position": 0.0444,
+          "stable or no convincing change": 0.0726,
+          "artifact or missing data": 0.3423,
+          "uncertain": 0.4092
+        },
+        "confidence": 0.2079,
+        "action": {
+          "act_probability": 0.9115
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:47",
+      "frames": [
+        72
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0671,
+          "disappeared or faded": 0.073,
+          "shifted position": 0.0484,
+          "stable or no convincing change": 0.1143,
+          "artifact or missing data": 0.2775,
+          "uncertain": 0.4197
+        },
+        "confidence": 0.1701,
+        "action": {
+          "act_probability": 0.9463
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D5:156",
+      "frames": [
+        73
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0604,
+          "disappeared or faded": 0.0609,
+          "shifted position": 0.0397,
+          "stable or no convincing change": 0.0615,
+          "artifact or missing data": 0.4151,
+          "uncertain": 0.3624
+        },
+        "confidence": 0.234,
+        "action": {
+          "act_probability": 0.9295
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D2:48",
+      "frames": [
+        74
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0587,
+          "disappeared or faded": 0.0685,
+          "shifted position": 0.0481,
+          "stable or no convincing change": 0.1979,
+          "artifact or missing data": 0.4829,
+          "uncertain": 0.1438
+        },
+        "confidence": 0.1924,
+        "action": {
+          "act_probability": 0.9619
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:157",
+      "frames": [
+        75
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0738,
+          "disappeared or faded": 0.0759,
+          "shifted position": 0.0388,
+          "stable or no convincing change": 0.0762,
+          "artifact or missing data": 0.2777,
+          "uncertain": 0.4576
+        },
+        "confidence": 0.2054,
+        "action": {
+          "act_probability": 0.8795
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:49",
+      "frames": [
+        76
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0867,
+          "disappeared or faded": 0.0848,
+          "shifted position": 0.0607,
+          "stable or no convincing change": 0.1347,
+          "artifact or missing data": 0.4789,
+          "uncertain": 0.1542
+        },
+        "confidence": 0.1616,
+        "action": {
+          "act_probability": 0.9749
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:159",
+      "frames": [
+        77
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0545,
+          "disappeared or faded": 0.0574,
+          "shifted position": 0.0461,
+          "stable or no convincing change": 0.0621,
+          "artifact or missing data": 0.2621,
+          "uncertain": 0.5177
+        },
+        "confidence": 0.2583,
+        "action": {
+          "act_probability": 0.9108
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:50",
+      "frames": [
+        78,
+        115
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0885,
+          "disappeared or faded": 0.0722,
+          "shifted position": 0.0336,
+          "stable or no convincing change": 0.0838,
+          "artifact or missing data": 0.1546,
+          "uncertain": 0.5674
+        },
+        "confidence": 0.2543,
+        "action": {
+          "act_probability": 0.7953
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D5:160",
+      "frames": [
+        79,
+        116
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0432,
+          "disappeared or faded": 0.0385,
+          "shifted position": 0.022,
+          "stable or no convincing change": 0.0369,
+          "artifact or missing data": 0.3587,
+          "uncertain": 0.5007
+        },
+        "confidence": 0.3409,
+        "action": {
+          "act_probability": 0.6642
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:55",
+      "frames": [
+        86
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0695,
+          "disappeared or faded": 0.0829,
+          "shifted position": 0.0575,
+          "stable or no convincing change": 0.0963,
+          "artifact or missing data": 0.295,
+          "uncertain": 0.3988
+        },
+        "confidence": 0.1583,
+        "action": {
+          "act_probability": 0.9496
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:56",
+      "frames": [
+        88,
+        152,
+        212
+      ],
+      "choice": "appeared or brightened",
+      "answer": {
+        "type": "choice",
+        "choice": "appeared or brightened",
+        "probabilities": {
+          "appeared or brightened": 0.373,
+          "disappeared or faded": 0.0884,
+          "shifted position": 0.0659,
+          "stable or no convincing change": 0.086,
+          "artifact or missing data": 0.2807,
+          "uncertain": 0.1059
+        },
+        "confidence": 0.1255,
+        "action": {
+          "act_probability": 0.9734
+        }
+      },
+      "raw_model_choice": "appeared or brightened"
+    },
+    {
+      "group": "D5:167",
+      "frames": [
+        89,
+        153
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0705,
+          "disappeared or faded": 0.1456,
+          "shifted position": 0.0317,
+          "stable or no convincing change": 0.0692,
+          "artifact or missing data": 0.1788,
+          "uncertain": 0.5041
+        },
+        "confidence": 0.2103,
+        "action": {
+          "act_probability": 0.718
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:57",
+      "frames": [
+        90,
+        214,
+        246
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.1542,
+          "disappeared or faded": 0.1861,
+          "shifted position": 0.0653,
+          "stable or no convincing change": 0.1676,
+          "artifact or missing data": 0.2956,
+          "uncertain": 0.1312
+        },
+        "confidence": 0.0482,
+        "action": {
+          "act_probability": 0.9639
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:168",
+      "frames": [
+        91,
+        215,
+        247
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.1994,
+          "disappeared or faded": 0.0975,
+          "shifted position": 0.0555,
+          "stable or no convincing change": 0.1135,
+          "artifact or missing data": 0.2196,
+          "uncertain": 0.3144
+        },
+        "confidence": 0.0776,
+        "action": {
+          "act_probability": 0.9546
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D5:175",
+      "frames": [
+        99
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0839,
+          "disappeared or faded": 0.0656,
+          "shifted position": 0.0371,
+          "stable or no convincing change": 0.0707,
+          "artifact or missing data": 0.1594,
+          "uncertain": 0.5833
+        },
+        "confidence": 0.2726,
+        "action": {
+          "act_probability": 0.8495
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D2:59",
+      "frames": [
+        100,
+        210,
+        248
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.3787,
+          "disappeared or faded": 0.0659,
+          "shifted position": 0.0381,
+          "stable or no convincing change": 0.0609,
+          "artifact or missing data": 0.4044,
+          "uncertain": 0.052
+        },
+        "confidence": 0.2401,
+        "action": {
+          "act_probability": 0.959
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:170",
+      "frames": [
+        101,
+        211,
+        249
+      ],
+      "choice": "appeared or brightened",
+      "answer": {
+        "type": "choice",
+        "choice": "appeared or brightened",
+        "probabilities": {
+          "appeared or brightened": 0.346,
+          "disappeared or faded": 0.0957,
+          "shifted position": 0.049,
+          "stable or no convincing change": 0.0859,
+          "artifact or missing data": 0.1514,
+          "uncertain": 0.272
+        },
+        "confidence": 0.1124,
+        "action": {
+          "act_probability": 0.9448
+        }
+      },
+      "raw_model_choice": "appeared or brightened"
+    },
+    {
+      "group": "D3:65",
+      "frames": [
+        102
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.086,
+          "disappeared or faded": 0.0907,
+          "shifted position": 0.0591,
+          "stable or no convincing change": 0.1299,
+          "artifact or missing data": 0.1205,
+          "uncertain": 0.5137
+        },
+        "confidence": 0.1861,
+        "action": {
+          "act_probability": 0.9413
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:176",
+      "frames": [
+        103,
+        157
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0753,
+          "disappeared or faded": 0.074,
+          "shifted position": 0.0356,
+          "stable or no convincing change": 0.0511,
+          "artifact or missing data": 0.5765,
+          "uncertain": 0.1875
+        },
+        "confidence": 0.2803,
+        "action": {
+          "act_probability": 0.9238
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D3:66",
+      "frames": [
+        104
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0786,
+          "disappeared or faded": 0.0845,
+          "shifted position": 0.0532,
+          "stable or no convincing change": 0.0987,
+          "artifact or missing data": 0.5523,
+          "uncertain": 0.1326
+        },
+        "confidence": 0.2246,
+        "action": {
+          "act_probability": 0.9787
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D6:177",
+      "frames": [
+        105
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0523,
+          "disappeared or faded": 0.0615,
+          "shifted position": 0.0437,
+          "stable or no convincing change": 0.076,
+          "artifact or missing data": 0.1875,
+          "uncertain": 0.5789
+        },
+        "confidence": 0.2806,
+        "action": {
+          "act_probability": 0.8204
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:68",
+      "frames": [
+        106
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0988,
+          "disappeared or faded": 0.1046,
+          "shifted position": 0.0511,
+          "stable or no convincing change": 0.1747,
+          "artifact or missing data": 0.2354,
+          "uncertain": 0.3354
+        },
+        "confidence": 0.0911,
+        "action": {
+          "act_probability": 0.9185
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:178",
+      "frames": [
+        107,
+        159
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0661,
+          "disappeared or faded": 0.0736,
+          "shifted position": 0.0445,
+          "stable or no convincing change": 0.0865,
+          "artifact or missing data": 0.3535,
+          "uncertain": 0.3758
+        },
+        "confidence": 0.1868,
+        "action": {
+          "act_probability": 0.9147
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:69",
+      "frames": [
+        108
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0734,
+          "disappeared or faded": 0.0814,
+          "shifted position": 0.0546,
+          "stable or no convincing change": 0.1473,
+          "artifact or missing data": 0.1388,
+          "uncertain": 0.5044
+        },
+        "confidence": 0.1873,
+        "action": {
+          "act_probability": 0.9347
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:180",
+      "frames": [
+        109
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0664,
+          "disappeared or faded": 0.0662,
+          "shifted position": 0.0491,
+          "stable or no convincing change": 0.0761,
+          "artifact or missing data": 0.1123,
+          "uncertain": 0.63
+        },
+        "confidence": 0.3078,
+        "action": {
+          "act_probability": 0.9055
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:71",
+      "frames": [
+        110
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0609,
+          "disappeared or faded": 0.0705,
+          "shifted position": 0.0472,
+          "stable or no convincing change": 0.1073,
+          "artifact or missing data": 0.29,
+          "uncertain": 0.424
+        },
+        "confidence": 0.183,
+        "action": {
+          "act_probability": 0.9445
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:73",
+      "frames": [
+        111,
+        166
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0847,
+          "disappeared or faded": 0.0901,
+          "shifted position": 0.0378,
+          "stable or no convincing change": 0.0951,
+          "artifact or missing data": 0.234,
+          "uncertain": 0.4583
+        },
+        "confidence": 0.179,
+        "action": {
+          "act_probability": 0.8937
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:182",
+      "frames": [
+        112
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0362,
+          "disappeared or faded": 0.0378,
+          "shifted position": 0.0282,
+          "stable or no convincing change": 0.0419,
+          "artifact or missing data": 0.1846,
+          "uncertain": 0.6713
+        },
+        "confidence": 0.4102,
+        "action": {
+          "act_probability": 0.786
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:74",
+      "frames": [
+        113
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0674,
+          "disappeared or faded": 0.0755,
+          "shifted position": 0.0413,
+          "stable or no convincing change": 0.0923,
+          "artifact or missing data": 0.3945,
+          "uncertain": 0.3291
+        },
+        "confidence": 0.1846,
+        "action": {
+          "act_probability": 0.9416
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D6:184",
+      "frames": [
+        114,
+        169
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.072,
+          "disappeared or faded": 0.0815,
+          "shifted position": 0.0463,
+          "stable or no convincing change": 0.1052,
+          "artifact or missing data": 0.1878,
+          "uncertain": 0.5072
+        },
+        "confidence": 0.2012,
+        "action": {
+          "act_probability": 0.9089
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:75",
+      "frames": [
+        117
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0595,
+          "disappeared or faded": 0.0681,
+          "shifted position": 0.0395,
+          "stable or no convincing change": 0.092,
+          "artifact or missing data": 0.0789,
+          "uncertain": 0.6619
+        },
+        "confidence": 0.3461,
+        "action": {
+          "act_probability": 0.841
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:185",
+      "frames": [
+        118,
+        143
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0611,
+          "disappeared or faded": 0.0459,
+          "shifted position": 0.0316,
+          "stable or no convincing change": 0.0583,
+          "artifact or missing data": 0.1459,
+          "uncertain": 0.6572
+        },
+        "confidence": 0.3616,
+        "action": {
+          "act_probability": 0.6384
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:77",
+      "frames": [
+        119
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0796,
+          "disappeared or faded": 0.0946,
+          "shifted position": 0.0476,
+          "stable or no convincing change": 0.1333,
+          "artifact or missing data": 0.2225,
+          "uncertain": 0.4225
+        },
+        "confidence": 0.1425,
+        "action": {
+          "act_probability": 0.932
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:186",
+      "frames": [
+        120
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0533,
+          "disappeared or faded": 0.0453,
+          "shifted position": 0.0266,
+          "stable or no convincing change": 0.0486,
+          "artifact or missing data": 0.093,
+          "uncertain": 0.7331
+        },
+        "confidence": 0.4483,
+        "action": {
+          "act_probability": 0.7083
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:79",
+      "frames": [
+        121
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0671,
+          "disappeared or faded": 0.0932,
+          "shifted position": 0.0556,
+          "stable or no convincing change": 0.108,
+          "artifact or missing data": 0.2774,
+          "uncertain": 0.3987
+        },
+        "confidence": 0.1484,
+        "action": {
+          "act_probability": 0.9487
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:81",
+      "frames": [
+        122,
+        150
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0267,
+          "disappeared or faded": 0.0311,
+          "shifted position": 0.022,
+          "stable or no convincing change": 0.0342,
+          "artifact or missing data": 0.1785,
+          "uncertain": 0.7076
+        },
+        "confidence": 0.4663,
+        "action": {
+          "act_probability": 0.8035
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:189",
+      "frames": [
+        123,
+        151
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0749,
+          "disappeared or faded": 0.066,
+          "shifted position": 0.0349,
+          "stable or no convincing change": 0.0617,
+          "artifact or missing data": 0.0858,
+          "uncertain": 0.6766
+        },
+        "confidence": 0.3651,
+        "action": {
+          "act_probability": 0.7589
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:83",
+      "frames": [
+        124
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0809,
+          "disappeared or faded": 0.0874,
+          "shifted position": 0.0651,
+          "stable or no convincing change": 0.0994,
+          "artifact or missing data": 0.3021,
+          "uncertain": 0.3652
+        },
+        "confidence": 0.1332,
+        "action": {
+          "act_probability": 0.9707
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:190",
+      "frames": [
+        125
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0492,
+          "disappeared or faded": 0.0598,
+          "shifted position": 0.029,
+          "stable or no convincing change": 0.0496,
+          "artifact or missing data": 0.5779,
+          "uncertain": 0.2345
+        },
+        "confidence": 0.3162,
+        "action": {
+          "act_probability": 0.8905
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D3:85",
+      "frames": [
+        126
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0724,
+          "disappeared or faded": 0.0827,
+          "shifted position": 0.0507,
+          "stable or no convincing change": 0.14,
+          "artifact or missing data": 0.3681,
+          "uncertain": 0.2863
+        },
+        "confidence": 0.1358,
+        "action": {
+          "act_probability": 0.9729
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D6:193",
+      "frames": [
+        129
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0471,
+          "disappeared or faded": 0.047,
+          "shifted position": 0.0302,
+          "stable or no convincing change": 0.0493,
+          "artifact or missing data": 0.1237,
+          "uncertain": 0.7028
+        },
+        "confidence": 0.4152,
+        "action": {
+          "act_probability": 0.7911
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:187",
+      "frames": [
+        145
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0773,
+          "disappeared or faded": 0.0795,
+          "shifted position": 0.0542,
+          "stable or no convincing change": 0.1091,
+          "artifact or missing data": 0.2119,
+          "uncertain": 0.468
+        },
+        "confidence": 0.1723,
+        "action": {
+          "act_probability": 0.9078
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D3:86",
+      "frames": [
+        176,
+        236
+      ],
+      "choice": "artifact or missing data",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.1018,
+          "disappeared or faded": 0.0843,
+          "shifted position": 0.0439,
+          "stable or no convincing change": 0.1147,
+          "artifact or missing data": 0.4121,
+          "uncertain": 0.2433
+        },
+        "confidence": 0.1428,
+        "action": {
+          "act_probability": 0.9259
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D5:166",
+      "frames": [
+        213
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.064,
+          "disappeared or faded": 0.0611,
+          "shifted position": 0.0458,
+          "stable or no convincing change": 0.0832,
+          "artifact or missing data": 0.1235,
+          "uncertain": 0.6224
+        },
+        "confidence": 0.3033,
+        "action": {
+          "act_probability": 0.8115
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D4:104",
+      "frames": [
+        217
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.098,
+          "disappeared or faded": 0.1008,
+          "shifted position": 0.0809,
+          "stable or no convincing change": 0.0985,
+          "artifact or missing data": 0.4309,
+          "uncertain": 0.191
+        },
+        "confidence": 0.124,
+        "action": {
+          "act_probability": 0.9794
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:113",
+      "frames": [
+        223
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.1069,
+          "disappeared or faded": 0.1178,
+          "shifted position": 0.0772,
+          "stable or no convincing change": 0.1147,
+          "artifact or missing data": 0.3541,
+          "uncertain": 0.2293
+        },
+        "confidence": 0.0834,
+        "action": {
+          "act_probability": 0.9873
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:116",
+      "frames": [
+        227
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.1015,
+          "disappeared or faded": 0.1014,
+          "shifted position": 0.0776,
+          "stable or no convincing change": 0.1056,
+          "artifact or missing data": 0.4517,
+          "uncertain": 0.1621
+        },
+        "confidence": 0.1327,
+        "action": {
+          "act_probability": 0.9828
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:119",
+      "frames": [
+        229
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.1298,
+          "disappeared or faded": 0.1253,
+          "shifted position": 0.0911,
+          "stable or no convincing change": 0.1285,
+          "artifact or missing data": 0.3887,
+          "uncertain": 0.1366
+        },
+        "confidence": 0.0811,
+        "action": {
+          "act_probability": 0.9602
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:122",
+      "frames": [
+        231
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0911,
+          "disappeared or faded": 0.0958,
+          "shifted position": 0.0739,
+          "stable or no convincing change": 0.1011,
+          "artifact or missing data": 0.4288,
+          "uncertain": 0.2093
+        },
+        "confidence": 0.1307,
+        "action": {
+          "act_probability": 0.9809
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:126",
+      "frames": [
+        233
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0981,
+          "disappeared or faded": 0.1051,
+          "shifted position": 0.0689,
+          "stable or no convincing change": 0.1134,
+          "artifact or missing data": 0.4586,
+          "uncertain": 0.156
+        },
+        "confidence": 0.1389,
+        "action": {
+          "act_probability": 0.9774
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D4:129",
+      "frames": [
+        235
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "uncertain",
+        "probabilities": {
+          "appeared or brightened": 0.0936,
+          "disappeared or faded": 0.099,
+          "shifted position": 0.0618,
+          "stable or no convincing change": 0.1354,
+          "artifact or missing data": 0.1579,
+          "uncertain": 0.4523
+        },
+        "confidence": 0.1384,
+        "action": {
+          "act_probability": 0.9536
+        }
+      },
+      "raw_model_choice": "uncertain"
+    },
+    {
+      "group": "D6:192",
+      "frames": [
+        237
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0954,
+          "disappeared or faded": 0.106,
+          "shifted position": 0.0535,
+          "stable or no convincing change": 0.0971,
+          "artifact or missing data": 0.3668,
+          "uncertain": 0.2812
+        },
+        "confidence": 0.1239,
+        "action": {
+          "act_probability": 0.9528
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D3:90",
+      "frames": [
+        240
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0941,
+          "disappeared or faded": 0.1072,
+          "shifted position": 0.0742,
+          "stable or no convincing change": 0.0935,
+          "artifact or missing data": 0.5598,
+          "uncertain": 0.0712
+        },
+        "confidence": 0.2247,
+        "action": {
+          "act_probability": 0.9292
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D6:195",
+      "frames": [
+        241
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0713,
+          "disappeared or faded": 0.0754,
+          "shifted position": 0.047,
+          "stable or no convincing change": 0.0839,
+          "artifact or missing data": 0.3632,
+          "uncertain": 0.3592
+        },
+        "confidence": 0.1793,
+        "action": {
+          "act_probability": 0.934
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D3:92",
+      "frames": [
+        242
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.0918,
+          "disappeared or faded": 0.0971,
+          "shifted position": 0.0767,
+          "stable or no convincing change": 0.0962,
+          "artifact or missing data": 0.5315,
+          "uncertain": 0.1067
+        },
+        "confidence": 0.1949,
+        "action": {
+          "act_probability": 0.9816
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    },
+    {
+      "group": "D6:197",
+      "frames": [
+        243
+      ],
+      "choice": "uncertain",
+      "answer": {
+        "type": "choice",
+        "choice": "artifact or missing data",
+        "probabilities": {
+          "appeared or brightened": 0.076,
+          "disappeared or faded": 0.0941,
+          "shifted position": 0.0417,
+          "stable or no convincing change": 0.0697,
+          "artifact or missing data": 0.6308,
+          "uncertain": 0.0877
+        },
+        "confidence": 0.3076,
+        "action": {
+          "act_probability": 0.9823
+        }
+      },
+      "raw_model_choice": "artifact or missing data"
+    }
+  ],
+  "tracks": [],
+  "message": "Laya reviewed 188 / 188 real frames. 0 model-supported motion candidates; 0 deterministic peak associations are not confirmed detections.",
+  "batches_total": 118,
+  "common_mode_rejected": 0,
+  "failed": [],
+  "note": "Every successfully loaded exposure was reviewed, with earliest/latest context in long groups. Candidate tracks require four independent nights, >=30 days, >=5-sigma fitted velocity, low scatter and leave-one-out consistency. Batch-level VQA support requires at least two points from that track in the reviewed panel; it is not individual-source identification. Original arrays and masks are unchanged. Faint motion can be rejected; zero candidates does not prove no motion.",
+  "supported_motion_candidates": 0,
+  "scope": "Every available cached WISE exposure; loaded subset only, not the full release.",
+  "archive_discovered": 256,
+  "elapsed_seconds": 122.20300000000861
+}

@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-10T06:14:28.148Z",
+  "errors": [],
+  "barnardMs": 2620,
+  "viewer": {
+    "sceneUninitialized": true,
+    "group": "D3",
+    "ready": 70,
+    "contrasts": {
+      "D3": {
+        "black": 0.12484280705451965,
+        "white": 6.38892022895823,
+        "reference_frame": 0,
+        "unit": "MJy / sr"
+      },
+      "D6": {
+        "black": 0.36594161272048953,
+        "white": 3.539042893886566,
+        "reference_frame": 1,
+        "unit": "MJy / sr"
+      },
+      "D2": {
+        "black": 0.2440859280526638,
+        "white": 9.491027368545536,
+        "reference_frame": 24,
+        "unit": "MJy / sr"
+      },
+      "D5": {
+        "black": 0.10785557426512242,
+        "white": 3.7807035205364214,
+        "reference_frame": 25,
+        "unit": "MJy / sr"
+      },
+      "D1": {
+        "black": 0.21666786074638367,
+        "white": 6.822117328643799,
+        "reference_frame": 50,
+        "unit": "MJy / sr"
+      },
+      "D4": {
+        "black": 0.12744455695152282,
+        "white": 5.747634151458763,
+        "reference_frame": 51,
+        "unit": "MJy / sr"
+      }
+    }
+  },
+  "motion": "Catalog 10.393″/yr. Measured motion unavailable: Predicted source neighborhood is masked or clipped. 400.3 day baseline, D3, 2.393 / 2.410 µm. 70 / 364 usable exposures. Widest baseline among available same-detector exposures within 0.025 µm. Loaded subset only; this is not the widest-baseline archive proof. Difference B − A is unscaled, without PSF matching. Prediction includes proper motion and geometric annual parallax; radial velocity and perspective acceleration are omitted. Gaussian centroids require S/N ≥8 and fit-quality checks. Error includes a 0.2-pixel component floor; no field-star astrometric registration or calibration-systematic correction.",
+  "context3D": {
+    "canvas": true,
+    "earthLandingOnly": true,
+    "marsHidesEarthLanding": true
+  },
+  "shareIndex": 1,
+  "layaUI": {
+    "status": "complete",
+    "reviewed": 256,
+    "note": "Laya reviewed 256 / 256 real frames. 0 model-supported motion candidates; 340 deterministic peak associations are not confirmed detections. Every loaded exposure was included. Single-frame panels cannot establish change. General VQA contact-sheet judgments and association of the strongest 100 peaks per frame are experimental. Group-level model support is not individual-source identification. Original arrays are unchanged; faint real motion may be rejected.",
+    "job": "0a724d7d12a44145b897a9dcabf48cf3"
+  },
+  "mobile": {
+    "overflow": false,
+    "canvas": {
+      "x": 17,
+      "y": 196.765625,
+      "width": 356,
+      "height": 356
+    }
+  }
+}

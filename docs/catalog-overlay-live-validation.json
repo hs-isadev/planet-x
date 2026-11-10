@@ -1,0 +1,22 @@
+{
+  "job": "5be185875d914c068fa1df8e16f97463",
+  "frame": 0,
+  "gaia": {
+    "status": 200,
+    "markers": 149,
+    "notes": [
+      "Markers are catalog predictions, not detections in SPHEREx pixels.",
+      "Gaia proper motions are applied where available; parallax displacement is not modeled.",
+      "AllWISE stationary-solution coordinates are not propagated; fast movers may be offset."
+    ]
+  },
+  "wise": {
+    "status": 200,
+    "markers": 306,
+    "notes": [
+      "Markers are catalog predictions, not detections in SPHEREx pixels.",
+      "Gaia proper motions are applied where available; parallax displacement is not modeled.",
+      "AllWISE stationary-solution coordinates are not propagated; fast movers may be offset."
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "source": "https://ssd.jpl.nasa.gov/sats/elem/sep.html",
+  "radii_source": "https://ssd.jpl.nasa.gov/sats/phys_par/",
+  "note": "Selected major moons only. Mean orbital scales and periods from JPL; circular layout, phase and plane are illustrative. Orbits and radii are enlarged separately for visibility. Not a satellite ephemeris.",
+  "rows": [
+    {"id":"moon","name":"Moon","parent":"earth","radius_km":1737.4,"semimajor_km":384400,"period_days":27.322},
+    {"id":"phobos","name":"Phobos","parent":"mars","radius_km":11.08,"semimajor_km":9375,"period_days":0.3187},
+    {"id":"deimos","name":"Deimos","parent":"mars","radius_km":6.2,"semimajor_km":23457,"period_days":1.2625},
+    {"id":"io","name":"Io","parent":"jupiter","radius_km":1821.49,"semimajor_km":421800,"period_days":1.762732},
+    {"id":"europa","name":"Europa","parent":"jupiter","radius_km":1560.8,"semimajor_km":671100,"period_days":3.525463},
+    {"id":"ganymede","name":"Ganymede","parent":"jupiter","radius_km":2631.2,"semimajor_km":1070400,"period_days":7.155588},
+    {"id":"callisto","name":"Callisto","parent":"jupiter","radius_km":2410.3,"semimajor_km":1882700,"period_days":16.69044},
+    {"id":"titan","name":"Titan","parent":"saturn","radius_km":2574.73,"semimajor_km":1221900,"period_days":15.945448},
+    {"id":"titania","name":"Titania","parent":"uranus","radius_km":788.9,"semimajor_km":436298,"period_days":8.705869},
+    {"id":"triton","name":"Triton","parent":"neptune","radius_km":1352.6,"semimajor_km":354800,"period_days":5.8792,"retrograde":true}
+  ]
+}

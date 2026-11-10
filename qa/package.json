@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:3d": "node browser-3d.mjs",
+    "test:observed": "node browser-observed.mjs",
+    "test:tour": "node browser-tour.mjs",
+    "test:slow": "node browser-slow-frame.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0"
+  }
+}

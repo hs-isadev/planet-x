@@ -1,0 +1,126 @@
+{
+  "count": 1000,
+  "unknown": 0,
+  "truncated": true,
+  "sample": [
+    {
+      "ra": 217.39232147200883,
+      "dec": -62.67607511676666,
+      "ref_epoch": 2016.0,
+      "parallax": 768.0665391873573,
+      "parallax_error": 0.049872905015945435,
+      "pmra": -3781.741008265163,
+      "pmdec": 769.4650146478623,
+      "phot_g_mean_mag": 8.984748840332031,
+      "ruwe": 0.9714532494544983,
+      "distance_gspphot": 1.3011000156402588,
+      "distance_gspphot_lower": 1.3006000518798828,
+      "distance_gspphot_upper": 1.301300048828125,
+      "id": "5853498713190525696",
+      "name": "Gaia DR3 5853498713190525696",
+      "catalog": "Gaia DR3",
+      "provenance": "catalog",
+      "source": "https://gaia.aip.de/tap",
+      "distance_pc": 1.3019705311704333,
+      "distance_lower_pc": 1.3018859957385478,
+      "distance_upper_pc": 1.302055077581319,
+      "distance_method": "parallax inversion (S/N \u2265 5)",
+      "distance_source": "Gaia DR3",
+      "xyz_pc": [
+        -0.47481565124324704,
+        -0.36292315816737014,
+        -1.156703999576596
+      ],
+      "direction": [
+        -0.364690014002392,
+        -0.27874913408455787,
+        -0.8884256378189704
+      ],
+      "position_provenance": "computed from ICRS direction and catalog distance",
+      "uncertain": false,
+      "distance_note": "Catalog statistical interval; parallax zero-point and other systematics are not corrected."
+    },
+    {
+      "ra": 269.44850252543836,
+      "dec": 4.739420051112412,
+      "ref_epoch": 2016.0,
+      "parallax": 546.975939730948,
+      "parallax_error": 0.04011635482311249,
+      "pmra": -801.5509783684709,
+      "pmdec": 10362.394206546573,
+      "phot_g_mean_mag": 8.193974494934082,
+      "ruwe": 1.084850549697876,
+      "distance_gspphot": 1.8274999856948853,
+      "distance_gspphot_lower": 1.826799988746643,
+      "distance_gspphot_upper": 1.8285000324249268,
+      "id": "4472832130942575872",
+      "name": "Gaia DR3 4472832130942575872",
+      "catalog": "Gaia DR3",
+      "provenance": "catalog",
+      "source": "https://gaia.aip.de/tap",
+      "distance_pc": 1.828233981355542,
+      "distance_lower_pc": 1.8280999047004243,
+      "distance_upper_pc": 1.8283680776790248,
+      "distance_method": "parallax inversion (S/N \u2265 5)",
+      "distance_source": "Gaia DR3",
+      "xyz_pc": [
+        -0.017537128004698872,
+        -1.8218984386783241,
+        0.1510563433489899
+      ],
+      "direction": [
+        -0.009592387070552091,
+        -0.9965346105904233,
+        0.08262418535563448
+      ],
+      "position_provenance": "computed from ICRS direction and catalog distance",
+      "uncertain": false,
+      "distance_note": "Catalog statistical interval; parallax zero-point and other systematics are not corrected."
+    },
+    {
+      "ra": 164.10319030755974,
+      "dec": 7.002726940984864,
+      "ref_epoch": 2016.0,
+      "parallax": 415.17941567802137,
+      "parallax_error": 0.06837085634469986,
+      "pmra": -3866.3382751436793,
+      "pmdec": -2699.214987679166,
+      "phot_g_mean_mag": 11.03839111328125,
+      "ruwe": 0.835335373878479,
+      "distance_gspphot": null,
+      "distance_gspphot_lower": null,
+      "distance_gspphot_upper": null,
+      "id": "3864972938605115520",
+      "name": "Gaia DR3 3864972938605115520",
+      "catalog": "Gaia DR3",
+      "provenance": "catalog",
+      "source": "https://gaia.aip.de/tap",
+      "distance_pc": 2.408597252748958,
+      "distance_lower_pc": 2.408200675423082,
+      "distance_upper_pc": 2.4089939607113555,
+      "distance_method": "parallax inversion (S/N \u2265 5)",
+      "distance_source": "Gaia DR3",
+      "xyz_pc": [
+        -2.2992040533339435,
+        0.6548070944432551,
+        0.2936479459307971
+      ],
+      "direction": [
+        -0.9545821953877249,
+        0.2718624268527736,
+        0.12191658260659956
+      ],
+      "position_provenance": "computed from ICRS direction and catalog distance",
+      "uncertain": false,
+      "distance_note": "Catalog statistical interval; parallax zero-point and other systematics are not corrected."
+    }
+  ],
+  "notes": [
+    "Observed SPHEREx photos are flat. Depth comes from catalog distances, never from the image.",
+    "Markers have symbolic size and color; they do not represent stellar radii or measured surface appearance.",
+    "Unknown/poor distances are omitted from 3D and listed separately, not placed at an invented radius.",
+    "Nearby mode is a parallax-selected capped sample, not a complete stellar census.",
+    "Parallax inversion is used only at S/N \u2265 5; otherwise a labeled GSP-Phot model distance is used if its interval is valid.",
+    "Distance intervals exclude unmodeled systematics. High RUWE and model-derived distances are marked as uncertain."
+  ]
+}
