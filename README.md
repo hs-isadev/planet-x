@@ -29,7 +29,7 @@ Public hosting requires a Python-capable host, HTTPS, persistent cache storage a
 
 - Degrees or sexagesimal RA/Dec, selectable 2–20 arcmin field, all five named presets and `?ra=&dec=&fov=&frame=` links.
 - Genuine IRSA native FITS, WCS registration, original quality masks, chronological playback, speed, loop, scrubber, date and metadata. Missing pixels remain unknown.
-- Default playback uses one detector. Narrow 0.025 micrometer groups, fixed per-detector contrast, six-array stacking and compatible-frame add/subtract reduce cross-band confusion. They do not remove PSF/calibration systematics.
+- Default playback includes every available detector in chronological order, with pending/unavailable exposures marked in the full timeline. Detector and wavelength filters are optional. Narrow 0.025 micrometer groups, fixed per-detector contrast, six-array stacking and compatible-frame add/subtract reduce cross-band confusion. They do not remove PSF/calibration systematics.
 - Click an aperture for a quicklook spectrum using native per-pixel wavelengths. Aperture flux is not precision aperture-corrected spectrophotometry.
 - Barnard comparison samples the wavelength map at the predicted source position, selects a compatible time baseline, shows a real difference and predicted markers, and attempts a free native PSF-wing fit. Masked or poor fits remain unavailable; the catalog's roughly 10.4 arcsec/year is not called a measured shift.
 - Light curves search compatible loaded groups. If native apertures fail, a fixed common footprint of valid registered pixels can supply a brightness index. Masked cores are excluded in every epoch, not reconstructed. Statistical errors omit resampling correlations, PSF and calibration systematics. A plotted change alone does not establish intrinsic variability.
@@ -44,13 +44,13 @@ Keyboard: Space play/pause, arrows step, brackets change speed, slash opens sear
 
 **Photos are flat. Stellar depth comes from catalog distances; Solar System positions are computed.** Images returns directly to the SPHEREx viewer. This context does not replace the observations.
 
-Bottom navigation and direct body clicks share a smooth focus action. Approach changes distance deliberately. Flights interpolate linear world distances with quintic easing. Return journeys turn toward the source before moving. Explicit transitions distinguish parsec, AU and normalized stellar-illustration scales; they are not physical spacecraft trajectories.
+Bottom navigation and direct body clicks share a smooth focus action. Approach changes distance deliberately. Camera zooms interpolate distance geometrically with quintic easing. Journeys accelerate and decelerate while keeping the camera facing forward. Return journeys turn toward the source before moving; they no longer turn back toward Earth during departure. Explicit transitions distinguish parsec, AU and normalized stellar-illustration scales; they are not physical spacecraft trajectories.
 
-The Sun returns to its planetary scene rather than a star-only closeup. Known catalog exoplanets appear during stellar closeups, with a system overview button. NASA Exoplanet Archive periods/orbital scales are used; circular planes, phases, radii/display enlargement and appearances remain illustrative. No orbit is invented for an unmatched system.
+A persistent Solar System button, a stellar-strip home entry and a target-menu entry return to the Sun and planets. Earth journeys offer Stay on Earth as well as Return to object. The Sun returns to its planetary scene rather than a star-only closeup. Known catalog exoplanets appear in automatically framed system overviews, with named planet buttons and a separate stellar-surface closeup. Planets remain visible through deliberate display enlargement; systems with no installed orbit are labelled explicitly. NASA Exoplanet Archive periods/orbital scales are used; circular planes, phases, radii/display enlargement and appearances remain illustrative. No orbit is invented for an unmatched system.
 
 Ten selected major moons are present: Moon, Phobos, Deimos, Io, Europa, Ganymede, Callisto, Titan, Titania and Triton. JPL mean orbital scales/periods and radii are attributed in web/assets/moons.json. Display radii and separations are enlarged independently. Circular layouts/phases are illustrative, not satellite ephemerides or a complete moon census.
 
-A real catalog host-star backdrop supplies surrounding context. It is an incomplete sample; point sizes are adapted for visibility, not measured brightness. Plasma, faster sunspots, corona, magnetic loops, dust and travel streaks are computed illustrations, not observed events or measured surface maps. Closeups with unknown temperature carry a persistent warning that appearance may be inaccurate. Unknown temperature does not supply an invented temperature or reliable distance.
+A real catalog host-star backdrop supplies surrounding context. It is an incomplete sample; point sizes are adapted for visibility, not measured brightness. Plasma, faster sunspots, a faint white coronal illustration, magnetic loops, dust and travel streaks are computed illustrations, not observed events or measured surface maps. Planet rotation is independently accelerated for visibility rather than tied to orbital playback. The Solar System loading cover remains for at least five seconds and waits for all requested appearance maps and models to settle before revealing the scene. Closeups with unknown temperature carry a persistent warning that appearance may be inaccurate. Unknown temperature does not supply an invented temperature or reliable distance.
 
 Earth landing actions appear only for selected Earth. Location-specific terrain requests compiled Mapzen elevation tiles for the clicked/visible direction. Missing elevation remains an error; a different site is not substituted. Colors, astronaut geometry, water context and lighting are illustrative. No current weather or measured local temperature is claimed. No verified terrain walker for other bodies is installed.
 
@@ -77,7 +77,13 @@ Laya Vision source is Apache-2.0; the selected checkpoint declares **CC-BY-NC-SA
 
 ```powershell
 python -m pytest tests -q
+node --experimental-default-type=module scripts/check_frontend.mjs
+node --experimental-default-type=module --experimental-loader ./scripts/web-loader.mjs tests/frontend_startup.mjs
 node --experimental-loader ./scripts/web-loader.mjs tests/scene_contracts.mjs
+node --experimental-loader ./scripts/web-loader.mjs tests/scene_render_loop.mjs
+node --experimental-loader ./scripts/web-loader.mjs tests/camera_paths.mjs
+node --experimental-loader ./scripts/web-loader.mjs tests/journey_roundtrip.mjs
+node --experimental-loader ./scripts/web-loader.mjs tests/scene_assets.mjs
 ```
 
 The Node scene/geometry checks use bundled Three.js and require no npm installation. Optional UI scripts under qa/ use `npm install` from qa/ and require a working browser/localhost connection.

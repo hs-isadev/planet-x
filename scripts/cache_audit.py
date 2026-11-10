@@ -26,11 +26,12 @@ def cached_jobs():
                 for f in candidates:
                     for cid,m,center in metadata.get(urlsplit(f['url']).path,[]):
                         if abs(center[0]-preset['ra'])<1e-7 and abs(center[1]-preset['dec'])<1e-7:
-                            matched.append((f,cid,m));break
+                            matched.append((f,cid,m))
                 if len(matched)>len(rows):rows=matched;manifest=candidates
             except (ValueError,KeyError):continue
         if not rows:continue
-        width=rows[0][2]['width'];scale=rows[0][2]['scale_arcsec'];fov=round(width*scale/60,9)
+        from collections import Counter
+        fov=Counter(round(m['width']*m['scale_arcsec']/60,9) for _,_,m in rows).most_common(1)[0][0]
         frames=[]
         for f,cid,m in rows:
             if abs(m['width']*m['scale_arcsec']/60-fov)>1e-6:continue

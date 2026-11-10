@@ -168,11 +168,11 @@ def align_cutout(hdus, ra, dec, fov):
         provenance="observed", transform="computed WCS registration; no source motion added")
 
 
-def _fetch_frame(row, ra, dec, fov):
+def _fetch_frame(row, ra, dec, fov, native=False):
     identity = key_for(f"{row['url']}|{ra}|{dec}|{fov}|native-analysis-v2")
     array_file = CACHE / (identity + ".npy")
     meta_file = CACHE / (identity + ".json")
-    if array_file.exists() and meta_file.exists() and (CACHE / (identity + ".npz")).exists() and (CACHE / (identity + ".fits")).exists():
+    if array_file.exists() and meta_file.exists() and (CACHE / (identity + ".npz")).exists() and (not native or (CACHE / (identity + ".fits")).exists()):
         return identity, json.loads(meta_file.read_text())
     fits_file = CACHE / (identity + ".fits")
     url = row["url"] + "?" + urlencode({"center": f"{ra},{dec}d", "size": f"{fov / 60 * 1.5:.8f}"})
@@ -208,12 +208,12 @@ def _fetch_frame(row, ra, dec, fov):
 
 _cache_writes=0
 
-def fetch_frame(row,ra,dec,fov):
+def fetch_frame(row,ra,dec,fov,native=False):
     ra,dec,fov=float(ra),float(dec),float(fov)
     global _cache_writes
     identity=key_for(f"{row['url']}|{ra}|{dec}|{fov}|native-analysis-v2")
     with FileLock(str(CACHE/(identity+'.lock')),timeout=180):
-        result=_fetch_frame(row,ra,dec,fov)
+        result=_fetch_frame(row,ra,dec,fov,native=native)
         now=time.time()
         for ext in ('.fits','.npy','.npz','.json'):
             p=CACHE/(identity+ext)
@@ -236,12 +236,12 @@ def ensure_frame_files(frame,job=None,native=False,analysis=False):
         index=frame.get('index');frame.update(meta)
         if index is not None:frame['index']=index
     else:
-        identity,meta=fetch_frame(frame,source['ra'],source['dec'],source['fov'])
+        identity,meta=fetch_frame(frame,source['ra'],source['dec'],source['fov'],**({'native':True} if native else {}))
         frame.update(meta,cache_id=identity)
 
 
 def prune_cache(protected=None):
-    """Evict complete exposure groups by LRU, including while large jobs prefetch.
+    """Evict bulky native FITS first, retaining small chronological playback arrays.
 
     Manifests retain metadata; evicted observations are fetched again on demand.
     A cross-process lock prevents concurrent pruners. Locked/incomplete files
@@ -260,6 +260,20 @@ def prune_cache(protected=None):
                 group=groups.setdefault(key,dict(files=[],size=0,mtime=0))
                 group['files'].append(p);group['size']+=stat.st_size;group['mtime']=max(group['mtime'],stat.st_mtime)
             cutoff=time.time()-CONFIG['cache_max_age_days']*86400
+            # A cutout FITS can be hundreds of times larger than its aligned
+            # playback array. Native photometry can refetch it on demand.
+            for key,group in sorted(groups.items(),key=lambda pair:pair[1]['mtime']):
+                if key in protected or total<=CONFIG['cache_max_bytes']:continue
+                native=[p for p in group['files'] if p.suffix=='.fits']
+                if not native:continue
+                try:
+                    with FileLock(str(CACHE/(key+'.lock')),timeout=0):
+                        for p in native:
+                            try:
+                                size=p.stat().st_size;p.unlink(missing_ok=True);total-=size
+                                group['files'].remove(p);group['size']-=size
+                            except OSError:pass
+                except Timeout:continue
             # Keep small discovery/catalog metadata ahead of much larger exposure groups.
             # The global byte budget still applies if metadata itself grows large.
             for key,group in sorted(groups.items(),key=lambda pair:(not bool(re.fullmatch(r'[a-f0-9]{24}',pair[0])),pair[1]['mtime'])):

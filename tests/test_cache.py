@@ -21,6 +21,26 @@ def test_missing_cached_observation_is_retrieved_not_replaced(tmp_path,monkeypat
     assert calls==[('real-archive-row',1,2,8)] and frame['cache_id']=='new'
     assert frame['provenance']=='observed'
 
+def test_budget_preserves_playback_when_native_fits_can_be_evicted(tmp_path,monkeypatch):
+    monkeypatch.setattr(archive,'CACHE',tmp_path)
+    monkeypatch.setitem(archive.CONFIG,'cache_max_bytes',50)
+    old,new='a'*24,'b'*24
+    for identity in (old,new):
+        for ext in ('.npy','.npz','.fits'):(tmp_path/(identity+ext)).write_bytes(b'0123456789')
+    archive.prune_cache(protected={new})
+    assert not (tmp_path/(old+'.fits')).exists()
+    assert all((tmp_path/(old+ext)).exists() for ext in ('.npy','.npz'))
+
+def test_playback_cache_does_not_need_native_fits(tmp_path,monkeypatch):
+    import json
+    monkeypatch.setattr(archive,'CACHE',tmp_path)
+    row={'url':'https://example.invalid/test-only'}
+    key=archive.key_for(f"{row['url']}|1.0|2.0|8.0|native-analysis-v2")
+    for ext in ('.npy','.npz'):(tmp_path/(key+ext)).write_bytes(b'test-only')
+    (tmp_path/(key+'.json')).write_text(json.dumps({'provenance':'observed'}))
+    monkeypatch.setattr(archive.requests,'get',lambda *a,**k:(_ for _ in ()).throw(AssertionError('Unexpected download')))
+    assert archive.fetch_frame(row,1,2,8)[0]==key
+
 
 def test_prefetch_pause_and_resume_preserve_real_manifest(tmp_path,monkeypatch):
     import numpy as np

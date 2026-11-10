@@ -80,7 +80,7 @@ def run_job(job, resume=False):
         if job.get('worker_active'):return
         job['worker_active']=True
     try:
-        rows = job["frames"] if resume else discover(job["ra"], job["dec"])
+        rows = job["frames"] if resume else sorted(discover(job["ra"], job["dec"]), key=lambda f: (float(f["mjd"]), f["id"]))
         with GUARD:
             if not resume:
                 job["frames"] = [dict(r, status="pending", index=i) for i, r in enumerate(rows)]
@@ -91,7 +91,7 @@ def run_job(job, resume=False):
         # Hydrate genuine cached products before any network call. The manifest stays chronological.
         for frame in job['frames']:
             key=key_for(f"{frame['url']}|{float(job['ra'])}|{float(job['dec'])}|{float(job['fov'])}|native-analysis-v2")
-            if all((CACHE/(key+ext)).exists() for ext in ('.json','.fits','.npy','.npz')):
+            if all((CACHE/(key+ext)).exists() for ext in ('.json','.npy','.npz')):
                 try:
                     meta=json.loads((CACHE/(key+'.json')).read_text())
                     with GUARD:frame.update(meta,cache_id=key,status='ready',ra=job['ra'],dec=job['dec'],fov=job['fov'])
@@ -245,7 +245,7 @@ def job_status(identity: str):
 
 
 @app.get("/api/jobs/{identity}/frames/{index}.png")
-def frame_png(identity: str, index: int, cmap: str = "infrared", stretch: str = "asinh", black: float | None = None, white: float | None = None, thumbnail: bool = False, enhanced: bool = False, changes: bool = False):
+def frame_png(identity: str, index: int, cmap: str = "infrared", stretch: str = "asinh", black: float | None = None, white: float | None = None, thumbnail: bool = False, enhanced: bool = False, changes: bool = False, reference_index: int | None = None):
     with GUARD:
         job = get_job(identity)
         if index < 0 or index >= len(job["frames"]):
@@ -284,9 +284,9 @@ def frame_png(identity: str, index: int, cmap: str = "infrared", stretch: str = 
         from .quicklook import enhanced_rgba,comparable
         reference=None
         if changes:
-            candidates=[f for f in job['frames'] if f.get('status')=='ready' and comparable(frame,f)]
+            candidates=[f for f in job['frames'] if f.get('status')=='ready' and comparable(frame,f) and f['mjd']<frame['mjd'] and (reference_index is None or f['index']==reference_index)]
             if not candidates:raise HTTPException(422,'No comparable wavelength/detector on another date is loaded. Load more frames or turn off red changes.')
-            reference=max(candidates,key=lambda f:abs(f['mjd']-frame['mjd']))
+            reference=max(candidates,key=lambda f:(f['mjd'],f['index']))
         try:rgba=enhanced_rgba(frame,reference)
         except ValueError as e:raise HTTPException(422,str(e))
         image=Image.fromarray(np.flipud(rgba));stream=io.BytesIO();image.save(stream,format='PNG')
@@ -334,8 +334,6 @@ install_laya_routes(app,JOBS,GUARD)
 from .systems import install_system_routes
 install_system_routes(app)
 
-from .terrain import install_terrain_routes
-install_terrain_routes(app)
 
 from .laya_sequence import install_sequence_routes
 install_sequence_routes(app,JOBS,GUARD)
@@ -348,4 +346,10 @@ install_companion_routes(app)
 
 DIST = ROOT / "web"
 if DIST.exists():
-    app.mount("/", StaticFiles(directory=DIST, html=True), name="frontend")
+    class FreshStaticFiles(StaticFiles):
+        async def get_response(self, path, scope):
+            response = await super().get_response(path, scope)
+            if Path(path).suffix in (".js", ".css", ".html") or path in ("", "."):
+                response.headers["Cache-Control"] = "no-cache"
+            return response
+    app.mount("/", FreshStaticFiles(directory=DIST, html=True), name="frontend")

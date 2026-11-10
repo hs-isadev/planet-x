@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {epochPair,epochSequence} from '../web/epoch-compare.js';
+const f=(index,mjd,detector=1,wavelength_um=1.05,valid_fraction=.9)=>({index,mjd,detector,wavelength_um,valid_fraction,status:'ready'});
+assert.equal(epochPair([f(0,1),f(1,1)]),null);
+assert.equal(epochPair([f(0,1),f(1,90,2)]),null);
+assert.equal(epochPair([f(0,1),f(1,90,1,1.2)]),null);
+assert.deepEqual(epochPair([f(2,40),f(0,1),f(1,20)]).frames.map(f=>f.index),[0,2]);
+assert.deepEqual(epochPair([f(0,1),f(1,30),f(2,100,1,1.05,.1)]).frames.map(f=>f.index),[0,1]);
+assert.equal(epochPair([{...f(0,1),status:'pending'},f(1,100)]),null);
+const many=Array.from({length:42},(_,i)=>f(i,i*3,6,4.96+(i%3)*.005));
+assert.equal(epochSequence(many).frames.length,42);
+assert.equal(epochSequence(many).nights,42);
+assert.equal(epochSequence([f(0,1),f(1,1.001)]),null);
+assert.equal(epochSequence([...many,f(99,300,6,4.99)]).frames.length,42);
+console.log('PASS: comparison uses separate dates, compatible wavelengths/detectors, coverage and chronological order.');

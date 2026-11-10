@@ -16,3 +16,16 @@ def test_masked_counterpart_is_unknown():
 def test_unchanged_source_is_not_red():
     a=product(True)
     assert not change_masks(a,a)['red'].any()
+
+def test_pixel_wavelength_mismatch_is_not_a_change():
+    on,off=product(True),product(False)
+    on['wavelength']=np.full((17,17),2.0)
+    off['wavelength']=np.full((17,17),2.1)
+    assert not change_masks(on,off)['red'].any()
+    off['wavelength'][:]=2.01
+    assert change_masks(on,off)['appearance'].any()
+
+def test_single_pixel_outlier_is_not_a_source():
+    on,off=product(False),product(False)
+    on['value'][8,8]=100
+    assert not change_masks(on,off)['red'].any()

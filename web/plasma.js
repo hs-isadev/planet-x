@@ -15,7 +15,7 @@ export function surfaceMaterial(base){
  float fire=fbm(q*24.+vec3(t*.5,t*.22,0.));
  float spots=0.;float penumbra=0.;for(int j=0;j<7;j++){float a=float(j)*2.399;vec3 center=normalize(vec3(cos(a),sin(a*2.1)*.42,sin(a)));float d=length(q-center);float life=.65+.35*sin(t*.4+a);spots=max(spots,(1.-smoothstep(.024,.065,d))*life);penumbra=max(penumbra,(1.-smoothstep(.06,.105,d))*life);}
  float limb=.32+.68*pow(max(0.,dot(normalize(n),normalize(v))),.42);
- vec3 heat=mix(base*.52,base*1.65,smoothstep(.24,.78,granules));heat+=vec3(1.,.35,.04)*pow(fire,5.)*.8;
+ vec3 heat=mix(base*.52,base*1.65,smoothstep(.24,.78,granules));heat+=base*pow(fire,5.)*.18;
  heat*=limb*(1.-penumbra*.36)*(1.-spots*.88);gl_FragColor=vec4(heat,1.);}`});
 }
 export function corona(radius){
@@ -23,7 +23,7 @@ export function corona(radius){
  uniforms:{clock:{value:0}},vertexShader:`uniform float clock;varying vec3 p;varying vec3 n;varying vec3 v;${noise}
  void main(){p=normalize(position);float plume=fbm(p*13.+vec3(0.,-clock*.7,clock*.2));vec3 pos=position*(1.+plume*.12);vec4 mv=modelViewMatrix*vec4(pos,1.);n=normalize(normalMatrix*normal);v=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`,
  fragmentShader:`uniform float clock;varying vec3 p;varying vec3 n;varying vec3 v;${noise}
- void main(){float edge=pow(1.-abs(dot(normalize(n),normalize(v))),2.8);float flame=fbm(p*24.+vec3(clock*.2,-clock*1.1,clock*.3));float rays=pow(fbm(p*57.+vec3(0.,-clock*1.8,0.)),3.);float a=edge*(.1+flame*.42+rays*.7);gl_FragColor=vec4(1.,.24+flame*.43,.035,a);}`});
+ void main(){float edge=pow(1.-abs(dot(normalize(n),normalize(v))),2.8);float flame=fbm(p*24.+vec3(clock*.2,-clock*1.1,clock*.3));float rays=pow(fbm(p*57.+vec3(0.,-clock*1.8,0.)),3.);float a=edge*(.012+flame*.035+rays*.05);gl_FragColor=vec4(.92,.95,1.,a);}`});
  const mesh=new THREE.Mesh(new THREE.SphereGeometry(radius*1.10,96,64),material);
  mesh.userData.update=t=>material.uniforms.clock.value=t;return mesh;
 }

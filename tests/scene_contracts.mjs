@@ -6,8 +6,8 @@ import {surfaceMaterial,corona} from '../web/plasma.js';
 import {addPlanets,addMoons} from '../web/companions.js';
 
 const elements=new Map();
-globalThis.document={getElementById(id){if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',style:{},classList:{add(){},remove(){}}});return elements.get(id);},body:{classList:{add(){},remove(){}}}};
-document.createElement=()=>({width:128,height:128,getContext:()=>({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){}})});
+globalThis.document={getElementById(id){if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',style:{},replaceChildren(){},append(){},classList:{add(){},remove(){}}});return elements.get(id);},body:{classList:{add(){},remove(){}}}};
+document.createElement=()=>({append(){},width:128,height:128,getContext:()=>({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){}})});
 globalThis.window=new EventTarget();
 const view=Object.create(ObservatoryScene.prototype);
 view.stopFlight=()=>{};view.camera=new THREE.PerspectiveCamera(38,1,.001,100000);view.camera.position.set(0,0,10);
@@ -16,7 +16,7 @@ view.scene=new THREE.Scene();view.content=new THREE.Group();view.scene.add(view.
 view.renderer={domElement:{style:{}}};view.items=[];view.mode='solar';view.reduced=false;
 const planet={data:{id:'earth'},mesh:{visible:false},model:{visible:false}};view.items=[planet];
 view.exitLocal();assert.equal(planet.model.visible,true);assert.equal(planet.mesh.visible,false);
-await new Promise(resolve=>{view.fly(new THREE.Vector3(1,0,0),new THREE.Vector3(1,0,5),2000,true);assert.equal(view.flight.log,false);assert.equal(view.flight.duration,2000);resolve();});
+await new Promise(resolve=>{view.fly(new THREE.Vector3(1,0,0),new THREE.Vector3(1,0,5),2000,true);assert.ok(view.flight.fromTarget);assert.ok(view.flight.pos);assert.equal(view.flight.duration,2000);resolve();});
 view.flight=null;
 view.mode='stars';const item={data:{id:'unknown',name:'Unknown temperature'},pos:new THREE.Vector3(2,0,0)};view.items=[item];view.selected='unknown';
 view.makeHalo=()=>new THREE.Group();view.localGroup=null;
@@ -35,8 +35,8 @@ await addMoons(moonView,solarData,1);assert.equal(moonView.items.length,2);const
 moonView.selected='moon';moonView.controls.target.copy(moon.pos);moonView.camera.position.copy(moon.pos).add(new THREE.Vector3(0,0,.01));const offset=moonView.camera.position.clone().sub(moonView.controls.target);
 moon.mesh.userData.update(10);assert.ok(moonView.camera.position.clone().sub(moonView.controls.target).distanceTo(offset)<1e-12);
 const navigation=Object.create(ObservatoryScene.prototype),actions=[];
-Object.assign(navigation,{mode:'solar',selected:'sun',items:[{data:{id:'sun'},pos:new THREE.Vector3(),radius:.1}],camera:new THREE.PerspectiveCamera(),controls:{target:new THREE.Vector3(),enabled:true},renderer:{domElement:{style:{}}},stopFlight(){},exitLocal(){},turnLeftTo:async()=>actions.push('turn'),fly:async()=>actions.push('fly')});
+Object.assign(navigation,{mode:'solar',selected:'sun',items:[{data:{id:'sun'},pos:new THREE.Vector3(),radius:.1}],camera:new THREE.PerspectiveCamera(),controls:{target:new THREE.Vector3(),enabled:true},renderer:{domElement:{style:{}}},stopFlight(){},exitLocal(){},turnLeftTo:async()=>{actions.push('turn');return true;},fly:async()=>{actions.push('fly');return true;},flyForward:async()=>{actions.push('fly');return true;}});
 navigation.camera.position.set(0,0,1);await navigation.focus();assert.deepEqual(actions,['turn','fly']);actions.length=0;
-navigation.traceReturn={mode:'solar',selected:'sun',camera:new THREE.Vector3(0,0,1),target:new THREE.Vector3(),context:{}};
+navigation.traceReturn={data:{objects:[{id:'sun',name:'Sun'}]},mode:'solar',selected:'sun',camera:new THREE.Vector3(0,0,1),target:new THREE.Vector3(),context:{}};
 await navigation.returnFromTrace();assert.equal(actions[0],'turn');assert.ok(actions.slice(1).every(a=>a==='fly'));
-console.log('PASS: solar visibility restored, linear flights, unknown-temperature approach, catalog companions, animated shader state, moon rendering and camera follow, focus and return turn before travel.');
+console.log('PASS: solar visibility restored, gradual camera flights, unknown-temperature approach, catalog companions, animated shader state, moon rendering and camera follow, focus and return turn before travel.');

@@ -6,22 +6,34 @@ export function addPlanets(view,item,planets){
  const old=view.localGroup.getObjectByName('companions');
  if(old){view.localGroup.remove(old);old.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});}
  const group=new THREE.Group();group.name='companions';view.localGroup.add(group);
+ const list=document.getElementById('planet-list');list?.replaceChildren();
  let extent=1;
  planets.forEach((p,index)=>{
-  // One local unit is the host radius when a catalog stellar radius exists.
-  const starRadius=p.star_radius_solar||1;
-  const a=p.semimajor_au/(starRadius*.00465047);extent=Math.max(extent,a);
+  const starRadius=p.star_radius_solar||1,a=p.semimajor_au/(starRadius*.00465047);extent=Math.max(extent,a);
   const curve=Array.from({length:129},(_,j)=>new THREE.Vector3(a*Math.cos(j/128*Math.PI*2),0,a*Math.sin(j/128*Math.PI*2)));
-  const orbit=new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve),new THREE.LineBasicMaterial({color:0x9a8976,transparent:true,opacity:.45}));group.add(orbit);
+  const orbit=new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve),new THREE.LineBasicMaterial({color:0xaab5c3,transparent:true,opacity:.48}));group.add(orbit);
   const radius=THREE.MathUtils.clamp((p.radius_earth||1)*.0091577/starRadius,.045,.3);
-  const planet=new THREE.Mesh(new THREE.SphereGeometry(radius,20,12),new THREE.MeshStandardMaterial({color:0xb5aba1,roughness:1,emissive:0x24201c}));group.add(planet);
-  // Deliberately computed phase, never presented as a catalog sky position.
-  planet.userData.update=time=>{const phase=index*2.399+time/Math.max(p.period_days,.1)*Math.PI*2;planet.position.set(a*Math.cos(phase),0,a*Math.sin(phase));};
+  const planet=new THREE.Mesh(new THREE.SphereGeometry(radius,32,20),new THREE.MeshStandardMaterial({color:0xb5aba1,roughness:1,emissive:0x181a20}));
+  planet.name=p.name;planet.userData.displayRadius=radius;group.add(planet);
+  planet.userData.update=time=>{
+   const phase=index*2.399+time/Math.max(p.period_days,.1)*Math.PI*2;
+   const previous=planet.position.clone();planet.position.set(a*Math.cos(phase),0,a*Math.sin(phase));if(view.local?.followPlanet===planet&&!view.journey){const delta=planet.position.clone().sub(previous);view.camera.position.add(delta);view.controls.target.add(delta);const flight=view.flight;if(flight&&!flight.heading){flight.from.add(delta);flight.fromTarget.add(delta);flight.pos.add(delta);flight.target.add(delta);}}
+   // Keep the intentionally enlarged planet at least four pixels across in a
+   // system overview, without changing its orbital distance or period.
+   const distance=view.camera.position.distanceTo(planet.position),minRadius=distance*2*Math.tan(THREE.MathUtils.degToRad(view.camera.fov/2))*2/Math.max(view.h||800,1);
+   planet.scale.setScalar(Math.max(1,minRadius/radius));
+   planet.rotation.y=time*.1;
+  };
+  planet.userData.update(view.activityTime||0);
+  if(list){const button=document.createElement('button');button.className='quiet';button.textContent=p.name;button.title='Catalog orbit: '+p.semimajor_au+' AU · '+p.period_days+' days. Planet size enlarged.';button.onclick=()=>view.planetCloseup(planet);list.append(button);}
  });
- const light=new THREE.PointLight(0xffd8ac,3,0,0);group.add(light);
+ group.add(new THREE.PointLight(0xfff4e8,3,0,0));
  view.local.systemExtent=extent;
- const button=document.getElementById('stellar-system');button.hidden=!planets.length;
- if(planets.length){const label=document.getElementById('stellar-provenance');label.textContent+=' '+planets.length+' catalog planets: '+planets.map(p=>p.name).join(', ')+'. Circular orbits, phases and appearance are illustrative; radii enlarged.';}
+ view.controls.maxDistance=Math.max(view.controls.maxDistance,extent*14);
+ view.camera.far=Math.max(view.camera.far,extent*40);view.camera.updateProjectionMatrix();
+ const button=document.getElementById('stellar-system');button.hidden=false;button.disabled=!planets.length;button.textContent=planets.length?'View all '+planets.length+' planet orbits':'No catalogued planet orbits';
+ const label=document.getElementById('stellar-provenance');
+ label.textContent+=planets.length?' '+planets.length+' catalogued planets. Circular orbit planes, phases and appearances are illustrative; planet sizes are enlarged for visibility. '+(planets.some(p=>!p.star_radius_solar)?'Host radius is unavailable; stellar size normalization is approximate.':''):' No measured planetary orbits for this target are installed in this catalog. This does not establish that it has no planets.';
 }
 
 export async function addMoons(view,data,version){

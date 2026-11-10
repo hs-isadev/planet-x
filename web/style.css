@@ -92,3 +92,33 @@ body.observing #observations{scroll-margin-top:78px}
 [hidden]{display:none!important}
 
 body.observing #observations-home{display:none}
+
+/* Let the heading's actual height determine where the object details begin. */
+@media(min-width:651px){
+ body:not(.observing) #workspace{display:grid;grid-template-columns:245px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:24px 0;padding:38px 0 165px 36px}
+ body:not(.observing) .scene-heading{position:static;grid-area:1/1;max-width:none;width:245px}
+ body:not(.observing) .inspector{position:static;grid-area:2/1;transform:none;min-height:0;width:245px;overflow-y:auto}
+}
+@media(min-width:1400px){body:not(.observing) #workspace{padding-top:48px;padding-left:64px}}
+@media(min-width:651px) and (max-width:900px){
+ body:not(.observing) #workspace{grid-template-columns:197px minmax(0,1fr);padding-top:28px;padding-left:22px}
+ body:not(.observing) .scene-heading,body:not(.observing) .inspector{width:197px}
+}
+
+/* Ready means the maps/models have settled, with a five-second minimum. */
+#scene-loading{position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:32px;text-align:center}
+#scene-loading h2{font-size:28px;font-weight:400;letter-spacing:-.035em;margin:8px 0 12px}
+#scene-loading p:last-child{max-width:390px;color:var(--muted);font-size:12px}
+.loading-orbit{width:62px;height:62px;border:1px solid var(--line);border-top-color:var(--text);border-radius:50%;animation:loading-turn 2s linear infinite;margin-bottom:28px}
+@keyframes loading-turn{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.loading-orbit{animation:none}}
+body.observing #solar-tab{display:none!important}
+.journey-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+#planet-list{display:inline-flex;gap:4px;flex-wrap:wrap}
+#planet-list button{border:1px solid var(--line);font:10px var(--mono);min-height:30px;padding:4px 8px}
+#stellar-note{max-height:28vh;overflow-y:auto;background:var(--bg);padding:8px 12px}
+.pending-exposure{width:48px;height:48px;display:grid;place-items:center;font:7px var(--mono);color:var(--muted);background:var(--surface)}
+.object-strip .solar-home{position:sticky;left:0;z-index:1;background:var(--surface);border-right:1px solid var(--line)}
+@media(max-width:650px){header nav{max-width:calc(100vw - 170px);overflow-x:auto;scrollbar-width:thin}header nav button{white-space:nowrap}#scene-loading h2{font-size:23px}.journey-actions{justify-content:flex-start}#stellar-note{max-width:calc(100% - 32px);max-height:25vh}}
+
+.epoch-tools{padding:14px 0;border-top:1px solid var(--line);margin-top:14px}.epoch-tools button{margin:0 8px 8px 0}.epoch-tools p{max-width:72ch}

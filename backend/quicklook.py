@@ -39,6 +39,11 @@ def change_masks(current,reference):
     from scipy.ndimage import maximum_filter,binary_dilation
     a,va,sa,ma=standardized(current);b,vb,sb,mb=standardized(reference)
     good=ma&mb
+    # LVF wavelengths vary across each exposure. Matching only the field-center
+    # wavelength can paint real spectral differences red elsewhere in the image.
+    if 'wavelength' in current and 'wavelength' in reference:
+        wa=np.asarray(current['wavelength']);wb=np.asarray(reference['wavelength'])
+        good &= np.isfinite(wa)&np.isfinite(wb)&(np.abs(wa-wb)<=.025)
     significance=np.divide(a-b,np.sqrt(va+vb),out=np.zeros(a.shape),where=good)
     # Require a source-like high-S/N peak, a faint counterpart and a significant
     # signed residual. Missing/flagged counterpart pixels never mean disappearance.
@@ -50,5 +55,5 @@ def change_masks(current,reference):
         regions,_=label(mask);counts=np.bincount(regions.ravel());counts[0]=0
         return mask&(counts[regions]>=2)
     appear=islands(appear);disappear=islands(disappear)
-    residual=islands(good&(np.abs(significance)>=4))
-    return dict(appearance=appear,disappearance=disappear,residual=residual,red=appear|disappear|residual)
+    residual=islands(good&(np.abs(significance)>=4)&((sa>=3)|(sb>=3)))
+    return dict(appearance=appear,disappearance=disappear,residual=residual,red=appear|disappear|residual,comparable=good,significance=significance)

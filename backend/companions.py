@@ -10,8 +10,8 @@ def planet_rows():
 
 def planets_for(ra,dec,name=''):
     # High proper-motion hosts need a name match, not a broad angular match.
-    normal=name.lower().strip()
-    host={"barnard":"barnard's star"}.get(normal,normal)
+    normal=name.lower().strip().replace('’', "'")
+    host={"barnard":"barnard's star", "barnard star":"barnard's star", "proxima centauri":"proxima cen", "alpha centauri c":"proxima cen", "v* proxima cen":"proxima cen"}.get(normal,normal)
     rows=[r for r in planet_rows() if r['hostname'].lower()==host]
     if not rows:
         cos=np.cos(np.deg2rad(dec))
