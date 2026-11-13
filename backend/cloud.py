@@ -70,7 +70,7 @@ def cloud_cutout(key,fov=8,center=None):
     # HTTP range reads follow IRSA's cloud-access tutorial. Only a native cutout
     # and small WCS table are transferred, not the full ~70 MB MEF.
     throttle()
-    with fits.open(url,use_fsspec=True,fsspec_kwargs={'block_size':1048576,'client_kwargs':{'timeout':aiohttp.ClientTimeout(total=90)}},memmap=False) as remote:
+    with fits.open(url,use_fsspec=True,fsspec_kwargs={'block_size':1048576,'client_kwargs':{'timeout':aiohttp.ClientTimeout(total=90),'trust_env':True}},memmap=False) as remote:
         header=remote['IMAGE'].header
         ra,dec=center if center else (float(header['CRVAL1']),float(header['CRVAL2']));source=WCS(header).celestial
         x,y=source.world_to_pixel_values(ra,dec);r=int(np.ceil(fov*60/CONFIG['pixel_scale_arcsec']*.85))
@@ -79,6 +79,16 @@ def cloud_cutout(key,fov=8,center=None):
         if x1<=x0 or y1<=y0:raise ValueError('This exposure does not cover the selected field.')
         sliced=source.slice((slice(y0,y1),slice(x0,x1)))
         cut_header=sliced.to_header(relax=True)
+        # Preserve native detector location and spacecraft metadata in cloud cutouts.
+        for name in ("XYZ_SC_SYSTEM", "X_SC", "Y_SC", "Z_SC", "X_SC_START", "Y_SC_START",
+                     "Z_SC_START", "DATE-AVG", "DATE-BEG"):
+            if name in header:
+                cut_header[("HIERARCH " if len(name) > 8 else "") + name] = header[name]
+        if ((header.get("WCSNAMEA") or "").strip() == "0-based active pixel coordinates"
+                and "CRPIX1A" in header and "CRPIX2A" in header):
+            cut_header["WCSNAMEA"] = header["WCSNAMEA"]
+            cut_header["CRPIX1A"] = header["CRPIX1A"] - x0
+            cut_header["CRPIX2A"] = header["CRPIX2A"] - y0
         for name in ['BUNIT','MJD-OBS','DATE-OBS','MJD-AVG','TIMESYS']:
             if name in header:cut_header[name]=header[name]
         hdus=[fits.PrimaryHDU(header=remote[0].header.copy())]

@@ -1,0 +1,26 @@
+#satellite-camera {
+  box-sizing: border-box;
+  width: min(96vw, 1180px);
+  max-width: none;
+  max-height: 94dvh;
+  overflow: auto;
+  padding: 16px 20px;
+  background: #101720;
+  color: #e3edf5;
+  border: 1px solid #52657b;
+}
+#satellite-camera::backdrop { background: #03070bd9; }
+.satellite-heading, .satellite-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.satellite-heading { justify-content: space-between; }
+.satellite-heading h2 { margin: 4px 0; }
+.satellite-controls button[aria-pressed="true"] { border-color: #ffc67c; }
+.satellite-stage { position: relative; margin-top: 10px; background: #050910; }
+#satellite-sky, #satellite-detector { display: block; width: 100%; height: auto; }
+#satellite-sky { position: absolute; inset: 0; pointer-events: none; }
+#satellite-sky[hidden] { display: none; }
+#satellite-detector { position: relative; cursor: crosshair; }
+#satellite-detector:focus-visible { outline: 2px solid #ffc680; outline-offset: -2px; }
+#satellite-source[hidden] { display: none; }
+#satellite-detector.looking { cursor: grab; touch-action: none; }
+#satellite-detector.looking:active { cursor: grabbing; }
+#satellite-exposure, #satellite-status { font-size: 13px; }

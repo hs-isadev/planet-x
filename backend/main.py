@@ -344,6 +344,9 @@ install_time_routes(app,JOBS,GUARD)
 from .companions import install_companion_routes
 install_companion_routes(app)
 
+from .routes_satellite_view import install_satellite_view_routes
+install_satellite_view_routes(app, JOBS, GUARD)
+
 DIST = ROOT / "web"
 if DIST.exists():
     class FreshStaticFiles(StaticFiles):
