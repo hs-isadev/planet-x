@@ -122,3 +122,11 @@ body.observing #solar-tab{display:none!important}
 @media(max-width:650px){header nav{max-width:calc(100vw - 170px);overflow-x:auto;scrollbar-width:thin}header nav button{white-space:nowrap}#scene-loading h2{font-size:23px}.journey-actions{justify-content:flex-start}#stellar-note{max-width:calc(100% - 32px);max-height:25vh}}
 
 .epoch-tools{padding:14px 0;border-top:1px solid var(--line);margin-top:14px}.epoch-tools button{margin:0 8px 8px 0}.epoch-tools p{max-width:72ch}
+
+#spectrum-result { margin-top: 12px; }
+#spectrum-result ul { max-height: 12rem; overflow: auto; overflow-wrap: anywhere; padding-left: 18px; }
+#spectrum-result canvas { display: block; }
+@media (pointer: coarse) {
+  #journey-panel button { min-height: 44px; }
+  #stage canvas { touch-action: none; }
+}

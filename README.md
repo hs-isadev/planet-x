@@ -6,11 +6,19 @@ A science-first viewer for real SPHEREx infrared observations. Enter RA/Dec or s
 
 ## SPHEREx View and Free View
 
-**SPHEREx View** uses the selected archive exposure's detector orientation as its starting point. The amber reticle marks the selected field. Drag or use the arrow keys to turn in any direction from that viewpoint, scroll to zoom, and use **Center target** to return to the marker. Right-click a direction to search IRSA. Use **Images** for infrared frames and playback.
+**SPHEREx View** opens the image sequence. Choose **Satellite camera** from its toolbar to start from the selected archive exposure's detector orientation. The amber reticle marks the selected field. Drag or swipe to turn and scroll or pinch to zoom. Use **Center target** to return to the marker. Right-click a direction or use **Search view center** to search IRSA.
 
-**Free View** keeps the 3D orbit, pan, zoom, and object selection controls. Open **Destinations** to switch between the Solar System, nearby catalog stars, and target systems. You can also zoom out from the Solar System into the stellar neighborhood.
+**Free View** keeps the 3D orbit, pan, zoom, and object selection controls. On a phone, drag with one finger to orbit and pinch with two fingers to zoom. Open **Destinations** to switch between the Solar System, nearby catalog stars, and target systems. You can also zoom out from the Solar System into the stellar neighborhood.
 
-The catalog sky is the celestial [NASA/Goddard Scientific Visualization Studio Deep Star Maps](https://svs.gsfc.nasa.gov/3895/) 4K image, based on the Bright Star, Tycho-2 and UCAC3 catalogs. It provides visible-light context. The archived infrared observations are in Images. The spacecraft position comes from the selected FITS header when present. Free look is an illustrative rotation at that viewpoint. The reticle marks the selected coordinates. The sky map is fetched on first use and cached locally. A coordinate grid remains available if the texture or WebGL fails.
+The catalog sky is the celestial [NASA/Goddard Scientific Visualization Studio Deep Star Maps](https://svs.gsfc.nasa.gov/3895/) 4K image, based on the Bright Star, Tycho-2 and UCAC3 catalogs. It provides visible-light context. The archived infrared observations are in the SPHEREx sequence. The spacecraft position comes from the selected FITS header when present. Free look is an illustrative rotation at that viewpoint. The reticle marks the selected coordinates. The sky map is fetched on first use and cached locally. A coordinate grid remains available if the texture or WebGL fails.
+
+**Trace back to Earth** follows one illustrative, curved flight to the sunlit side. The camera turns during the flight with gentle sideways glances. The source sky chart is optional after arrival. The flight uses a single path and rebases from parsecs to AU without a scheduled stop.
+
+## Infrared spectrum and absorption bands
+
+In **SPHEREx View**, load a field, open **Measure a source**, choose **Infrared spectrum**, and tap or click the object in an observed frame. The chart uses aperture measurements from cached native SPHEREx FITS at that sky position. Select a UTC observation date to inspect its samples and uncertainties, and optionally overlay a second date. **Show reference absorption bands** displays approximate methane, carbon dioxide, and carbon monoxide windows for visual comparison. The exposure list gives dates, detector IDs, flux and uncertainty or an exclusion reason, plus links to the archive.
+
+The quicklook uses approximate pixel wavelengths and lacks PSF deblending and aperture correction. Reference windows are approximate guides based on the [AKARI brown dwarf study](https://hero.epa.gov/reference/2669638/). Different dates and wavelengths can sample variable brightness. An unresolved companion can be blended with its host. A moving Solar System body needs an ephemeris at each exposure. A visual match alone cannot establish composition. IRSA provides a [PSF-based spectrophotometry tool](https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html) for a source with a known position.
 
 ## Run
 

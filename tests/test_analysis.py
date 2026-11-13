@@ -86,7 +86,8 @@ def test_analysis_api_endpoints(tmp_path,monkeypatch):
     frames=[]
     for i in range(2):
         identity=str(i);np.savez_compressed(tmp_path/(identity+'.npz'),**products);hdus.writeto(tmp_path/(identity+'.fits'))
-        frames.append(dict(id=identity,index=i,cache_id=identity,status='ready',mjd=60000+i*365.25,detector=1,band='SPHEREx-D1',wavelength_um=1.02))
+        frames.append(dict(id=identity,index=i,cache_id=identity,status='ready',mjd=60000+i*365.25,detector=1,band='SPHEREx-D1',wavelength_um=1.02,
+                           date=f'202{i+3}-01-01T00:00:00Z',observation=f'fixture-{i}'))
     main.JOBS['analysis-test']=dict(id='analysis-test',ra=133.,dec=-7.,fov=4,frames=frames,status='complete')
     client=TestClient(main.app)
     groups=client.get('/api/jobs/analysis-test/groups').json()['groups']
@@ -101,4 +102,12 @@ def test_analysis_api_endpoints(tmp_path,monkeypatch):
     spec=client.get('/api/jobs/analysis-test/spectrum',params=dict(x=.5,y=.5)).json()
     assert spec['provenance']=='computed' and len(spec['points'])==2
     assert all(p['status']=='ok' for p in spec['points'])
+    assert [(p['exposure_id'], p['date'], p['observation']) for p in spec['points']] == [
+        ('0', '2023-01-01T00:00:00Z', 'fixture-0'),
+        ('1', '2024-01-01T00:00:00Z', 'fixture-1'),
+    ]
+    assert all(p['aperture_flags']==[0,1<<21] for p in spec['points'])
+    (tmp_path/'0.fits').unlink()
+    spec=client.get('/api/jobs/analysis-test/spectrum',params=dict(x=.5,y=.5)).json()
+    assert [p['status'] for p in spec['points']]==['missing','ok']
     del main.JOBS['analysis-test']

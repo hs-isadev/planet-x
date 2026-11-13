@@ -1,6 +1,6 @@
-import {orbitPose,cruisePose,orbitDuration} from './camera-path.js';
+import {orbitPose,cruisePose,orbitDuration} from './camera-path.js?v=earth-arc-1';
 import {installContext} from './context-scene.js';
-import {installNavigation} from './navigation.js';
+import {installNavigation} from './navigation.js?v=earth-arc-1';
 import {flares,dust} from './activity.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -10,22 +10,42 @@ const $=id=>document.getElementById(id);
 export class ObservatoryScene {
  constructor(onSelect){
   this.starSize=2.5;this.makeHalo=halo;this.onSelect=onSelect;this.items=[];this.mode='solar';this.selected=null;this.showLabels=true;this.showPaths=true;this.filterRadius=5;this.filterMagnitude=12;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  this.renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;$('scene').append(this.renderer.domElement);
-  this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#080b10');this.camera=new THREE.PerspectiveCamera(38,1,.000001,30000);this.camera.position.set(0,2,3);this.controls=new OrbitControls(this.camera,this.renderer.domElement);this.controls.enableDamping=!this.reduced;this.controls.dampingFactor=.09;this.controls.minDistance=.000001;this.controls.maxDistance=10000;this.controls.zoomSpeed=.65;
+  this.renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});this.renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.5:2));this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;$('scene').append(this.renderer.domElement);
+  this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#080b10');this.camera=new THREE.PerspectiveCamera(38,1,.000001,30000);this.camera.position.set(0,2,3);this.controls=new OrbitControls(this.camera,this.renderer.domElement);this.controls.enableDamping=!this.reduced;this.controls.dampingFactor=.075;this.controls.rotateSpeed=.72;this.controls.minDistance=.000001;this.controls.maxDistance=10000;this.controls.zoomSpeed=.65;
   this.ambient=new THREE.AmbientLight(0xffffff,.13);this.scene.add(this.ambient);this.light=new THREE.PointLight(0xffffff,3,0,0);this.scene.add(this.light);
   this.content=new THREE.Group();this.scene.add(this.content);this.orbits=new THREE.Group();this.content.add(this.orbits);this.ray=new THREE.Raycaster();this.pointer=new THREE.Vector2();
-  this.renderer.domElement.addEventListener('pointerdown',e=>this.down=[e.clientX,e.clientY]);this.renderer.domElement.addEventListener('pointerup',e=>{if(this.surface||this.journey||this.local||!this.down||Math.hypot(e.clientX-this.down[0],e.clientY-this.down[1])>5)return;let r=this.renderer.domElement.getBoundingClientRect();this.pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);let hits=this.ray.intersectObjects(this.items.filter(x=>x.model?.visible||x.mesh.visible).map(x=>x.hit).concat(this.mode==='solar'&&this.sky?this.sky.children.filter(s=>!s.userData.passive):[]),true);if(hits[0]?.object.userData.catalogObject){window.dispatchEvent(new CustomEvent('cosmic-select',{detail:hits[0].object.userData.catalogObject.id}));return;}if(hits.length){let o=hits[0].object;while(o&&!o.userData.id)o=o.parent;if(o){this.onSelect(o.userData.id,true);}}});
-  this.navKeys=new Set();this.activityEnabled=!this.reduced;this.activityTime=0;
-  document.addEventListener('keydown',e=>{if(!e.ctrlKey&&!e.metaKey&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&['KeyW','KeyA','KeyS','KeyD'].includes(e.code)&&!document.body.classList.contains('observing')){this.navKeys.add(e.code);if(!this.surface)e.preventDefault();}});document.addEventListener('keyup',e=>this.navKeys.delete(e.code));window.addEventListener('blur',()=>this.navKeys.clear());
+  const canvas=this.renderer.domElement, pointers=new Set();
+  let tap=null;
+  canvas.addEventListener('pointerdown',event=>{
+   pointers.add(event.pointerId);
+   this.touchPinch=event.pointerType==='touch'&&pointers.size>=2;
+   tap=pointers.size===1&&event.button===0?{id:event.pointerId,x:event.clientX,y:event.clientY}:null;
+  });
+  canvas.addEventListener('pointermove',event=>{
+   if(tap?.id===event.pointerId&&Math.hypot(event.clientX-tap.x,event.clientY-tap.y)>6)tap=null;
+  });
+  function release(event){
+   pointers.delete(event.pointerId);
+   if(pointers.size<2)this.touchPinch=false;
+   const clicked=tap?.id===event.pointerId&&event.type==='pointerup';
+   tap=null;
+   return clicked;
+  }
+  canvas.addEventListener('pointercancel',event=>release.call(this,event));
+  canvas.addEventListener('lostpointercapture',event=>release.call(this,event));
+  canvas.addEventListener('pointerup',e=>{
+   if(!release.call(this,e)||this.surface||this.journey||this.local)return;
+   let r=this.renderer.domElement.getBoundingClientRect();this.pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);let hits=this.ray.intersectObjects(this.items.filter(x=>x.model?.visible||x.mesh.visible).map(x=>x.hit).concat(this.mode==='solar'&&this.sky?this.sky.children.filter(s=>!s.userData.passive):[]),true);if(hits[0]?.object.userData.catalogObject){window.dispatchEvent(new CustomEvent('cosmic-select',{detail:hits[0].object.userData.catalogObject.id}));return;}if(hits.length){let o=hits[0].object;while(o&&!o.userData.id)o=o.parent;if(o){this.onSelect(o.userData.id,true);}}
+  });
   this.renderer.domElement.addEventListener('wheel',e=>{if(this.surface||this.journey)return;e.preventDefault();e.stopImmediatePropagation();this.zoomBy(Math.exp(THREE.MathUtils.clamp(e.deltaY,-220,220)*.003));},{passive:false,capture:true});
   this.controls.addEventListener('start',()=>{this.stopFlight();});new ResizeObserver(()=>this.resize()).observe($('stage'));this.resize();this.animate();
  }
  resize(){let r=$('stage').getBoundingClientRect();if(!r.width||!r.height)return;this.w=r.width;this.h=r.height;this.renderer.setSize(r.width,r.height);this.camera.aspect=r.width/r.height;this.camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(19))/Math.min(1,this.camera.aspect)));if(this.camera.aspect<1)this.camera.setViewOffset(r.width,r.height,0,r.height*.17,r.width,r.height);else this.camera.clearViewOffset();this.camera.fov/=(this.viewFill||1);this.camera.updateProjectionMatrix();}
  stopFlight(){if(this.pan){this.pan.done(false);this.pan=null;}if(this.flight?.baseFov){this.camera.fov=this.flight.baseFov;this.camera.updateProjectionMatrix();}this.renderer.domElement.style.transform='';this.renderer.domElement.style.filter='';if(this.flight?.done)this.flight.done(false);this.flight=null;}
- clear(){this.beaconLabel?.remove();this.beaconLabel=null;this.earthBeacon=null;this.stopFlight();this.exitLocal();this.version=(this.version||0)+1;this.items.forEach(x=>x.label.remove());this.content.traverse(o=>{o.geometry?.dispose();if(o.material)for(let m of Array.isArray(o.material)?o.material:[o.material]){m.map?.dispose();m.dispose();}});this.content.clear();this.content.visible=true;this.orbits=new THREE.Group();this.content.add(this.orbits);this.items=[];}
+ clear({preserveFlight=false}={}){this.beaconLabel?.remove();this.beaconLabel=null;this.earthBeacon=null;if(!preserveFlight)this.stopFlight();this.exitLocal();this.version=(this.version||0)+1;this.items.forEach(x=>x.label.remove());this.content.traverse(o=>{o.geometry?.dispose();if(o.material)for(let m of Array.isArray(o.material)?o.material:[o.material]){m.map?.dispose();m.dispose();}});this.content.clear();this.content.visible=true;this.orbits=new THREE.Group();this.content.add(this.orbits);this.items=[];}
  label(data,pos,radius,mesh){let label=document.createElement('span');label.className='object-label';label.textContent=data.name;label.setAttribute('aria-hidden','true');$('labels').append(label);this.items.push({data,pos,radius,mesh,hit:mesh,label});}
- async solar(data){
-  this.clear();this.solarData=data;
+ async solar(data,{preserveFlight=false}={}){
+  this.clear({preserveFlight});this.solarData=data;
   if(!data.size_layout){this.physicalSolar=data;this.orbitDays=0;this.orbitEpoch=data.date;}
   this.mode='solar';this.ambient.intensity=.16;this.light.visible=true;
   this.controls.maxDistance=200;this.controls.minDistance=.000001;
@@ -80,7 +100,7 @@ export class ObservatoryScene {
  }
  async returnFromTrace(){this.journey=false;this.stopFlight();let r=this.traceReturn;this.traceReturn=null;if(r){if(r.mode==='solar')await this.solar(r.data);else this.stars(r.data);this.selected=r.selected;this.select(r.selected);this.approach();}this.controls.enabled=true;}
  theme(light){this.lightTheme=light;this.scene.background.set('#080b10');}
- animate(){requestAnimationFrame(()=>this.animate());let now=performance.now(),dt=Math.min(.05,(now-(this.lastTick||now))/1000);this.lastTick=now;if(this.activityEnabled&&!this.loading&&!this.journey)this.activityTime+=dt;this.navigationTick(dt);if(this.surface){this.surface.update();return;}const panning=!!this.pan,flying=!!this.flight;if(this.pan){const p=this.pan,k=Math.min(1,(now-p.start)/p.duration),t=k*k*k*(k*(k*6-15)+10);this.camera.quaternion.slerpQuaternions(p.fromQuaternion,p.toQuaternion,t);const direction=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);this.controls.target.copy(this.camera.position).addScaledVector(direction,p.distance);if(k===1){this.pan=null;p.done(true);}}if(this.flight){const f=this.flight,k=Math.min(1,(now-f.start)/f.duration),pose=f.heading?cruisePose(f.from,f.pos,f.heading,f.clearance,k):orbitPose(f.from,f.fromTarget,f.pos,f.target,k);this.camera.position.copy(pose.position);this.controls.target.copy(pose.target);this.camera.lookAt(pose.target);if(k===1){this.flight=null;f.done(true);}}if(!panning&&!flying)this.controls.update();if(this.localGroup)this.localGroup.traverse(o=>{if(o.material?.uniforms?.clock)o.material.uniforms.clock.value=this.activityTime;});let occupied=[];
+ animate(){requestAnimationFrame(()=>this.animate());let now=performance.now(),dt=Math.min(.05,(now-(this.lastTick||now))/1000);this.lastTick=now;if(this.activityEnabled&&!this.loading&&!this.journey)this.activityTime+=dt;this.navigationTick(dt);if(this.surface){this.surface.update();return;}const panning=!!this.pan,flying=!!this.flight;if(this.pan){const p=this.pan,k=Math.min(1,(now-p.start)/p.duration),t=k*k*k*(k*(k*6-15)+10);this.camera.quaternion.slerpQuaternions(p.fromQuaternion,p.toQuaternion,t);const direction=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);this.controls.target.copy(this.camera.position).addScaledVector(direction,p.distance);if(k===1){this.pan=null;p.done(true);}}if(this.flight){const f=this.flight,k=Math.min(1,(now-f.start)/f.duration),pose=f.pose?f.pose(k):f.heading?cruisePose(f.from,f.pos,f.heading,f.clearance,k):orbitPose(f.from,f.fromTarget,f.pos,f.target,k);this.camera.position.copy(pose.position);this.controls.target.copy(pose.target);if(pose.up)this.camera.up.copy(pose.up);this.camera.lookAt(pose.target);if(k===1){this.flight=null;f.done(true);}}if(!panning&&!flying)this.controls.update();if(this.localGroup)this.localGroup.traverse(o=>{if(o.material?.uniforms?.clock)o.material.uniforms.clock.value=this.activityTime;});let occupied=[];
   if(this.mode==='solar'&&!this.loading&&!this.journey&&!this.surface&&!this.flight&&!this.pan&&this.activityEnabled&&(this.orbitRate??1)>0){this.orbitDays=(this.orbitDays||0)+dt*(this.orbitRate??1);for(let i of this.items){let curve=i.data.orbit_au,period=i.data.orbital_period_days;if(!curve||!period)continue;let t=(128+this.orbitDays/period*256)%256,k=Math.floor(t),f=t-k,a=this.vector(curve[k]),b=this.vector(curve[(k+1)%256]),next=a.lerp(b,f),delta=next.clone().sub(i.pos),follow=i.data.id===this.selected&&this.controls.target.distanceTo(i.pos)<i.radius*.1;i.pos.copy(next);i.mesh.position.copy(next);if(i.model)i.model.position.copy(next);if(follow&&!this.flight){this.controls.target.add(delta);this.camera.position.add(delta);}}let el=document.getElementById('simulation-time');if(el)el.textContent='COMPUTED orbit time +'+this.orbitDays.toFixed(1)+' d · '+(this.orbitRate??1)+' d/s';if(this.orbitEpoch&&document.activeElement.id!=='date')document.getElementById('date').value=new Date(Date.parse(this.orbitEpoch)+this.orbitDays*86400000).toISOString().slice(0,10);}
    // Catalog sky positions and visibility are updated by addCatalogSky's callback.
    this.scene.traverse(o=>{o.userData.update?.(this.activityTime);});if(this.activityEnabled&&!this.loading&&this.mode==='solar'&&!this.journey){

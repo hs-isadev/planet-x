@@ -153,12 +153,21 @@ def install_analysis_routes(app,jobs,guard,clients):
     def spectrum(identity:str,request:Request,x:float=Query(ge=0,le=1),y:float=Query(ge=0,le=1),radius:float=Query(default=18.45,ge=6.15,le=45)):
         throttle_client(request,'spectrum',20)
         job=job_for(identity);position=sky_at_click(job,x,y);points=[]
-        for frame in list(job['frames']):
-            if frame['status']!='ready':continue
+        with guard:
+            frames=[dict(frame) for frame in job['frames'] if frame['status']=='ready']
+        for frame in frames:
             try:
-                if not (CACHE/(frame["cache_id"]+".fits")).exists():
-                    ensure_frame_files(frame,job,native=True)
-                with fits.open(CACHE/(frame['cache_id']+'.fits'),memmap=False) as hdus:measurement=aperture_measure(hdus,position,radius)
-            except (ValueError,KeyError,FileNotFoundError):measurement=dict(status='missing',reason='Native photometry data are unavailable.')
-            points.append(dict(measurement,frame=frame['index'],mjd=frame['mjd'],detector=frame.get('detector')))
-        return dict(provenance='computed',source_pixels='observed',ra=float(position.ra.deg),dec=float(position.dec.deg),radius_arcsec=radius,points=points,notes=['Quicklook aperture flux, not a calibrated or aperture-corrected source spectrum.','Native pixels and conservative flags are used; background is estimated in a local annulus. No resampled display pixels are measured.','Wavelength uses the approximate per-pixel WCS-WAVE mapping, not the precision CWAVE calibration.','Error bars include native variance and annulus background uncertainty; calibration and confusion systematics are omitted.','Observations are taken at different times. Variability can shape this wavelength plot.'])
+                with fits.open(CACHE/(frame['cache_id']+'.fits'),memmap=False) as hdus:
+                    measurement=aperture_measure(hdus,position,radius)
+            except (ValueError, KeyError, OSError):
+                measurement=dict(status='missing',reason='Native FITS is unavailable or could not be measured.')
+            points.append(dict(measurement,frame=frame['index'],exposure_id=frame['id'],
+                               observation=frame.get('observation'),date=frame.get('date'),
+                               archive_url=frame.get('url'),mjd=frame['mjd'],detector=frame.get('detector')))
+        return dict(provenance='computed',source_pixels='observed',ra=float(position.ra.deg),
+                    dec=float(position.dec.deg),radius_arcsec=radius,points=points,notes=[
+                        'Quicklook aperture brightness at one fixed sky position. Moving objects require epoch-specific positions.',
+                        'The spectrum uses loaded exposures with cached native FITS, conservative masks, and a local background annulus.',
+                        'Wavelengths use approximate per-pixel WCS-WAVE. Horizontal bars show the wavelength spread across the aperture, not the detector bandpass.',
+                        'Vertical bars include native variance and estimated background uncertainty. PSF, calibration and source confusion systematics are omitted.',
+                    ])

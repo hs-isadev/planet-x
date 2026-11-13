@@ -58,8 +58,6 @@ export function skyRay(camera, x, y) {
 }
 
 function setupViewNavigation(byId) {
-  byId('universe-home').textContent = 'Free View';
-  byId('satellite-view-tab').textContent = 'SPHEREx View';
   const destinations = document.createElement('details');
   destinations.className = 'free-destinations';
   const summary = document.createElement('summary');
@@ -90,7 +88,7 @@ export function installSatelliteView(view) {
     <p class="micro"><a id="satellite-source" target="_blank" rel="noreferrer" hidden></a></p>
     <div class="satellite-controls">
       <button type="button" id="satellite-free">Free View</button>
-      <button type="button" id="satellite-images">Images</button>
+      <button type="button" id="satellite-images">Back to observations</button>
       <button type="button" id="satellite-target">Center target</button>
       <button type="button" id="satellite-search">Search view center</button>
     </div>
@@ -105,7 +103,8 @@ export function installSatelliteView(view) {
   const status = byId('satellite-status'), sky = byId('satellite-sky');
   const defaultFocal = canvas.width * .85;
   let focal = defaultFocal;
-  let camera, drag, catalogDraw, catalogLoad, catalogFailed;
+  const pointers = new Map();
+  let camera, catalogDraw, catalogLoad, catalogFailed;
   let target, targetName, turn = 0, request = 0;
 
   function openCatalog() {
@@ -184,9 +183,12 @@ export function installSatelliteView(view) {
     }
     crosshair(canvas.width / 2, canvas.height / 2);
     drawTarget(screenPosition(camera, target, canvas.width, canvas.height, focal));
+    const gesture = matchMedia('(pointer: coarse)').matches
+      ? 'Swipe to turn. Pinch to zoom. Use Search view center to load a field.'
+      : 'Drag to turn, scroll to zoom, and right-click to search SPHEREx.';
     showCenter(skyRay(camera, 0, 0), hasCatalog
-      ? 'Catalog sky · NASA Goddard SVS. Drag to turn, scroll to zoom, and right-click to search SPHEREx.'
-      : catalogFailed ? 'Catalog map unavailable. Drag the coordinate grid or right-click to search SPHEREx.'
+      ? 'Catalog sky · NASA Goddard SVS. ' + gesture
+      : catalogFailed ? 'Catalog map unavailable. ' + gesture
         : 'Loading the catalog sky. Right-click to search SPHEREx.');
   }
 
@@ -248,7 +250,7 @@ export function installSatelliteView(view) {
     if (!dialog.open) {
       cancelAnimationFrame(turn);
       request++;
-      drag = null;
+      pointers.clear();
     }
   });
   function canvasPoint(event) {
@@ -262,26 +264,38 @@ export function installSatelliteView(view) {
     search(...canvasPoint(event));
   });
   canvas.addEventListener('pointerdown', event => {
-    if (!camera || event.button !== 0) return;
+    if (!camera || event.button !== 0 || pointers.size === 2) return;
     cancelAnimationFrame(turn);
-    drag = {id: event.pointerId, point: canvasPoint(event)};
-    canvas.focus({preventScroll: true});
+    pointers.set(event.pointerId, canvasPoint(event));
+    if (event.pointerType === 'mouse') canvas.focus({preventScroll: true});
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener('pointermove', event => {
-    if (!camera || event.pointerId !== drag?.id) return;
+    const previous = pointers.get(event.pointerId);
+    if (!camera || !previous) return;
     const point = canvasPoint(event);
-    look((drag.point[0] - point[0]) / focal, (point[1] - drag.point[1]) / focal);
-    drag.point = point;
+    if (pointers.size === 2) {
+      const other = [...pointers].find(([id]) => id !== event.pointerId)[1];
+      const oldDistance = Math.hypot(previous[0] - other[0], previous[1] - other[1]);
+      const newDistance = Math.hypot(point[0] - other[0], point[1] - other[1]);
+      if (oldDistance > 2 && newDistance > 2) zoom(newDistance / oldDistance);
+    } else {
+      look((previous[0] - point[0]) / focal, (point[1] - previous[1]) / focal);
+    }
+    pointers.set(event.pointerId, point);
   });
-  canvas.addEventListener('lostpointercapture', () => { drag = null; });
+  for (const type of ['pointercancel', 'lostpointercapture', 'pointerup']) {
+    canvas.addEventListener(type, event => pointers.delete(event.pointerId));
+  }
+  function zoom(factor) {
+    focal = Math.max(canvas.width * .42, Math.min(canvas.width * 3, focal * factor));
+    draw();
+  }
   canvas.addEventListener('wheel', event => {
     if (!camera) return;
     event.preventDefault();
     const multiplier = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? canvas.height : 1;
-    focal = Math.max(canvas.width * .42, Math.min(canvas.width * 3,
-      focal * Math.exp(-event.deltaY * multiplier * .001)));
-    draw();
+    zoom(Math.exp(-event.deltaY * multiplier * .001));
   }, {passive: false});
   function look(horizontal, vertical) {
     [camera.forward, camera.right] = rotatePair(camera.forward, camera.right, horizontal);

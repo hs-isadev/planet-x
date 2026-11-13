@@ -36,3 +36,18 @@
 @media (max-width: 650px) {
   body.observing header nav, body.searching header nav { display: flex; }
 }
+
+body.observing #observations-home.spherex-hub { display: inline-flex; }
+.drawer-header #satellite-view-tab { margin-right: 6px; white-space: nowrap; }
+@media (pointer: coarse) {
+  #satellite-camera { padding: 12px; }
+  .satellite-controls button, .satellite-heading button { min-height: 44px; }
+  .drawer-header #satellite-view-tab { margin-right: 0; }
+}
+
+@media (max-width: 480px) {
+  .drawer-header { flex-wrap: wrap; gap: 8px; }
+  .drawer-header #satellite-view-tab { min-height: 40px; }
+  body.observing header nav { max-width: none; }
+  #satellite-camera { max-height: 92dvh; }
+}

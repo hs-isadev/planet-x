@@ -1,4 +1,4 @@
-import {installSatelliteView} from './satellite-view.js?v=2';
+import {installSatelliteView} from './satellite-view.js?v=3';
 const $=id=>document.getElementById(id);
 const icons={search:'<circle cx="7.5" cy="7.5" r="5"/><path d="m11.5 11.5 4 4"/>',close:'<path d="m4 4 10 10M14 4 4 14"/>',theme:'<circle cx="9" cy="9" r="5.5"/><path d="M9 3.5v11a5.5 5.5 0 0 0 0-11"/>',info:'<circle cx="9" cy="9" r="7"/><path d="M9 8v5M9 5v.2"/>',expand:'<path d="M2 6V2h4M12 2h4v4M16 12v4h-4M6 16H2v-4"/>',target:'<circle cx="9" cy="9" r="5"/><path d="M9 1v4M9 13v4M1 9h4M13 9h4"/>',arrow:'<path d="M3 9h12M10 4l5 5-5 5"/>',link:'<path d="m7 11 4-4M6 13l-1 1a3 3 0 0 1-4-4l4-4a3 3 0 0 1 4 0M12 5l1-1a3 3 0 0 1 4 4l-4 4a3 3 0 0 1-4 0"/>',play:'<path d="m5 3 9 6-9 6Z"/>',pause:'<path d="M6 3v12M12 3v12"/>',prev:'<path d="M4 4v10M14 4l-8 5 8 5Z"/>',next:'<path d="M14 4v10M4 4l8 5-8 5Z"/>',image:'<rect x="2" y="2" width="14" height="14" rx="2"/><circle cx="6" cy="6" r="1"/><path d="m2 13 5-5 4 4 2-2 3 3"/>'};
 function icon(k){return '<svg viewBox="0 0 18 18" aria-hidden="true">'+(icons[k]||icons.info)+'</svg>';}document.querySelectorAll('[data-icon]').forEach(e=>e.innerHTML=icon(e.dataset.icon));
@@ -90,20 +90,31 @@ async function closeEarthSky(){
 $('trace-earth').onclick=async()=>{
  const token=++journeyGeneration,data=selectedData()||{name:'Sun'};
  try{
-  $('journey-panel').hidden=false;$('journey-stay').hidden=true;$('journey-exit').hidden=true;$('journey-cancel').hidden=false;
+  $('journey-panel').hidden=false;$('journey-sky').hidden=true;$('journey-stay').hidden=true;$('journey-exit').hidden=true;$('journey-cancel').hidden=false;
   $('journey-title').textContent='Preparing Earth journey';$('journey-note').textContent='Computing the direction to Earth.';document.body.classList.add('journey-active');
   if(scene.mode==='sizes')await scene.scaleTransition(()=>scene.solar(state.solar));
   const context=await api('/api/journey?'+contextParams(data));if(token!==journeyGeneration)return;
-  const solar=state.solar||await api('/api/solar?date='+$('date').value);
+  const date=$('date').value;
+  const solar=state.solar?.date?.slice(0,10)===date?state.solar:await api('/api/solar?date='+date);
+  if(token!==journeyGeneration)return;
   const reached=await scene.trace(context,solar,(title,note)=>{$('journey-title').textContent=title;$('journey-note').textContent=note;});
   if(token!==journeyGeneration||!reached)return;
   syncSceneControls();$('journey-stay').hidden=false;$('journey-exit').hidden=false;$('journey-cancel').hidden=true;
-  const {earthSky}=await import('./journey.js');await earthSky(context,data.name,api);
- }catch(error){toast(error.message);await scene?.cancelTrace();syncSceneControls();$('journey-panel').hidden=true;document.body.classList.remove('journey-active');}
+  const skyButton=$('journey-sky');
+  skyButton.hidden=false;skyButton.textContent='Show source sky chart';
+  skyButton.onclick=async()=>{
+   if(!$('earth-sky').hidden){await closeEarthSky();skyButton.textContent='Show source sky chart';return;}
+   try{
+    const {earthSky}=await import('./journey.js');
+    if(token!==journeyGeneration)return;
+    skyButton.textContent='Show Earth';await earthSky(context,data.name,api);
+   }catch(error){if(token===journeyGeneration)toast(error.message);}
+  };
+ }catch(error){if(token!==journeyGeneration)return;toast(error.message);await scene?.cancelTrace();if(token===journeyGeneration){syncSceneControls();$('journey-panel').hidden=true;document.body.classList.remove('journey-active');}}
 };
 $('journey-exit').onclick=async()=>{
  const generation=++journeyGeneration,button=$('journey-exit');button.disabled=true;await closeEarthSky();if(generation!==journeyGeneration){button.disabled=false;return;}
- $('journey-stay').hidden=true;$('journey-cancel').hidden=false;document.body.classList.add('journey-active');$('journey-panel').hidden=false;
+ $('journey-stay').hidden=true;$('journey-sky').hidden=true;$('journey-cancel').hidden=false;document.body.classList.add('journey-active');$('journey-panel').hidden=false;
  try{await scene?.returnFromTrace((title,note)=>{if(generation===journeyGeneration){$('journey-title').textContent=title;$('journey-note').textContent=note;}});if(generation===journeyGeneration)syncSceneControls();}
  catch(error){if(generation===journeyGeneration){toast(error.message);await scene?.cancelTrace();syncSceneControls();}}
  finally{if(generation===journeyGeneration){$('journey-panel').hidden=true;document.body.classList.remove('journey-active');}button.disabled=false;}
@@ -129,14 +140,14 @@ async function loadSystems(){const home=document.createElement('button');home.cl
 
 let sceneReady=null;
 async function ensureScene(){
- if(!sceneReady)sceneReady=(async()=>{const {ObservatoryScene}=await import('./scene.js');scene=new ObservatoryScene(select);scene.theme(document.documentElement.dataset.theme==='light');$('activity-toggle').textContent='Activity '+(scene.activityEnabled?'on':'off');$('activity-toggle').setAttribute('aria-pressed',scene.activityEnabled);await showSolar();prefetchUniverse().catch(()=>{});})();
+ if(!sceneReady)sceneReady=(async()=>{const {ObservatoryScene}=await import('./scene.js?v=earth-arc-1');scene=new ObservatoryScene(select);scene.theme(document.documentElement.dataset.theme==='light');$('activity-toggle').textContent='Activity '+(scene.activityEnabled?'on':'off');$('activity-toggle').setAttribute('aria-pressed',scene.activityEnabled);await showSolar();prefetchUniverse().catch(()=>{});})();
  try{await sceneReady;}catch(error){sceneReady=null;throw error;}
 }
 async function contextView(){observations?.close();document.body.classList.remove('observing');$('observations').hidden=true;$('search-panel').hidden=true;try{await ensureScene();scene.resize();}catch(e){message('3D is unavailable: '+e.message+'. Return to observations to continue.');}}
 // Wire navigation before importing optional views or starting catalog requests.
 $('universe-home').onclick=()=>contextView();
 $('observation-close').onclick=()=>contextView();
-let {ObservationDrawer}=await import('./observations.js?v=20261110-sequence-5');observations=new ObservationDrawer({api,toast,icon});installSatelliteView(observations);observations.open();
+let {ObservationDrawer}=await import('./observations.js?v=spectrum-1');observations=new ObservationDrawer({api,toast,icon});installSatelliteView(observations);observations.open();
 // Catalog availability must never gate navigation or shared-view initialization.
 presets();
 $('observation-close').onclick=()=>contextView();

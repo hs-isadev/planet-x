@@ -157,11 +157,11 @@ def aperture_measure(hdus,position,radius_arcsec):
     data*=factor;variance*=factor*factor
     area=pixel_solid_angles(wcs,data.shape)*1e12  # MJy/sr × sr → microJy
     background=float(np.median(data[annulus&background_good]))
-    background_sigma=1.4826*np.median(np.abs(data[annulus&good]-background))
-    bkgvar=np.pi/2*background_sigma**2/(annulus&good).sum()
+    background_sigma=1.4826*np.median(np.abs(data[annulus&background_good]-background))
+    bkgvar=np.pi/2*background_sigma**2/(annulus&background_good).sum()
     flux=float(np.sum((data[aperture]-background)*area[aperture]))
     error=float(np.sqrt(np.sum(variance[aperture]*area[aperture]**2)+bkgvar*np.sum(area[aperture])**2))
     wave=wavelength_map(hdus);known=aperture&np.isfinite(wave)
     if known.sum()!=aperture.sum():return dict(status='missing',reason='Per-pixel wavelength is unavailable.',valid_fraction=coverage)
     wavelength=float(np.average(wave[known],weights=area[known]))
-    return dict(status='ok',flux_ujy=flux,error_ujy=error,wavelength_um=wavelength,wavelength_min_um=float(wave[known].min()),wavelength_max_um=float(wave[known].max()),valid_fraction=coverage,aperture_pixels=int(aperture.sum()),background_mjy_sr=background)
+    return dict(status='ok',flux_ujy=flux,error_ujy=error,wavelength_um=wavelength,wavelength_min_um=float(wave[known].min()),wavelength_max_um=float(wave[known].max()),valid_fraction=coverage,aperture_pixels=int(aperture.sum()),aperture_flags=[int(v) for v in np.unique(flags[aperture])],background_mjy_sr=background)
