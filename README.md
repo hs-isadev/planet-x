@@ -4,11 +4,13 @@ A science-first viewer for real SPHEREx infrared observations. Enter RA/Dec or s
 
 **The release is not all-pass.** See [the complete acceptance report](docs/CURRENT_STATUS.md) for every requested item, current evidence, unresolved science results and verification limits. No catalog motion is substituted for a failed image measurement.
 
-## SPHEREx view
+## SPHEREx View and Free View
 
-Open a loaded exposure, then choose **SPHEREx view**. The view starts at the selected exposure's detector orientation and turns toward the observation field. The amber reticle marks the search coordinates. Drag or use the arrow keys to look around, and use **Center target** to reacquire the marked field. Right-click a direction to start the existing IRSA coordinate search. **Loaded cutout** shows the native detector pixels, while **Detector footprint** locates the cutout within the full detector when the FITS alternate pixel WCS is available.
+**SPHEREx View** uses the selected archive exposure's detector orientation as its starting point. The amber reticle marks the selected field. Drag or use the arrow keys to turn in any direction from that viewpoint, scroll to zoom, and use **Center target** to return to the marker. Right-click a direction to search IRSA. Use **Images** for infrared frames and playback.
 
-The catalog sky is the celestial [NASA/Goddard Scientific Visualization Studio Deep Star Maps](https://svs.gsfc.nasa.gov/3895/) 4K image, based on the Bright Star, Tycho-2 and UCAC3 catalogs. It provides visible-light context. The archived infrared detector cutout is separate. The spacecraft position comes from the selected FITS header when present. Free look is an illustrative rotation at that viewpoint. The reticle marks the selected coordinates. The sky map is fetched on first use and cached locally. A coordinate grid remains available if the texture or WebGL fails.
+**Free View** keeps the 3D orbit, pan, zoom, and object selection controls. Open **Destinations** to switch between the Solar System, nearby catalog stars, and target systems. You can also zoom out from the Solar System into the stellar neighborhood.
+
+The catalog sky is the celestial [NASA/Goddard Scientific Visualization Studio Deep Star Maps](https://svs.gsfc.nasa.gov/3895/) 4K image, based on the Bright Star, Tycho-2 and UCAC3 catalogs. It provides visible-light context. The archived infrared observations are in Images. The spacecraft position comes from the selected FITS header when present. Free look is an illustrative rotation at that viewpoint. The reticle marks the selected coordinates. The sky map is fetched on first use and cached locally. A coordinate grid remains available if the texture or WebGL fails.
 
 ## Run
 

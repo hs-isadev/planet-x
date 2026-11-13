@@ -1,20 +1,6 @@
 import {loadCatalogSky} from './satellite-stars.js?v=1';
 
-// A fixed detector viewpoint for the exposure selected in Images.
-export function fitDetector(bounds, width, height) {
-  const scale = Math.min(width / (bounds.right - bounds.left), height / (bounds.top - bounds.bottom));
-  const w = (bounds.right - bounds.left) * scale, h = (bounds.top - bounds.bottom) * scale;
-  const left = (width - w) / 2, top = (height - h) / 2;
-  return {
-    left, top, w, h, scale,
-    screen(x, y) { return [left + (x - bounds.left) * scale, top + (bounds.top - y) * scale]; },
-    pixel(x, y) {
-      if (x < left || x > left + w || y < top || y > top + h) return null;
-      return [bounds.left + (x - left) / scale, bounds.top - (y - top) / scale];
-    }
-  };
-}
-
+// Look around from the detector pointing of the selected archive exposure.
 const radians = Math.PI / 180;
 const dot = (a, b) => a.reduce((sum, value, i) => sum + value * b[i], 0);
 const scaleVector = (vector, factor) => vector.map(value => value * factor);
@@ -71,39 +57,56 @@ export function skyRay(camera, x, y) {
   return {ra: (Math.atan2(b, a) / radians + 360) % 360, dec: Math.atan2(c, Math.hypot(a, b)) / radians};
 }
 
+function setupViewNavigation(byId) {
+  byId('universe-home').textContent = 'Free View';
+  byId('satellite-view-tab').textContent = 'SPHEREx View';
+  const destinations = document.createElement('details');
+  destinations.className = 'free-destinations';
+  const summary = document.createElement('summary');
+  summary.textContent = 'Destinations';
+  const menu = document.createElement('div');
+  destinations.append(summary, menu);
+  for (const id of ['solar-tab', 'stars-tab', 'systems-toggle']) {
+    const button = byId(id);
+    button.hidden = false;
+    button.addEventListener('click', () => { destinations.open = false; });
+    menu.append(button);
+  }
+  document.querySelector('.view-tools').prepend(destinations);
+}
+
 export function installSatelliteView(view) {
   const byId = id => document.getElementById(id);
+  setupViewNavigation(byId);
   const dialog = document.createElement('dialog');
   dialog.id = 'satellite-camera';
   dialog.setAttribute('aria-labelledby', 'satellite-camera-title');
   dialog.innerHTML = `
     <div class="satellite-heading">
-      <h2 id="satellite-camera-title">SPHEREx view</h2>
+      <h2 id="satellite-camera-title">SPHEREx View</h2>
       <button type="button" id="satellite-close">Close</button>
     </div>
     <p id="satellite-exposure"></p>
     <p class="micro"><a id="satellite-source" target="_blank" rel="noreferrer" hidden></a></p>
     <div class="satellite-controls">
-      <button type="button" id="satellite-loaded" aria-pressed="true">Loaded cutout</button>
-      <button type="button" id="satellite-full" aria-pressed="false">Detector footprint</button>
-      <button type="button" id="satellite-look" aria-pressed="false">Look around</button>
+      <button type="button" id="satellite-free">Free View</button>
+      <button type="button" id="satellite-images">Images</button>
       <button type="button" id="satellite-target">Center target</button>
       <button type="button" id="satellite-search">Search view center</button>
     </div>
     <div class="satellite-stage">
       <canvas id="satellite-sky" width="960" height="540" aria-hidden="true" hidden></canvas>
-      <canvas id="satellite-detector" width="960" height="540" tabindex="0" aria-label="SPHEREx sky view. Use arrow keys to look around."></canvas>
+      <canvas id="satellite-camera-canvas" width="960" height="540" tabindex="0" aria-label="SPHEREx sky view. Use arrow keys to look around."></canvas>
     </div>
     <p id="satellite-detail" class="micro"></p>
     <p id="satellite-status" role="status"></p>`;
   document.body.append(dialog);
-  const canvas = byId('satellite-detector'), ctx = canvas.getContext('2d');
+  const canvas = byId('satellite-camera-canvas'), ctx = canvas.getContext('2d');
   const status = byId('satellite-status'), sky = byId('satellite-sky');
-  const modes = ['loaded', 'full', 'look'];
   const defaultFocal = canvas.width * .85;
   let focal = defaultFocal;
-  let data, pixels, selection, projection, camera, drag, catalogDraw, catalogLoad, catalogFailed;
-  let target, targetName, turn = 0, mode = 'look', request = 0, resolving = false;
+  let camera, drag, catalogDraw, catalogLoad, catalogFailed;
+  let target, targetName, turn = 0, request = 0;
 
   function openCatalog() {
     if (catalogLoad) return;
@@ -124,7 +127,7 @@ export function installSatelliteView(view) {
     const arc = Math.acos(cosine);
     const tangent = cosine < -.9999999 ? start.right : orthogonal(end.forward, start.forward);
     function step(now) {
-      if (mode !== 'look' || !dialog.open) return;
+      if (!dialog.open) return;
       const progress = reduced ? 1 : Math.min(1, (now - began) / 550);
       const ease = progress * progress * (3 - 2 * progress);
       if (progress === 1 || arc < 1e-8) camera = end;
@@ -168,54 +171,23 @@ export function installSatelliteView(view) {
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    sky.hidden = true;
-    if (!data || !pixels) return;
-    for (const name of modes) byId('satellite-' + name).setAttribute('aria-pressed', String(mode === name));
-    canvas.classList.toggle('looking', mode === 'look');
-    if (mode === 'look') {
-      const hasCatalog = catalogDraw?.(camera, focal);
-      sky.hidden = !hasCatalog;
-      if (!hasCatalog) {
-        ctx.fillStyle = '#080e18';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        drawSkyGrid();
-      }
-      crosshair(canvas.width / 2, canvas.height / 2);
-      drawTarget(screenPosition(camera, target, canvas.width, canvas.height, focal));
-      showCenter(skyRay(camera, 0, 0), hasCatalog
-        ? 'Catalog sky · NASA Goddard SVS. Drag to look around, scroll to zoom, and right-click to search SPHEREx.'
-        : catalogFailed ? 'Catalog map unavailable. Drag the coordinate grid or right-click to search SPHEREx.'
-          : 'Loading the catalog sky. Right-click to search SPHEREx.');
+    if (!camera) {
+      sky.hidden = true;
       return;
     }
-    const full = mode === 'full';
-    const [ox, oy] = full ? data.detector_offset : [0, 0];
-    const bounds = {
-      left: -.5 - ox, bottom: -.5 - oy,
-      right: (full ? data.detector_size : data.width) - .5 - ox,
-      top: (full ? data.detector_size : data.height) - .5 - oy
-    };
-    projection = fitDetector(bounds, canvas.width, canvas.height);
-    const {left, top, w, h, scale} = projection;
-    ctx.fillStyle = '#192431';
-    ctx.fillRect(left, top, w, h);
-    const [x, y] = projection.screen(-.5, data.height - .5);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(pixels, x, y, data.width * scale, data.height * scale);
-    ctx.strokeStyle = '#748ca3';
-    ctx.strokeRect(left + .5, top + .5, w - 1, h - 1);
-    if (full) {
-      ctx.strokeStyle = '#ffcd81';
-      ctx.strokeRect(x, y, data.width * scale, data.height * scale);
+    const hasCatalog = catalogDraw?.(camera, focal);
+    sky.hidden = !hasCatalog;
+    if (!hasCatalog) {
+      ctx.fillStyle = '#080e18';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawSkyGrid();
     }
-    crosshair(left + w / 2, top + h / 2);
-    if (data.target_pixel) {
-      const [tx, ty] = projection.screen(...data.target_pixel);
-      if (tx >= left && tx <= left + w && ty >= top && ty <= top + h) drawTarget([tx, ty]);
-    }
-    showCenter(full ? data.detector_center : data.crop_center, full
-      ? 'The amber box marks the loaded cutout. The rest of the detector is outside this cutout.'
-      : 'Archived detector orientation. Invalid pixels are masked.');
+    crosshair(canvas.width / 2, canvas.height / 2);
+    drawTarget(screenPosition(camera, target, canvas.width, canvas.height, focal));
+    showCenter(skyRay(camera, 0, 0), hasCatalog
+      ? 'Catalog sky · NASA Goddard SVS. Drag to turn, scroll to zoom, and right-click to search SPHEREx.'
+      : catalogFailed ? 'Catalog map unavailable. Drag the coordinate grid or right-click to search SPHEREx.'
+        : 'Loading the catalog sky. Right-click to search SPHEREx.');
   }
 
   function drawTarget(point) {
@@ -256,50 +228,22 @@ export function installSatelliteView(view) {
       '°, Dec ' + sky.dec.toFixed(5) + '°. ' + message;
   }
 
-  async function search(point) {
-    if (!data || resolving || !point) return;
+  async function search(x, y) {
+    if (!camera || !dialog.open) return;
     cancelAnimationFrame(turn);
-    const token = request;
-    resolving = true;
-    status.textContent = 'Finding the sky coordinates…';
-    try {
-      const [x, y] = point;
-      const coords = mode === 'look'
-        ? skyRay(camera, (x - canvas.width / 2) / focal, (canvas.height / 2 - y) / focal)
-        : await view.api(selection.url + '/direction?' + new URLSearchParams({x, y, exposure_id: selection.id}));
-      if (token !== request || !dialog.open) return;
-      byId('object-query').value = '';
-      byId('ra').value = coords.ra.toFixed(8);
-      byId('dec').value = coords.dec.toFixed(8);
-      dialog.close();
-      await view.search('Sky direction from SPHEREx');
-    } catch (error) {
-      if (token === request) status.textContent = error.message;
-    } finally {
-      if (token === request) resolving = false;
-    }
+    const coords = skyRay(camera, (x - canvas.width / 2) / focal, (canvas.height / 2 - y) / focal);
+    byId('object-query').value = '';
+    byId('ra').value = coords.ra.toFixed(8);
+    byId('dec').value = coords.dec.toFixed(8);
+    dialog.close();
+    await view.search('Sky direction from SPHEREx');
   }
 
   byId('satellite-close').onclick = () => dialog.close();
-  for (const name of modes) byId('satellite-' + name).onclick = () => {
-    if (resolving) return;
-    mode = name;
-    if (name === 'look') openCatalog();
-    status.textContent = name === 'look' ? 'Right-click any direction to search the archive.'
-      : 'Right-click a direction inside the detector to search the archive.';
-    draw();
-  };
-  byId('satellite-target').onclick = () => {
-    if (!camera || resolving) return;
-    mode = 'look';
-    status.textContent = '';
-    openCatalog();
-    centerTarget();
-  };
-  function pointAt(x, y) {
-    return mode === 'look' ? [x, y] : projection?.pixel(x, y);
-  }
-  byId('satellite-search').onclick = () => search(pointAt(canvas.width / 2, canvas.height / 2));
+  byId('satellite-free').onclick = () => { dialog.close(); byId('universe-home').click(); };
+  byId('satellite-images').onclick = () => { dialog.close(); view.open(); };
+  byId('satellite-target').onclick = () => { if (camera) centerTarget(); };
+  byId('satellite-search').onclick = () => search(canvas.width / 2, canvas.height / 2);
   dialog.addEventListener('close', () => {
     if (!dialog.open) {
       cancelAnimationFrame(turn);
@@ -315,25 +259,24 @@ export function installSatelliteView(view) {
   }
   canvas.addEventListener('contextmenu', event => {
     event.preventDefault();
-    const point = pointAt(...canvasPoint(event));
-    if (point) search(point);
-    else if (projection) status.textContent = 'Choose a point inside the detector border.';
+    search(...canvasPoint(event));
   });
   canvas.addEventListener('pointerdown', event => {
-    if (mode !== 'look' || event.button !== 0) return;
+    if (!camera || event.button !== 0) return;
     cancelAnimationFrame(turn);
     drag = {id: event.pointerId, point: canvasPoint(event)};
+    canvas.focus({preventScroll: true});
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener('pointermove', event => {
-    if (mode !== 'look' || event.pointerId !== drag?.id) return;
+    if (!camera || event.pointerId !== drag?.id) return;
     const point = canvasPoint(event);
     look((drag.point[0] - point[0]) / focal, (point[1] - drag.point[1]) / focal);
     drag.point = point;
   });
   canvas.addEventListener('lostpointercapture', () => { drag = null; });
   canvas.addEventListener('wheel', event => {
-    if (!camera || mode !== 'look') return;
+    if (!camera) return;
     event.preventDefault();
     const multiplier = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? canvas.height : 1;
     focal = Math.max(canvas.width * .42, Math.min(canvas.width * 3,
@@ -347,7 +290,7 @@ export function installSatelliteView(view) {
   }
   canvas.addEventListener('keydown', event => {
     const moves = {ArrowLeft: [-.08,0], ArrowRight: [.08,0], ArrowUp: [0,.08], ArrowDown: [0,-.08]};
-    if (!camera || mode !== 'look' || !Object.hasOwn(moves, event.key)) return;
+    if (!camera || !Object.hasOwn(moves, event.key)) return;
     event.preventDefault();
     cancelAnimationFrame(turn);
     look(...moves[event.key]);
@@ -362,29 +305,23 @@ export function installSatelliteView(view) {
     }
     const token = ++request;
     view.stop();
-    selection = {id: frame.id, url: '/api/jobs/' + view.jobId + '/satellite-view/' + frame.index};
-    data = pixels = projection = camera = null;
-    mode = 'look';
+    const url = '/api/jobs/' + view.jobId + '/satellite-view/' + frame.index;
+    camera = null;
     focal = defaultFocal;
     targetName = byId('observation-title').textContent.trim() || 'Selected field';
-    resolving = false;
-    for (const name of [...modes, 'search', 'target']) byId('satellite-' + name).disabled = true;
+    byId('satellite-search').disabled = true;
+    byId('satellite-target').disabled = true;
     byId('satellite-source').hidden = true;
     byId('satellite-exposure').textContent = frame.date;
     byId('satellite-detail').textContent = '';
-    status.textContent = 'Opening the selected detector exposure…';
+    status.textContent = 'Loading the spacecraft pointing for this exposure…';
     draw();
     if (!dialog.open) dialog.showModal();
     openCatalog();
     try {
-      const result = await view.api(selection.url + '?' + new URLSearchParams({exposure_id: selection.id}));
-      const image = new Image();
-      image.src = result.image;
-      await image.decode();
+      const result = await view.api(url + '?' + new URLSearchParams({exposure_id: frame.id, preview: 'false'}));
       if (token !== request || !dialog.open) return;
-      data = result;
-      pixels = image;
-      camera = cameraBasis(data);
+      camera = cameraBasis(result);
       target = result.target ?? result.crop_center;
       const position = result.spacecraft;
       const provenance = position
@@ -398,9 +335,6 @@ export function installSatelliteView(view) {
         source.textContent = result.observation ? 'Original exposure · ' + result.observation : 'Original archive exposure';
         source.hidden = false;
       }
-      byId('satellite-loaded').disabled = false;
-      byId('satellite-full').disabled = !result.detector_offset;
-      byId('satellite-look').disabled = false;
       byId('satellite-search').disabled = false;
       byId('satellite-target').disabled = false;
       status.textContent = '';

@@ -15,12 +15,24 @@
 .satellite-heading h2 { margin: 4px 0; }
 .satellite-controls button[aria-pressed="true"] { border-color: #ffc67c; }
 .satellite-stage { position: relative; margin-top: 10px; background: #050910; }
-#satellite-sky, #satellite-detector { display: block; width: 100%; height: auto; }
+#satellite-sky, #satellite-camera-canvas { display: block; width: 100%; height: auto; }
 #satellite-sky { position: absolute; inset: 0; pointer-events: none; }
 #satellite-sky[hidden] { display: none; }
-#satellite-detector { position: relative; cursor: crosshair; }
-#satellite-detector:focus-visible { outline: 2px solid #ffc680; outline-offset: -2px; }
+#satellite-camera-canvas { position: relative; cursor: grab; touch-action: none; }
+#satellite-camera-canvas:focus-visible { outline: 2px solid #ffc680; outline-offset: -2px; }
 #satellite-source[hidden] { display: none; }
-#satellite-detector.looking { cursor: grab; touch-action: none; }
-#satellite-detector.looking:active { cursor: grabbing; }
+#satellite-camera-canvas:active { cursor: grabbing; }
 #satellite-exposure, #satellite-status { font-size: 13px; }
+
+.free-destinations { position: relative; align-self: center; font-size: 11px; }
+.free-destinations summary { cursor: pointer; white-space: nowrap; padding: 5px 6px; }
+.free-destinations > div {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 3;
+  min-width: 132px; display: grid; gap: 4px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 5px;
+}
+.free-destinations button { width: 100%; white-space: nowrap; }
+.free-destinations button[aria-pressed="true"] { background: var(--surface-2); }
+@media (max-width: 650px) {
+  body.observing header nav, body.searching header nav { display: flex; }
+}

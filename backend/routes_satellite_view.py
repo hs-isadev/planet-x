@@ -176,17 +176,21 @@ def install_satellite_view_routes(app, jobs, guard):
         return frame, path, target
 
     @app.get("/api/jobs/{identity}/satellite-view/{index}")
-    def satellite_view(identity: str, index: int, exposure_id: str = Query(max_length=80)):
+    def satellite_view(identity: str, index: int, exposure_id: str = Query(max_length=80),
+                       preview: bool = True):
         frame, path, target = get_frame(identity, index, exposure_id)
         try:
             with fits.open(path, memmap=False) as hdus:
                 geometry, wcs = camera_geometry(hdus)
-                image = image_preview(hdus)
-                try:
-                    x, y = wcs.world_to_pixel(SkyCoord(target["ra"], target["dec"], unit="deg", frame="icrs"))
-                    target_pixel = [float(x), float(y)] if np.isfinite([x, y]).all() else None
-                except NoConvergence:
-                    target_pixel = None
+                image = image_preview(hdus) if preview else None
+                target_pixel = None
+                if preview:
+                    try:
+                        x, y = wcs.world_to_pixel(SkyCoord(target["ra"], target["dec"], unit="deg", frame="icrs"))
+                        if np.isfinite([x, y]).all():
+                            target_pixel = [float(x), float(y)]
+                    except NoConvergence:
+                        pass
         except (OSError, KeyError, TypeError, ValueError) as exc:
             raise HTTPException(422, f"Cannot reconstruct this detector view. {exc}") from exc
         return {**geometry, "target": target, "target_pixel": target_pixel, "image": image, "exposure_id": frame["id"],
