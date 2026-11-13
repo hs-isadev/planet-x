@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import json
 import logging
+import math
 from pathlib import Path
 from threading import Lock
 import time
@@ -54,7 +55,7 @@ def cached_cutouts(roots):
 
 
 def refresh(fields_to_warm=None, force=False, bundle=False, offline=False, reuse_cache=(),
-            daily_only=False, mirror_only=False):
+            daily_only=False, mirror_only=False, new_dates_only=False):
     targets = [f for f in fields() if f['key'] != 'vesta'
                and (not fields_to_warm or f['key'] in fields_to_warm)]
     if not targets or fields_to_warm and set(fields_to_warm) != {f['key'] for f in targets}:
@@ -120,6 +121,10 @@ def refresh(fields_to_warm=None, force=False, bundle=False, offline=False, reuse
                 if not requested:
                     raise ValueError('The archive returned no observations covering this position.')
                 days = observing_days(requested)
+                previous_frames = server.load_manifest(entry['session'])['frames'] if entry and not offline else []
+                if new_dates_only:  # keep every saved frame (cached_records) and add one exposure per unsaved UTC date
+                    saved_days = {math.floor(frame['mjd']) for frame in previous_frames}
+                    days = [day for day in days if math.floor(day[0]['mjd']) not in saved_days]
                 first = [day[0] for day in days]
                 remaining = [row for day in days for row in day[1:]]
                 stages = [requested] if offline else [first]
@@ -128,7 +133,7 @@ def refresh(fields_to_warm=None, force=False, bundle=False, offline=False, reuse
                 if offline and not force and entry and entry.get('dates') is not None and entry['loaded'] >= len(combined_rows([], local)):
                     publish(key, 'Cached ' + field['name'], entry, True)
                     continue
-                previous_frames = server.load_manifest(entry['session'])['frames'] if entry and not offline else []
+                tried = 0
                 for selected in stages:
                     job = uuid.uuid4().hex
                     options = dict(ra=field['ra'], dec=field['dec'], fov=PRESET_FOV,
@@ -158,6 +163,14 @@ def refresh(fields_to_warm=None, force=False, bundle=False, offline=False, reuse
                                                                   for row in local or []},
                                     replace=offline and force)
                     _, entry = view_entry(key)
+                    if new_dates_only and selected is stages[-1] and tried < 3:
+                        tried += 1
+                        got = {math.floor(frame['mjd']) for frame in manifest['frames']}
+                        previous_frames = manifest['frames']  # retries build on this stage, not the original view
+                        retry = [day[tried] for day in days if math.floor(day[0]['mjd']) not in got
+                                 and len(day) > tried]
+                        if retry:
+                            stages.append(retry)
                     report = dict(entry or {}, requested=len(selected), discovered=len(rows),
                                   failures=len(manifest['failures']), last_error=next(iter(manifest['failures']), None))
                     publish(key, 'Prepared ' + field['name'], report,
@@ -205,6 +218,7 @@ def main():
     parser.add_argument('--bundle', action='store_true', help='Save preset and catalog FITS and previews into the deploy image.')
     parser.add_argument('--offline', action='store_true', help='Recover all verified cutouts from existing local files.')
     parser.add_argument('--daily-only', action='store_true', help='Fetch a representative exposure per UTC date first.')
+    parser.add_argument('--new-dates-only', action='store_true', help='Keep saved frames and add one exposure per unsaved UTC date (retries the next candidate on failure).')
     parser.add_argument('--mirror-only', action='store_true', help='Use saved exposure indexes and fetch from AWS without calling IRSA.')
     parser.add_argument('--reuse-cache', action='append', type=Path, default=[], help='Additional local Lab cache for offline recovery.')
     parser.add_argument('--force', action='store_true', help='Rediscover the archive even when the cache is current.')
@@ -212,7 +226,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     result = refresh(args.field, force=args.force, bundle=args.bundle, offline=args.offline,
                      reuse_cache=[path.resolve() for path in args.reuse_cache], daily_only=args.daily_only,
-                     mirror_only=args.mirror_only)
+                     mirror_only=args.mirror_only, new_dates_only=args.new_dates_only)
     print(f"{result['status']} ({result['completed']}/{result['total']} fields)")
     return 0 if result['completed'] == result['total'] else 1
 

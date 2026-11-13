@@ -1,0 +1,5842 @@
+{
+ "field": "wise-0855",
+ "generated_utc": "2026-11-17T08:47:55Z",
+ "center": {
+  "ra": 133.7951292,
+  "dec": -7.2451472
+ },
+ "cutout_arcsec": 330,
+ "catalog": {
+  "name": "WISEA J085510.74-071442.5",
+  "ra": 133.81890825,
+  "dec": -7.247048000000001,
+  "pmra_mas_yr": -8123.7,
+  "pmdec_mas_yr": 673.2,
+  "parallax_mas": 439.0,
+  "epoch": "J2000",
+  "source": "SIMBAD (simbad.harvard.edu)"
+ },
+ "series": [
+  {
+   "id": "wise-w1",
+   "mission": "WISE",
+   "product": "Level 1b single exposure",
+   "band": "W1",
+   "wavelength_um": 3.4,
+   "pixel_scale_arcsec": 2.75,
+   "distinct_dates": 4,
+   "first_date": "2010-05-03",
+   "last_date": "2010-11-11",
+   "notes": [
+    "Different telescope, PSF (~6.1\") and band than SPHEREx; not directly comparable pixel-for-pixel.",
+    "Previews are resampled north-up/east-left onto one grid centred on the preset field; FITS are the native IRSA Level 1b cutouts (detector orientation, original WCS).",
+    "Every preview uses the same display stretch after subtracting that frame's median sky. Unmeasurable (NaN) pixels flagged saturated are drawn white, other NaN pixels black.",
+    "Target marker is predicted from catalog proper motion (SIMBAD (simbad.harvard.edu), J2000); parallax (439 mas) ignored. Prediction only, not a measured position.",
+    "Target aperture (2 px radius) SNR in default frames: median 3.7, range 2.4-4.5; saturated at target in 0/4.",
+    "2010 WISE cryogenic/post-cryogenic phases; same telescope and detectors as NEOWISE-R."
+   ],
+   "frames": [
+    {
+     "id": "allsky-04242a115-w1",
+     "mission": "WISE",
+     "date_utc": "2010-05-03T21:27:28Z",
+     "mjd": 55319.894083,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/allsky-04242a115-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/allsky-04242a115-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/allsky/4band_p1bm_frm/2a/04242a/115/04242a115-w1-int-1b.fits",
+     "release": "allsky",
+     "scan_id": "04242a",
+     "frame_num": 115,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 143.258,
+      "saa_sep": 3.059,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 3.32,
+      "finite_fraction": 0.992
+     },
+     "expected_target_xy": [
+      0.4971,
+      0.4996
+     ]
+    },
+    {
+     "id": "allsky-04269a092-w1",
+     "mission": "WISE",
+     "date_utc": "2010-05-04T18:05:56Z",
+     "mjd": 55320.754124,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/allsky-04269a092-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/allsky-04269a092-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/allsky/4band_p1bm_frm/9a/04269a/092/04269a092-w1-int-1b.fits",
+     "release": "allsky",
+     "scan_id": "04269a",
+     "frame_num": 92,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 150.943,
+      "saa_sep": 10.801,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 4.1,
+      "finite_fraction": 0.986
+     },
+     "expected_target_xy": [
+      0.4972,
+      0.4996
+     ]
+    },
+    {
+     "id": "postcryo-10017b187-w1",
+     "mission": "WISE",
+     "date_utc": "2010-11-10T21:24:13Z",
+     "mjd": 55510.891824,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/postcryo-10017b187-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/postcryo-10017b187-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/postcryo/2band_p1bm_frm/7b/10017b/187/10017b187-w1-int-1b.fits",
+     "release": "postcryo",
+     "scan_id": "10017b",
+     "frame_num": 187,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 143.042,
+      "saa_sep": 93.202,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 2.42,
+      "finite_fraction": 0.989
+     },
+     "expected_target_xy": [
+      0.51,
+      0.4986
+     ]
+    },
+    {
+     "id": "postcryo-10048a163-w1",
+     "mission": "WISE",
+     "date_utc": "2010-11-11T21:12:50Z",
+     "mjd": 55511.883919,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/postcryo-10048a163-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/postcryo-10048a163-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/postcryo/2band_p1bm_frm/8a/10048a/163/10048a163-w1-int-1b.fits",
+     "release": "postcryo",
+     "scan_id": "10048a",
+     "frame_num": 163,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 151.77,
+      "saa_sep": 95.133,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 4.54,
+      "finite_fraction": 0.988
+     },
+     "expected_target_xy": [
+      0.5101,
+      0.4986
+     ]
+    }
+   ],
+   "extra": [
+    {
+     "id": "allsky-04273a092-w1",
+     "mission": "WISE",
+     "date_utc": "2010-05-04T21:16:27Z",
+     "mjd": 55320.886428,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/allsky-04273a092-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/allsky-04273a092-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/allsky/4band_p1bm_frm/3a/04273a/092/04273a092-w1-int-1b.fits",
+     "release": "allsky",
+     "scan_id": "04273a",
+     "frame_num": 92,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 151.939,
+      "saa_sep": 2.548,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 2.89,
+      "finite_fraction": 0.986
+     },
+     "expected_target_xy": [
+      0.4972,
+      0.4996
+     ]
+    },
+    {
+     "id": "postcryo-10017b188-w1",
+     "mission": "WISE",
+     "date_utc": "2010-11-10T21:24:24Z",
+     "mjd": 55510.891952,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/postcryo-10017b188-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/postcryo-10017b188-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/postcryo/2band_p1bm_frm/7b/10017b/188/10017b188-w1-int-1b.fits",
+     "release": "postcryo",
+     "scan_id": "10017b",
+     "frame_num": 188,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 142.682,
+      "saa_sep": 92.722,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 1.67,
+      "finite_fraction": 0.934
+     },
+     "expected_target_xy": [
+      0.51,
+      0.4986
+     ]
+    },
+    {
+     "id": "postcryo-10044a163-w1",
+     "mission": "WISE",
+     "date_utc": "2010-11-11T18:02:19Z",
+     "mjd": 55511.751615,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/postcryo-10044a163-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/postcryo-10044a163-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/postcryo/2band_p1bm_frm/4a/10044a/163/10044a163-w1-int-1b.fits",
+     "release": "postcryo",
+     "scan_id": "10044a",
+     "frame_num": 163,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 150.859,
+      "saa_sep": 100.243,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.44,
+      "finite_fraction": 0.957
+     },
+     "expected_target_xy": [
+      0.51,
+      0.4986
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wise-w2",
+   "mission": "WISE",
+   "product": "Level 1b single exposure",
+   "band": "W2",
+   "wavelength_um": 4.6,
+   "pixel_scale_arcsec": 2.75,
+   "distinct_dates": 4,
+   "first_date": "2010-05-03",
+   "last_date": "2010-11-11",
+   "notes": [
+    "Different telescope, PSF (~6.4\") and band than SPHEREx; not directly comparable pixel-for-pixel.",
+    "Previews are resampled north-up/east-left onto one grid centred on the preset field; FITS are the native IRSA Level 1b cutouts (detector orientation, original WCS).",
+    "Every preview uses the same display stretch after subtracting that frame's median sky. Unmeasurable (NaN) pixels flagged saturated are drawn white, other NaN pixels black.",
+    "Target marker is predicted from catalog proper motion (SIMBAD (simbad.harvard.edu), J2000); parallax (439 mas) ignored. Prediction only, not a measured position.",
+    "Target aperture (2 px radius) SNR in default frames: median 11.4, range 10.4-15.4; saturated at target in 0/4.",
+    "2010 WISE cryogenic/post-cryogenic phases; same telescope and detectors as NEOWISE-R."
+   ],
+   "frames": [
+    {
+     "id": "allsky-04242a115-w2",
+     "mission": "WISE",
+     "date_utc": "2010-05-03T21:27:28Z",
+     "mjd": 55319.894083,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/allsky-04242a115-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/allsky-04242a115-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/allsky/4band_p1bm_frm/2a/04242a/115/04242a115-w2-int-1b.fits",
+     "release": "allsky",
+     "scan_id": "04242a",
+     "frame_num": 115,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 143.258,
+      "saa_sep": 3.059,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 11.25,
+      "finite_fraction": 0.987
+     },
+     "expected_target_xy": [
+      0.4971,
+      0.4996
+     ]
+    },
+    {
+     "id": "allsky-04273a092-w2",
+     "mission": "WISE",
+     "date_utc": "2010-05-04T21:16:27Z",
+     "mjd": 55320.886428,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/allsky-04273a092-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/allsky-04273a092-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/allsky/4band_p1bm_frm/3a/04273a/092/04273a092-w2-int-1b.fits",
+     "release": "allsky",
+     "scan_id": "04273a",
+     "frame_num": 92,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 151.939,
+      "saa_sep": 2.548,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 15.36,
+      "finite_fraction": 0.988
+     },
+     "expected_target_xy": [
+      0.4972,
+      0.4996
+     ]
+    },
+    {
+     "id": "postcryo-10017b188-w2",
+     "mission": "WISE",
+     "date_utc": "2010-11-10T21:24:24Z",
+     "mjd": 55510.891952,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/postcryo-10017b188-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/postcryo-10017b188-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/postcryo/2band_p1bm_frm/7b/10017b/188/10017b188-w2-int-1b.fits",
+     "release": "postcryo",
+     "scan_id": "10017b",
+     "frame_num": 188,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 142.682,
+      "saa_sep": 92.722,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 11.5,
+      "finite_fraction": 0.989
+     },
+     "expected_target_xy": [
+      0.51,
+      0.4986
+     ]
+    },
+    {
+     "id": "postcryo-10048a163-w2",
+     "mission": "WISE",
+     "date_utc": "2010-11-11T21:12:50Z",
+     "mjd": 55511.883919,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/postcryo-10048a163-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/postcryo-10048a163-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/postcryo/2band_p1bm_frm/8a/10048a/163/10048a163-w2-int-1b.fits",
+     "release": "postcryo",
+     "scan_id": "10048a",
+     "frame_num": 163,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 151.77,
+      "saa_sep": 95.133,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 10.43,
+      "finite_fraction": 0.98
+     },
+     "expected_target_xy": [
+      0.5101,
+      0.4986
+     ]
+    }
+   ],
+   "extra": [
+    {
+     "id": "allsky-04269a092-w2",
+     "mission": "WISE",
+     "date_utc": "2010-05-04T18:05:56Z",
+     "mjd": 55320.754124,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/allsky-04269a092-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/allsky-04269a092-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/allsky/4band_p1bm_frm/9a/04269a/092/04269a092-w2-int-1b.fits",
+     "release": "allsky",
+     "scan_id": "04269a",
+     "frame_num": 92,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 150.943,
+      "saa_sep": 10.801,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 11.96,
+      "finite_fraction": 0.988
+     },
+     "expected_target_xy": [
+      0.4972,
+      0.4996
+     ]
+    },
+    {
+     "id": "postcryo-10017b187-w2",
+     "mission": "WISE",
+     "date_utc": "2010-11-10T21:24:13Z",
+     "mjd": 55510.891824,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/postcryo-10017b187-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/postcryo-10017b187-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/postcryo/2band_p1bm_frm/7b/10017b/187/10017b187-w2-int-1b.fits",
+     "release": "postcryo",
+     "scan_id": "10017b",
+     "frame_num": 187,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 143.042,
+      "saa_sep": 93.202,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 9.53,
+      "finite_fraction": 0.992
+     },
+     "expected_target_xy": [
+      0.51,
+      0.4986
+     ]
+    },
+    {
+     "id": "postcryo-10044a163-w2",
+     "mission": "WISE",
+     "date_utc": "2010-11-11T18:02:19Z",
+     "mjd": 55511.751615,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/postcryo-10044a163-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/postcryo-10044a163-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/postcryo/2band_p1bm_frm/4a/10044a/163/10044a163-w2-int-1b.fits",
+     "release": "postcryo",
+     "scan_id": "10044a",
+     "frame_num": 163,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 150.859,
+      "saa_sep": 100.243,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 7.36,
+      "finite_fraction": 0.98
+     },
+     "expected_target_xy": [
+      0.51,
+      0.4986
+     ]
+    }
+   ]
+  },
+  {
+   "id": "neowise-w1",
+   "mission": "NEOWISE-R",
+   "product": "Level 1b single exposure",
+   "band": "W1",
+   "wavelength_um": 3.4,
+   "pixel_scale_arcsec": 2.75,
+   "distinct_dates": 52,
+   "first_date": "2014-05-04",
+   "last_date": "2024-04-18",
+   "notes": [
+    "Different telescope, PSF (~6.1\") and band than SPHEREx; not directly comparable pixel-for-pixel.",
+    "Previews are resampled north-up/east-left onto one grid centred on the preset field; FITS are the native IRSA Level 1b cutouts (detector orientation, original WCS).",
+    "Every preview uses the same display stretch after subtracting that frame's median sky. Unmeasurable (NaN) pixels flagged saturated are drawn white, other NaN pixels black.",
+    "Target marker is predicted from catalog proper motion (SIMBAD (simbad.harvard.edu), J2000); parallax (439 mas) ignored. Prediction only, not a measured position.",
+    "Target aperture (2 px radius) SNR in default frames: median 0.5, range -1.9-3.5; saturated at target in 0/52."
+   ],
+   "frames": [
+    {
+     "id": "neowiser-48526a112-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-04T21:04:01Z",
+     "mjd": 56781.877794,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48526a112-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48526a112-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/48526a/112/48526a112-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48526a",
+     "frame_num": 112,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 33.68,
+      "saa_sep": 0.509,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.02,
+      "finite_fraction": 0.97
+     },
+     "expected_target_xy": [
+      0.5957,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48530a112-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-05T00:13:26Z",
+     "mjd": 56782.009334,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48530a112-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48530a112-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/48530a/112/48530a112-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48530a",
+     "frame_num": 112,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 32.738,
+      "saa_sep": 19.985,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 1.01,
+      "finite_fraction": 0.928
+     },
+     "expected_target_xy": [
+      0.5957,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48614a115-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-07T18:33:47Z",
+     "mjd": 56784.773461,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48614a115-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48614a115-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/48614a/115/48614a115-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48614a",
+     "frame_num": 115,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 19.775,
+      "saa_sep": 8.115,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.83,
+      "finite_fraction": 0.988
+     },
+     "expected_target_xy": [
+      0.5958,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48649a090-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-08T21:24:38Z",
+     "mjd": 56785.892116,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48649a090-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48649a090-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9a/48649a/090/48649a090-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48649a",
+     "frame_num": 90,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 27.078,
+      "saa_sep": -0.938,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -1.42,
+      "finite_fraction": 0.968
+     },
+     "expected_target_xy": [
+      0.5959,
+      0.4914
+     ]
+    },
+    {
+     "id": "neowiser-54333b190-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-11T21:06:25Z",
+     "mjd": 56972.879457,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54333b190-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54333b190-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3b/54333b/190/54333b190-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54333b",
+     "frame_num": 190,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 34.604,
+      "saa_sep": 101.894,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.38,
+      "finite_fraction": 0.979
+     },
+     "expected_target_xy": [
+      0.6085,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54337b190-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-12T00:15:39Z",
+     "mjd": 56973.01087,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54337b190-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54337b190-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7b/54337b/190/54337b190-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54337b",
+     "frame_num": 190,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 33.209,
+      "saa_sep": 60.452,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.82,
+      "finite_fraction": 0.98
+     },
+     "expected_target_xy": [
+      0.6085,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54421b186-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-14T18:31:47Z",
+     "mjd": 56975.772072,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54421b186-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54421b186-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1b/54421b/186/54421b186-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54421b",
+     "frame_num": 186,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 20.05,
+      "saa_sep": 98.181,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 3.29,
+      "finite_fraction": 0.978
+     },
+     "expected_target_xy": [
+      0.6087,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54452a162-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-15T18:11:57Z",
+     "mjd": 56976.758306,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54452a162-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54452a162-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2a/54452a/162/54452a162-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54452a",
+     "frame_num": 162,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 26.017,
+      "saa_sep": 93.746,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 1.7,
+      "finite_fraction": 0.979
+     },
+     "expected_target_xy": [
+      0.6088,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-59534a111-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-05-01T16:42:44Z",
+     "mjd": 57143.696348,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-59534a111-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-59534a111-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/59534a/111/59534a111-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "59534a",
+     "frame_num": 111,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 59.18,
+      "saa_sep": 19.034,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 2.27,
+      "finite_fraction": 0.982
+     },
+     "expected_target_xy": [
+      0.62,
+      0.4895
+     ]
+    },
+    {
+     "id": "neowiser-59569a087-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-05-02T19:29:24Z",
+     "mjd": 57144.812085,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-59569a087-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-59569a087-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9a/59569a/087/59569a087-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "59569a",
+     "frame_num": 87,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 71.258,
+      "saa_sep": 3.811,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.45,
+      "finite_fraction": 0.977
+     },
+     "expected_target_xy": [
+      0.6201,
+      0.4894
+     ]
+    },
+    {
+     "id": "neowiser-65453b184-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-11-11T20:34:51Z",
+     "mjd": 57337.857545,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-65453b184-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-65453b184-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3b/65453b/184/65453b184-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "65453b",
+     "frame_num": 184,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 94.248,
+      "saa_sep": 111.63,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.0,
+      "finite_fraction": 0.973
+     },
+     "expected_target_xy": [
+      0.6331,
+      0.4884
+     ]
+    },
+    {
+     "id": "neowiser-65480a159-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-11-12T17:02:30Z",
+     "mjd": 57338.710074,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-65480a159-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-65480a159-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/65480a/159/65480a159-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "65480a",
+     "frame_num": 159,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 103.624,
+      "saa_sep": 73.772,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.15,
+      "finite_fraction": 0.978
+     },
+     "expected_target_xy": [
+      0.6332,
+      0.4884
+     ]
+    },
+    {
+     "id": "neowiser-70486a107-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-04-24T19:35:48Z",
+     "mjd": 57502.816537,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-70486a107-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-70486a107-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/70486a/107/70486a107-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "70486a",
+     "frame_num": 107,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 106.486,
+      "saa_sep": 6.063,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -1.82,
+      "finite_fraction": 0.924
+     },
+     "expected_target_xy": [
+      0.6442,
+      0.4874
+     ]
+    },
+    {
+     "id": "neowiser-70513a083-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-04-25T16:02:32Z",
+     "mjd": 57503.668429,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-70513a083-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-70513a083-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3a/70513a/083/70513a083-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "70513a",
+     "frame_num": 83,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 115.511,
+      "saa_sep": 25.108,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 2.57,
+      "finite_fraction": 0.992
+     },
+     "expected_target_xy": [
+      0.6443,
+      0.4874
+     ]
+    },
+    {
+     "id": "neowiser-76565b182-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-11-09T22:52:31Z",
+     "mjd": 57701.953142,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-76565b182-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-76565b182-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5b/76565b/182/76565b182-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "76565b",
+     "frame_num": 182,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 145.548,
+      "saa_sep": 87.206,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 1.2,
+      "finite_fraction": 0.974
+     },
+     "expected_target_xy": [
+      0.6577,
+      0.4863
+     ]
+    },
+    {
+     "id": "neowiser-76569b182-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-11-10T02:01:01Z",
+     "mjd": 57702.084046,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-76569b182-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-76569b182-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9b/76569b/182/76569b182-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "76569b",
+     "frame_num": 182,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 144.609,
+      "saa_sep": 45.908,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.73,
+      "finite_fraction": 0.974
+     },
+     "expected_target_xy": [
+      0.6577,
+      0.4863
+     ]
+    },
+    {
+     "id": "neowiser-81501a055-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-04-20T13:06:52Z",
+     "mjd": 57863.546438,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-81501a055-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-81501a055-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1a/81501a/055/81501a055-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "81501a",
+     "frame_num": 55,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 158.109,
+      "saa_sep": 65.273,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.04,
+      "finite_fraction": 0.99
+     },
+     "expected_target_xy": [
+      0.6686,
+      0.4854
+     ]
+    },
+    {
+     "id": "neowiser-81517a078-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-04-21T01:41:03Z",
+     "mjd": 57864.07018,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-81517a078-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-81517a078-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7a/81517a/078/81517a078-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "81517a",
+     "frame_num": 78,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 157.53,
+      "saa_sep": 22.277,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.57,
+      "finite_fraction": 0.991
+     },
+     "expected_target_xy": [
+      0.6686,
+      0.4854
+     ]
+    },
+    {
+     "id": "neowiser-87693b180-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-09T06:43:39Z",
+     "mjd": 58066.280322,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87693b180-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87693b180-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3b/87693b/180/87693b180-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87693b",
+     "frame_num": 180,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 31.145,
+      "saa_sep": 5.074,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.61,
+      "finite_fraction": 0.978
+     },
+     "expected_target_xy": [
+      0.6822,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-87716a155-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-10T00:00:36Z",
+     "mjd": 58067.000418,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87716a155-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87716a155-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/87716a/155/87716a155-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87716a",
+     "frame_num": 155,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 26.042,
+      "saa_sep": 76.02,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.36,
+      "finite_fraction": 0.966
+     },
+     "expected_target_xy": [
+      0.6823,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-87774a178-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-11T21:34:24Z",
+     "mjd": 58068.8989,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87774a178-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87774a178-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/87774a/178/87774a178-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87774a",
+     "frame_num": 178,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 28.783,
+      "saa_sep": 106.03,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.58,
+      "finite_fraction": 0.966
+     },
+     "expected_target_xy": [
+      0.6824,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-87804a153-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-12T21:08:21Z",
+     "mjd": 58069.880803,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87804a153-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87804a153-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/87804a/153/87804a153-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87804a",
+     "frame_num": 153,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 36.824,
+      "saa_sep": 106.851,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.44,
+      "finite_fraction": 0.971
+     },
+     "expected_target_xy": [
+      0.6825,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-92503a100-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-15T15:44:36Z",
+     "mjd": 58223.655972,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92503a100-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92503a100-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3a/92503a/100/92503a100-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92503a",
+     "frame_num": 100,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 114.266,
+      "saa_sep": 36.843,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.49,
+      "finite_fraction": 0.953
+     },
+     "expected_target_xy": [
+      0.6928,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-92517a024-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-16T02:43:37Z",
+     "mjd": 58224.113625,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92517a024-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92517a024-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7a/92517a/024/92517a024-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92517a",
+     "frame_num": 24,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 108.831,
+      "saa_sep": 30.578,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.84,
+      "finite_fraction": 0.977
+     },
+     "expected_target_xy": [
+      0.6929,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-92770a105-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-24T10:11:36Z",
+     "mjd": 58232.424727,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92770a105-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92770a105-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/92770a/105/92770a105-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92770a",
+     "frame_num": 105,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 25.767,
+      "saa_sep": 106.846,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 1.19,
+      "finite_fraction": 0.99
+     },
+     "expected_target_xy": [
+      0.6934,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-98924a151-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-11-11T18:01:57Z",
+     "mjd": 58433.751359,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-98924a151-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-98924a151-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/98924a/151/98924a151-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "98924a",
+     "frame_num": 151,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 135.309,
+      "saa_sep": 70.316,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 1.21,
+      "finite_fraction": 0.974
+     },
+     "expected_target_xy": [
+      0.707,
+      0.4822
+     ]
+    },
+    {
+     "id": "neowiser-98936a151-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-11-12T03:27:16Z",
+     "mjd": 58434.143941,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-98936a151-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-98936a151-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/98936a/151/98936a151-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "98936a",
+     "frame_num": 151,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 138.749,
+      "saa_sep": 31.568,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.65,
+      "finite_fraction": 0.974
+     },
+     "expected_target_xy": [
+      0.707,
+      0.4822
+     ]
+    },
+    {
+     "id": "neowiser-04923r102-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-04-17T17:42:39Z",
+     "mjd": 58590.737956,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-04923r102-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-04923r102-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/04923r/102/04923r102-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "04923r",
+     "frame_num": 102,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 53.314,
+      "saa_sep": 18.868,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 1.83,
+      "finite_fraction": 0.982
+     },
+     "expected_target_xy": [
+      0.7176,
+      0.4814
+     ]
+    },
+    {
+     "id": "neowiser-04953r078-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-04-18T17:15:40Z",
+     "mjd": 58591.719223,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-04953r078-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-04953r078-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/04953r/078/04953r078-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "04953r",
+     "frame_num": 78,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 65.207,
+      "saa_sep": 21.21,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.1,
+      "finite_fraction": 0.986
+     },
+     "expected_target_xy": [
+      0.7176,
+      0.4814
+     ]
+    },
+    {
+     "id": "neowiser-11246r094-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-11-10T13:19:51Z",
+     "mjd": 58797.555459,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-11246r094-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-11246r094-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6r/11246r/094/11246r094-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "11246r",
+     "frame_num": 94,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 110.129,
+      "saa_sep": 6.725,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -1.01,
+      "finite_fraction": 0.986
+     },
+     "expected_target_xy": [
+      0.7315,
+      0.4802
+     ]
+    },
+    {
+     "id": "neowiser-11264r128-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-11-11T03:27:44Z",
+     "mjd": 58798.14427,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-11264r128-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-11264r128-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/11264r/128/11264r128-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "11264r",
+     "frame_num": 128,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 103.929,
+      "saa_sep": 34.441,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.41,
+      "finite_fraction": 0.97
+     },
+     "expected_target_xy": [
+      0.7315,
+      0.4802
+     ]
+    },
+    {
+     "id": "neowiser-16055r101-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-04-15T19:38:30Z",
+     "mjd": 58954.81841,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-16055r101-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-16055r101-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/16055r/101/16055r101-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "16055r",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 151.422,
+      "saa_sep": 12.841,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 1.13,
+      "finite_fraction": 0.985
+     },
+     "expected_target_xy": [
+      0.7421,
+      0.4793
+     ]
+    },
+    {
+     "id": "neowiser-16077r066-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-04-16T12:53:47Z",
+     "mjd": 58955.537359,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-16077r066-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-16077r066-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7r/16077r/066/16077r066-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "16077r",
+     "frame_num": 66,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 153.441,
+      "saa_sep": 76.445,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 1.68,
+      "finite_fraction": 0.974
+     },
+     "expected_target_xy": [
+      0.7422,
+      0.4793
+     ]
+    },
+    {
+     "id": "neowiser-22482r176-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-11-11T23:14:32Z",
+     "mjd": 59164.96843,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-22482r176-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-22482r176-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2r/22482r/176/22482r176-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "22482r",
+     "frame_num": 176,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 53.077,
+      "saa_sep": 88.234,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.66,
+      "finite_fraction": 0.95
+     },
+     "expected_target_xy": [
+      0.7563,
+      0.4782
+     ]
+    },
+    {
+     "id": "neowiser-22492r152-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-11-12T07:05:25Z",
+     "mjd": 59165.295434,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-22492r152-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-22492r152-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2r/22492r/152/22492r152-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "22492r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 57.191,
+      "saa_sep": -1.424,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.77,
+      "finite_fraction": 0.973
+     },
+     "expected_target_xy": [
+      0.7563,
+      0.4782
+     ]
+    },
+    {
+     "id": "neowiser-27203r101-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-15T06:54:28Z",
+     "mjd": 59319.287833,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27203r101-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27203r101-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/27203r/101/27203r101-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27203r",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 80.009,
+      "saa_sep": 83.046,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.86,
+      "finite_fraction": 0.933
+     },
+     "expected_target_xy": [
+      0.7667,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-27229r077-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-16T03:18:05Z",
+     "mjd": 59320.137558,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27229r077-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27229r077-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9r/27229r/077/27229r077-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27229r",
+     "frame_num": 77,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 71.7,
+      "saa_sep": 34.337,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 3.52,
+      "finite_fraction": 0.992
+     },
+     "expected_target_xy": [
+      0.7667,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-27410r104-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-22T02:02:46Z",
+     "mjd": 59326.085264,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27410r104-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27410r104-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/27410r/104/27410r104-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27410r",
+     "frame_num": 104,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 29.63,
+      "saa_sep": 16.336,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.35,
+      "finite_fraction": 0.925
+     },
+     "expected_target_xy": [
+      0.7671,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-33618r175-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-11-10T22:10:58Z",
+     "mjd": 59528.924292,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-33618r175-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-33618r175-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8r/33618r/175/33618r175-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "33618r",
+     "frame_num": 175,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 151.45,
+      "saa_sep": 100.744,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 2.24,
+      "finite_fraction": 0.923
+     },
+     "expected_target_xy": [
+      0.7808,
+      0.4761
+     ]
+    },
+    {
+     "id": "neowiser-33628r151-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-11-11T06:01:29Z",
+     "mjd": 59529.251042,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-33628r151-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-33628r151-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8r/33628r/151/33628r151-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "33628r",
+     "frame_num": 151,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 151.961,
+      "saa_sep": 4.557,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 1.98,
+      "finite_fraction": 0.931
+     },
+     "expected_target_xy": [
+      0.7808,
+      0.4761
+     ]
+    },
+    {
+     "id": "neowiser-38457r078-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-04-17T22:58:32Z",
+     "mjd": 59686.957318,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-38457r078-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-38457r078-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7r/38457r/078/38457r078-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "38457r",
+     "frame_num": 78,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 86.498,
+      "saa_sep": -2.192,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 2.14,
+      "finite_fraction": 0.961
+     },
+     "expected_target_xy": [
+      0.7915,
+      0.4752
+     ]
+    },
+    {
+     "id": "neowiser-38465r077-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-04-18T05:14:26Z",
+     "mjd": 59687.218361,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-38465r077-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-38465r077-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/38465r/077/38465r077-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "38465r",
+     "frame_num": 77,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 89.576,
+      "saa_sep": 60.481,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 1.41,
+      "finite_fraction": 0.973
+     },
+     "expected_target_xy": [
+      0.7915,
+      0.4752
+     ]
+    },
+    {
+     "id": "neowiser-44774r177-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-09T23:35:05Z",
+     "mjd": 59892.982704,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44774r177-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44774r177-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/44774r/177/44774r177-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44774r",
+     "frame_num": 177,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 76.776,
+      "saa_sep": 84.046,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 2.1,
+      "finite_fraction": 0.959
+     },
+     "expected_target_xy": [
+      0.8053,
+      0.4741
+     ]
+    },
+    {
+     "id": "neowiser-44780r152-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-10T04:16:33Z",
+     "mjd": 59893.178168,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44780r152-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44780r152-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/44780r/152/44780r152-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44780r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 74.444,
+      "saa_sep": 22.375,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -1.35,
+      "finite_fraction": 0.991
+     },
+     "expected_target_xy": [
+      0.8053,
+      0.4741
+     ]
+    },
+    {
+     "id": "neowiser-44976r149-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-16T13:33:19Z",
+     "mjd": 59899.564805,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44976r149-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44976r149-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6r/44976r/149/44976r149-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44976r",
+     "frame_num": 149,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 29.882,
+      "saa_sep": 10.994,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.95,
+      "finite_fraction": 0.984
+     },
+     "expected_target_xy": [
+      0.8058,
+      0.474
+     ]
+    },
+    {
+     "id": "neowiser-49615r018-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-04-16T12:25:37Z",
+     "mjd": 60050.517799,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-49615r018-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-49615r018-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/49615r/018/49615r018-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "49615r",
+     "frame_num": 18,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 146.75,
+      "saa_sep": 79.784,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -1.93,
+      "finite_fraction": 0.948
+     },
+     "expected_target_xy": [
+      0.816,
+      0.4732
+     ]
+    },
+    {
+     "id": "neowiser-49631r100-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-04-17T00:54:41Z",
+     "mjd": 60051.037975,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-49631r100-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-49631r100-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/49631r/100/49631r100-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "49631r",
+     "frame_num": 100,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 142.669,
+      "saa_sep": 12.677,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 2.3,
+      "finite_fraction": 0.979
+     },
+     "expected_target_xy": [
+      0.816,
+      0.4732
+     ]
+    },
+    {
+     "id": "neowiser-56074r174-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-11-11T20:55:05Z",
+     "mjd": 60259.871588,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-56074r174-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-56074r174-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/56074r/174/56074r174-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "56074r",
+     "frame_num": 174,
+     "quality": {
+      "qual_frame": 5,
+      "qual_scan": null,
+      "moon_sep": 74.633,
+      "saa_sep": 100.598,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.14,
+      "finite_fraction": 0.992
+     },
+     "expected_target_xy": [
+      0.8301,
+      0.472
+     ]
+    },
+    {
+     "id": "neowiser-56104r150-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-11-12T20:11:03Z",
+     "mjd": 60260.841012,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-56104r150-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-56104r150-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/56104r/150/56104r150-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "56104r",
+     "frame_num": 150,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 85.034,
+      "saa_sep": 94.441,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.2,
+      "finite_fraction": 0.957
+     },
+     "expected_target_xy": [
+      0.8301,
+      0.472
+     ]
+    },
+    {
+     "id": "neowiser-60871r018-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-14T11:27:21Z",
+     "mjd": 60414.477329,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60871r018-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60871r018-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/60871r/018/60871r018-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60871r",
+     "frame_num": 18,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 48.352,
+      "saa_sep": 94.637,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.27,
+      "finite_fraction": 0.984
+     },
+     "expected_target_xy": [
+      0.8405,
+      0.4712
+     ]
+    },
+    {
+     "id": "neowiser-60891r034-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-15T02:52:15Z",
+     "mjd": 60415.119622,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60891r034-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60891r034-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/60891r/034/60891r034-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60891r",
+     "frame_num": 34,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 42.969,
+      "saa_sep": 27.652,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -1.39,
+      "finite_fraction": 0.99
+     },
+     "expected_target_xy": [
+      0.8405,
+      0.4712
+     ]
+    },
+    {
+     "id": "neowiser-60997r041-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-18T12:34:55Z",
+     "mjd": 60418.524256,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60997r041-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60997r041-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7r/60997r/041/60997r041-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60997r",
+     "frame_num": 41,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 29.305,
+      "saa_sep": 79.114,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.47,
+      "finite_fraction": 0.961
+     },
+     "expected_target_xy": [
+      0.8408,
+      0.4711
+     ]
+    }
+   ],
+   "extra": [
+    {
+     "id": "neowiser-48534a112-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-05T03:23:02Z",
+     "mjd": 56782.141001,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48534a112-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48534a112-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/48534a/112/48534a112-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48534a",
+     "frame_num": 112,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 31.466,
+      "saa_sep": 59.201,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.04,
+      "finite_fraction": 0.954
+     },
+     "expected_target_xy": [
+      0.5957,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48618a115-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-07T21:43:12Z",
+     "mjd": 56784.905001,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48618a115-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48618a115-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8a/48618a/115/48618a115-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48618a",
+     "frame_num": 115,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 20.695,
+      "saa_sep": -0.396,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.05,
+      "finite_fraction": 0.945
+     },
+     "expected_target_xy": [
+      0.5959,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48649a091-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-08T21:24:49Z",
+     "mjd": 56785.892243,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48649a091-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48649a091-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9a/48649a/091/48649a091-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48649a",
+     "frame_num": 91,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 26.584,
+      "saa_sep": -0.433,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.2,
+      "finite_fraction": 0.894
+     },
+     "expected_target_xy": [
+      0.5959,
+      0.4914
+     ]
+    },
+    {
+     "id": "neowiser-54342a095-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-12T03:25:04Z",
+     "mjd": 56973.14241,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54342a095-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54342a095-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2a/54342a/095/54342a095-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54342a",
+     "frame_num": 95,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 32.185,
+      "saa_sep": 21.521,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.78,
+      "finite_fraction": 0.961
+     },
+     "expected_target_xy": [
+      0.6085,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54425b187-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-14T21:41:12Z",
+     "mjd": 56975.903613,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54425b187-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54425b187-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5b/54425b/187/54425b187-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54425b",
+     "frame_num": 187,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 20.81,
+      "saa_sep": 93.921,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.89,
+      "finite_fraction": 0.978
+     },
+     "expected_target_xy": [
+      0.6087,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54452a161-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-15T18:11:46Z",
+     "mjd": 56976.758178,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54452a161-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54452a161-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2a/54452a/161/54452a161-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54452a",
+     "frame_num": 161,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 25.477,
+      "saa_sep": 93.925,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.49,
+      "finite_fraction": 0.949
+     },
+     "expected_target_xy": [
+      0.6088,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-59538a111-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-05-01T19:51:47Z",
+     "mjd": 57143.827633,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-59538a111-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-59538a111-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8a/59538a/111/59538a111-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "59538a",
+     "frame_num": 111,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 60.508,
+      "saa_sep": 2.055,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.44,
+      "finite_fraction": 0.957
+     },
+     "expected_target_xy": [
+      0.62,
+      0.4894
+     ]
+    },
+    {
+     "id": "neowiser-59565a088-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-05-02T16:20:32Z",
+     "mjd": 57144.680926,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-59565a088-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-59565a088-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5a/59565a/088/59565a088-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "59565a",
+     "frame_num": 88,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 69.758,
+      "saa_sep": 20.768,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -1.28,
+      "finite_fraction": 0.938
+     },
+     "expected_target_xy": [
+      0.6201,
+      0.4894
+     ]
+    },
+    {
+     "id": "neowiser-65457b184-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-11-11T23:43:43Z",
+     "mjd": 57337.988703,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-65457b184-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-65457b184-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7b/65457b/184/65457b184-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "65457b",
+     "frame_num": 184,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 95.624,
+      "saa_sep": 71.339,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.8,
+      "finite_fraction": 0.962
+     },
+     "expected_target_xy": [
+      0.6331,
+      0.4884
+     ]
+    },
+    {
+     "id": "neowiser-65476a159-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-11-12T13:53:38Z",
+     "mjd": 57338.578916,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-65476a159-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-65476a159-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/65476a/159/65476a159-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "65476a",
+     "frame_num": 159,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 102.24,
+      "saa_sep": 31.374,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.85,
+      "finite_fraction": 0.929
+     },
+     "expected_target_xy": [
+      0.6332,
+      0.4884
+     ]
+    },
+    {
+     "id": "neowiser-70490a107-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-04-24T22:44:29Z",
+     "mjd": 57502.947568,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-70490a107-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-70490a107-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/70490a/107/70490a107-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "70490a",
+     "frame_num": 107,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 107.808,
+      "saa_sep": 1.523,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 1.41,
+      "finite_fraction": 0.924
+     },
+     "expected_target_xy": [
+      0.6443,
+      0.4874
+     ]
+    },
+    {
+     "id": "neowiser-70509a024-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-04-25T12:53:51Z",
+     "mjd": 57503.537398,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-70509a024-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-70509a024-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9a/70509a/024/70509a024-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "70509a",
+     "frame_num": 24,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 114.199,
+      "saa_sep": 63.02,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.51,
+      "finite_fraction": 0.979
+     },
+     "expected_target_xy": [
+      0.6443,
+      0.4874
+     ]
+    },
+    {
+     "id": "neowiser-76569b183-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-11-10T02:01:12Z",
+     "mjd": 57702.084173,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-76569b183-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-76569b183-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9b/76569b/183/76569b183-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "76569b",
+     "frame_num": 183,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 144.186,
+      "saa_sep": 45.457,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.22,
+      "finite_fraction": 0.948
+     },
+     "expected_target_xy": [
+      0.6577,
+      0.4863
+     ]
+    },
+    {
+     "id": "neowiser-81511a103-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-04-20T20:58:18Z",
+     "mjd": 57863.873824,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-81511a103-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-81511a103-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1a/81511a/103/81511a103-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "81511a",
+     "frame_num": 103,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 158.17,
+      "saa_sep": -0.105,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.62,
+      "finite_fraction": 0.858
+     },
+     "expected_target_xy": [
+      0.6686,
+      0.4854
+     ]
+    },
+    {
+     "id": "neowiser-81521a049-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-04-21T04:49:44Z",
+     "mjd": 57864.201211,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-81521a049-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-81521a049-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1a/81521a/049/81521a049-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "81521a",
+     "frame_num": 49,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 157.658,
+      "saa_sep": 63.198,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.26,
+      "finite_fraction": 0.933
+     },
+     "expected_target_xy": [
+      0.6686,
+      0.4854
+     ]
+    },
+    {
+     "id": "neowiser-87690a111-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-09T03:35:09Z",
+     "mjd": 58066.149419,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87690a111-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87690a111-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/87690a/111/87690a111-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87690a",
+     "frame_num": 111,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 32.345,
+      "saa_sep": 28.866,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.59,
+      "finite_fraction": 0.981
+     },
+     "expected_target_xy": [
+      0.6822,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-87800a153-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-12T17:59:51Z",
+     "mjd": 58069.7499,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87800a153-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87800a153-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/87800a/153/87800a153-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87800a",
+     "frame_num": 153,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 35.729,
+      "saa_sep": 74.532,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.54,
+      "finite_fraction": 0.941
+     },
+     "expected_target_xy": [
+      0.6825,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-92503a102-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-15T15:44:47Z",
+     "mjd": 58223.6561,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92503a102-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92503a102-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3a/92503a/102/92503a102-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92503a",
+     "frame_num": 102,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 114.465,
+      "saa_sep": 37.224,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.15,
+      "finite_fraction": 0.988
+     },
+     "expected_target_xy": [
+      0.6928,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-92515a101-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-16T01:10:06Z",
+     "mjd": 58224.048683,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92515a101-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92515a101-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5a/92515a/101/92515a101-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92515a",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 109.978,
+      "saa_sep": 17.095,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.2,
+      "finite_fraction": 0.964
+     },
+     "expected_target_xy": [
+      0.6929,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-98928a152-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-11-11T21:10:27Z",
+     "mjd": 58433.882262,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-98928a152-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-98928a152-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8a/98928a/152/98928a152-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "98928a",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 136.386,
+      "saa_sep": 101.953,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.17,
+      "finite_fraction": 0.955
+     },
+     "expected_target_xy": [
+      0.707,
+      0.4822
+     ]
+    },
+    {
+     "id": "neowiser-98932a151-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-11-12T00:18:46Z",
+     "mjd": 58434.013038,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-98932a151-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-98932a151-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2a/98932a/151/98932a151-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "98932a",
+     "frame_num": 151,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 137.727,
+      "saa_sep": 73.162,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.96,
+      "finite_fraction": 0.938
+     },
+     "expected_target_xy": [
+      0.707,
+      0.4822
+     ]
+    },
+    {
+     "id": "neowiser-04931r102-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-04-17T23:59:28Z",
+     "mjd": 58590.999636,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-04931r102-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-04931r102-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/04931r/102/04931r102-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "04931r",
+     "frame_num": 102,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 0,
+      "moon_sep": 56.332,
+      "saa_sep": 1.613,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.23,
+      "finite_fraction": 0.949
+     },
+     "expected_target_xy": [
+      0.7176,
+      0.4814
+     ]
+    },
+    {
+     "id": "neowiser-04945r024-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-04-18T10:58:51Z",
+     "mjd": 58591.457543,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-04945r024-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-04945r024-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/04945r/024/04945r024-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "04945r",
+     "frame_num": 24,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 62.134,
+      "saa_sep": 100.14,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.41,
+      "finite_fraction": 0.96
+     },
+     "expected_target_xy": [
+      0.7176,
+      0.4814
+     ]
+    },
+    {
+     "id": "neowiser-11242r177-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-11-10T10:11:32Z",
+     "mjd": 58797.424683,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-11242r177-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-11242r177-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2r/11242r/177/11242r177-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "11242r",
+     "frame_num": 177,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 111.307,
+      "saa_sep": -12.303,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -1.88,
+      "finite_fraction": 0.988
+     },
+     "expected_target_xy": [
+      0.7315,
+      0.4802
+     ]
+    },
+    {
+     "id": "neowiser-11260r152-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-11-11T00:19:14Z",
+     "mjd": 58798.013366,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-11260r152-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-11260r152-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/11260r/152/11260r152-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "11260r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 105.289,
+      "saa_sep": 76.223,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.61,
+      "finite_fraction": 0.981
+     },
+     "expected_target_xy": [
+      0.7315,
+      0.4802
+     ]
+    },
+    {
+     "id": "neowiser-16059r101-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-04-15T22:46:49Z",
+     "mjd": 58954.949186,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-16059r101-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-16059r101-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9r/16059r/101/16059r101-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "16059r",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 151.759,
+      "saa_sep": -0.064,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.53,
+      "finite_fraction": 0.945
+     },
+     "expected_target_xy": [
+      0.7421,
+      0.4793
+     ]
+    },
+    {
+     "id": "neowiser-16085r077-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-04-16T19:11:09Z",
+     "mjd": 58955.799421,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-16085r077-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-16085r077-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/16085r/077/16085r077-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "16085r",
+     "frame_num": 77,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 153.336,
+      "saa_sep": 14.77,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.61,
+      "finite_fraction": 0.956
+     },
+     "expected_target_xy": [
+      0.7422,
+      0.4793
+     ]
+    },
+    {
+     "id": "neowiser-22480r152-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-11-11T21:40:28Z",
+     "mjd": 59164.903105,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-22480r152-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-22480r152-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/22480r/152/22480r152-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "22480r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 52.849,
+      "saa_sep": 102.011,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.26,
+      "finite_fraction": 0.939
+     },
+     "expected_target_xy": [
+      0.7563,
+      0.4782
+     ]
+    },
+    {
+     "id": "neowiser-22496r152-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-11-12T10:13:44Z",
+     "mjd": 59165.42621,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-22496r152-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-22496r152-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6r/22496r/152/22496r152-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "22496r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 58.676,
+      "saa_sep": -16.436,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 0.18,
+      "finite_fraction": 0.973
+     },
+     "expected_target_xy": [
+      0.7563,
+      0.4782
+     ]
+    },
+    {
+     "id": "neowiser-27199r026-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-15T03:45:25Z",
+     "mjd": 59319.156547,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27199r026-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27199r026-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9r/27199r/026/27199r026-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27199r",
+     "frame_num": 26,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 81.261,
+      "saa_sep": 38.73,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.72,
+      "finite_fraction": 0.955
+     },
+     "expected_target_xy": [
+      0.7667,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-27225r076-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-16T00:09:46Z",
+     "mjd": 59320.006782,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27225r076-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27225r076-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/27225r/076/27225r076-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27225r",
+     "frame_num": 76,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 0,
+      "moon_sep": 72.948,
+      "saa_sep": 4.365,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.13,
+      "finite_fraction": 0.975
+     },
+     "expected_target_xy": [
+      0.7667,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-33614r175-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-11-10T19:02:50Z",
+     "mjd": 59528.793644,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-33614r175-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-33614r175-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/33614r/175/33614r175-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "33614r",
+     "frame_num": 175,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 150.888,
+      "saa_sep": 81.185,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 1.69,
+      "finite_fraction": 0.978
+     },
+     "expected_target_xy": [
+      0.7808,
+      0.4761
+     ]
+    },
+    {
+     "id": "neowiser-33626r094-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-11-11T04:26:41Z",
+     "mjd": 59529.185208,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-33626r094-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-33626r094-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6r/33626r/094/33626r094-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "33626r",
+     "frame_num": 94,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 151.789,
+      "saa_sep": 21.402,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -1.84,
+      "finite_fraction": 0.961
+     },
+     "expected_target_xy": [
+      0.7808,
+      0.4761
+     ]
+    },
+    {
+     "id": "neowiser-38455r101-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-04-17T21:24:28Z",
+     "mjd": 59686.891994,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-38455r101-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-38455r101-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/38455r/101/38455r101-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "38455r",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 85.343,
+      "saa_sep": -1.338,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 1.39,
+      "finite_fraction": 0.991
+     },
+     "expected_target_xy": [
+      0.7914,
+      0.4752
+     ]
+    },
+    {
+     "id": "neowiser-38465r078-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-04-18T05:14:37Z",
+     "mjd": 59687.218489,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-38465r078-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-38465r078-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/38465r/078/38465r078-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "38465r",
+     "frame_num": 78,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 89.564,
+      "saa_sep": 60.756,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.85,
+      "finite_fraction": 0.918
+     },
+     "expected_target_xy": [
+      0.7915,
+      0.4752
+     ]
+    },
+    {
+     "id": "neowiser-44770r176-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-09T20:27:19Z",
+     "mjd": 59892.85231,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44770r176-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44770r176-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/44770r/176/44770r176-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44770r",
+     "frame_num": 176,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 78.005,
+      "saa_sep": 99.728,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.99,
+      "finite_fraction": 0.992
+     },
+     "expected_target_xy": [
+      0.8053,
+      0.4741
+     ]
+    },
+    {
+     "id": "neowiser-44778r144-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-10T02:42:40Z",
+     "mjd": 59893.112971,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44778r144-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44778r144-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8r/44778r/144/44778r144-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44778r",
+     "frame_num": 144,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 75.449,
+      "saa_sep": 42.942,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -1.25,
+      "finite_fraction": 0.967
+     },
+     "expected_target_xy": [
+      0.8053,
+      0.4741
+     ]
+    },
+    {
+     "id": "neowiser-49611r100-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-04-16T09:19:08Z",
+     "mjd": 60050.388297,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-49611r100-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-49611r100-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/49611r/100/49611r100-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "49611r",
+     "frame_num": 100,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 147.347,
+      "saa_sep": 115.55,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": -0.69,
+      "finite_fraction": 0.969
+     },
+     "expected_target_xy": [
+      0.8159,
+      0.4732
+     ]
+    },
+    {
+     "id": "neowiser-49633r027-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-04-17T02:27:39Z",
+     "mjd": 60051.102535,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-49633r027-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-49633r027-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/49633r/027/49633r027-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "49633r",
+     "frame_num": 27,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 142.142,
+      "saa_sep": 25.791,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 1.71,
+      "finite_fraction": 0.95
+     },
+     "expected_target_xy": [
+      0.816,
+      0.4732
+     ]
+    },
+    {
+     "id": "neowiser-56100r150-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-11-12T17:04:56Z",
+     "mjd": 60260.711764,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-56100r150-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-56100r150-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/56100r/150/56100r150-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "56100r",
+     "frame_num": 150,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 83.685,
+      "saa_sep": 57.97,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.67,
+      "finite_fraction": 0.945
+     },
+     "expected_target_xy": [
+      0.8301,
+      0.472
+     ]
+    },
+    {
+     "id": "neowiser-60875r099-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-14T14:33:06Z",
+     "mjd": 60414.606322,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60875r099-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60875r099-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/60875r/099/60875r099-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60875r",
+     "frame_num": 99,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 47.129,
+      "saa_sep": 54.56,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": -0.38,
+      "finite_fraction": 0.971
+     },
+     "expected_target_xy": [
+      0.8405,
+      0.4712
+     ]
+    },
+    {
+     "id": "neowiser-60889r075-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-15T01:20:34Z",
+     "mjd": 60415.055953,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60889r075-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60889r075-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9r/60889r/075/60889r075-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60889r",
+     "frame_num": 75,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 42.869,
+      "saa_sep": 14.674,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 2.59,
+      "finite_fraction": 0.975
+     },
+     "expected_target_xy": [
+      0.8405,
+      0.4712
+     ]
+    },
+    {
+     "id": "neowiser-60993r075-w1",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-18T09:30:49Z",
+     "mjd": 60418.396409,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60993r075-w1.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60993r075-w1.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/60993r/075/60993r075-w1-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60993r",
+     "frame_num": 75,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 29.071,
+      "saa_sep": 114.119,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 0.4,
+      "finite_fraction": 0.987
+     },
+     "expected_target_xy": [
+      0.8407,
+      0.4711
+     ]
+    }
+   ]
+  },
+  {
+   "id": "neowise-w2",
+   "mission": "NEOWISE-R",
+   "product": "Level 1b single exposure",
+   "band": "W2",
+   "wavelength_um": 4.6,
+   "pixel_scale_arcsec": 2.75,
+   "distinct_dates": 52,
+   "first_date": "2014-05-04",
+   "last_date": "2024-04-18",
+   "notes": [
+    "Different telescope, PSF (~6.4\") and band than SPHEREx; not directly comparable pixel-for-pixel.",
+    "Previews are resampled north-up/east-left onto one grid centred on the preset field; FITS are the native IRSA Level 1b cutouts (detector orientation, original WCS).",
+    "Every preview uses the same display stretch after subtracting that frame's median sky. Unmeasurable (NaN) pixels flagged saturated are drawn white, other NaN pixels black.",
+    "Target marker is predicted from catalog proper motion (SIMBAD (simbad.harvard.edu), J2000); parallax (439 mas) ignored. Prediction only, not a measured position.",
+    "Target aperture (2 px radius) SNR in default frames: median 8.2, range 3.5-11.9; saturated at target in 0/52."
+   ],
+   "frames": [
+    {
+     "id": "neowiser-48526a112-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-04T21:04:01Z",
+     "mjd": 56781.877794,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48526a112-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48526a112-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/48526a/112/48526a112-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48526a",
+     "frame_num": 112,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 33.68,
+      "saa_sep": 0.509,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 5.11,
+      "finite_fraction": 0.931
+     },
+     "expected_target_xy": [
+      0.5957,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48530a112-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-05T00:13:26Z",
+     "mjd": 56782.009334,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48530a112-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48530a112-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/48530a/112/48530a112-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48530a",
+     "frame_num": 112,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 32.738,
+      "saa_sep": 19.985,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 8.58,
+      "finite_fraction": 0.929
+     },
+     "expected_target_xy": [
+      0.5957,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48618a115-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-07T21:43:12Z",
+     "mjd": 56784.905001,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48618a115-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48618a115-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8a/48618a/115/48618a115-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48618a",
+     "frame_num": 115,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 20.695,
+      "saa_sep": -0.396,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 4.4,
+      "finite_fraction": 0.945
+     },
+     "expected_target_xy": [
+      0.5959,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48649a091-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-08T21:24:49Z",
+     "mjd": 56785.892243,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48649a091-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48649a091-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9a/48649a/091/48649a091-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48649a",
+     "frame_num": 91,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 26.584,
+      "saa_sep": -0.433,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 3.46,
+      "finite_fraction": 0.975
+     },
+     "expected_target_xy": [
+      0.5959,
+      0.4914
+     ]
+    },
+    {
+     "id": "neowiser-54333b190-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-11T21:06:25Z",
+     "mjd": 56972.879457,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54333b190-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54333b190-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3b/54333b/190/54333b190-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54333b",
+     "frame_num": 190,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 34.604,
+      "saa_sep": 101.894,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 5.2,
+      "finite_fraction": 0.962
+     },
+     "expected_target_xy": [
+      0.6085,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54337b190-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-12T00:15:39Z",
+     "mjd": 56973.01087,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54337b190-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54337b190-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7b/54337b/190/54337b190-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54337b",
+     "frame_num": 190,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 33.209,
+      "saa_sep": 60.452,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 7.61,
+      "finite_fraction": 0.948
+     },
+     "expected_target_xy": [
+      0.6085,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54421b186-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-14T18:31:47Z",
+     "mjd": 56975.772072,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54421b186-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54421b186-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1b/54421b/186/54421b186-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54421b",
+     "frame_num": 186,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 20.05,
+      "saa_sep": 98.181,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.84,
+      "finite_fraction": 0.963
+     },
+     "expected_target_xy": [
+      0.6087,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54452a162-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-15T18:11:57Z",
+     "mjd": 56976.758306,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54452a162-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54452a162-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2a/54452a/162/54452a162-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54452a",
+     "frame_num": 162,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 26.017,
+      "saa_sep": 93.746,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 9.11,
+      "finite_fraction": 0.946
+     },
+     "expected_target_xy": [
+      0.6088,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-59534a111-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-05-01T16:42:44Z",
+     "mjd": 57143.696348,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-59534a111-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-59534a111-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/59534a/111/59534a111-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "59534a",
+     "frame_num": 111,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 59.18,
+      "saa_sep": 19.034,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 4.02,
+      "finite_fraction": 0.962
+     },
+     "expected_target_xy": [
+      0.62,
+      0.4895
+     ]
+    },
+    {
+     "id": "neowiser-59565a088-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-05-02T16:20:32Z",
+     "mjd": 57144.680926,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-59565a088-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-59565a088-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5a/59565a/088/59565a088-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "59565a",
+     "frame_num": 88,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 69.758,
+      "saa_sep": 20.768,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 10.14,
+      "finite_fraction": 0.966
+     },
+     "expected_target_xy": [
+      0.6201,
+      0.4894
+     ]
+    },
+    {
+     "id": "neowiser-65457b184-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-11-11T23:43:43Z",
+     "mjd": 57337.988703,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-65457b184-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-65457b184-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7b/65457b/184/65457b184-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "65457b",
+     "frame_num": 184,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 95.624,
+      "saa_sep": 71.339,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 7.63,
+      "finite_fraction": 0.943
+     },
+     "expected_target_xy": [
+      0.6331,
+      0.4884
+     ]
+    },
+    {
+     "id": "neowiser-65476a159-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-11-12T13:53:38Z",
+     "mjd": 57338.578916,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-65476a159-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-65476a159-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/65476a/159/65476a159-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "65476a",
+     "frame_num": 159,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 102.24,
+      "saa_sep": 31.374,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.94,
+      "finite_fraction": 0.916
+     },
+     "expected_target_xy": [
+      0.6332,
+      0.4884
+     ]
+    },
+    {
+     "id": "neowiser-70490a107-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-04-24T22:44:29Z",
+     "mjd": 57502.947568,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-70490a107-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-70490a107-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/70490a/107/70490a107-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "70490a",
+     "frame_num": 107,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 107.808,
+      "saa_sep": 1.523,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 10.42,
+      "finite_fraction": 0.959
+     },
+     "expected_target_xy": [
+      0.6443,
+      0.4874
+     ]
+    },
+    {
+     "id": "neowiser-70509a024-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-04-25T12:53:51Z",
+     "mjd": 57503.537398,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-70509a024-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-70509a024-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9a/70509a/024/70509a024-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "70509a",
+     "frame_num": 24,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 114.199,
+      "saa_sep": 63.02,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 11.57,
+      "finite_fraction": 0.948
+     },
+     "expected_target_xy": [
+      0.6443,
+      0.4874
+     ]
+    },
+    {
+     "id": "neowiser-76565b182-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-11-09T22:52:31Z",
+     "mjd": 57701.953142,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-76565b182-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-76565b182-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5b/76565b/182/76565b182-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "76565b",
+     "frame_num": 182,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 145.548,
+      "saa_sep": 87.206,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 9.35,
+      "finite_fraction": 0.973
+     },
+     "expected_target_xy": [
+      0.6577,
+      0.4863
+     ]
+    },
+    {
+     "id": "neowiser-76569b183-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-11-10T02:01:12Z",
+     "mjd": 57702.084173,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-76569b183-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-76569b183-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9b/76569b/183/76569b183-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "76569b",
+     "frame_num": 183,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 144.186,
+      "saa_sep": 45.457,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 8.85,
+      "finite_fraction": 0.963
+     },
+     "expected_target_xy": [
+      0.6577,
+      0.4863
+     ]
+    },
+    {
+     "id": "neowiser-81511a103-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-04-20T20:58:18Z",
+     "mjd": 57863.873824,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-81511a103-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-81511a103-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1a/81511a/103/81511a103-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "81511a",
+     "frame_num": 103,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 158.17,
+      "saa_sep": -0.105,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 8.42,
+      "finite_fraction": 0.979
+     },
+     "expected_target_xy": [
+      0.6686,
+      0.4854
+     ]
+    },
+    {
+     "id": "neowiser-81521a049-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-04-21T04:49:44Z",
+     "mjd": 57864.201211,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-81521a049-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-81521a049-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1a/81521a/049/81521a049-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "81521a",
+     "frame_num": 49,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 157.658,
+      "saa_sep": 63.198,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 6.63,
+      "finite_fraction": 0.97
+     },
+     "expected_target_xy": [
+      0.6686,
+      0.4854
+     ]
+    },
+    {
+     "id": "neowiser-87690a111-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-09T03:35:09Z",
+     "mjd": 58066.149419,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87690a111-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87690a111-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/87690a/111/87690a111-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87690a",
+     "frame_num": 111,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 32.345,
+      "saa_sep": 28.866,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 5.92,
+      "finite_fraction": 0.958
+     },
+     "expected_target_xy": [
+      0.6822,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-87716a155-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-10T00:00:36Z",
+     "mjd": 58067.000418,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87716a155-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87716a155-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/87716a/155/87716a155-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87716a",
+     "frame_num": 155,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 26.042,
+      "saa_sep": 76.02,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 11.9,
+      "finite_fraction": 0.945
+     },
+     "expected_target_xy": [
+      0.6823,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-87774a178-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-11T21:34:24Z",
+     "mjd": 58068.8989,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87774a178-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87774a178-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/87774a/178/87774a178-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87774a",
+     "frame_num": 178,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 28.783,
+      "saa_sep": 106.03,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 7.5,
+      "finite_fraction": 0.971
+     },
+     "expected_target_xy": [
+      0.6824,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-87804a153-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-12T21:08:21Z",
+     "mjd": 58069.880803,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87804a153-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87804a153-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/87804a/153/87804a153-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87804a",
+     "frame_num": 153,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 36.824,
+      "saa_sep": 106.851,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 5.9,
+      "finite_fraction": 0.948
+     },
+     "expected_target_xy": [
+      0.6825,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-92503a100-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-15T15:44:36Z",
+     "mjd": 58223.655972,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92503a100-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92503a100-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3a/92503a/100/92503a100-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92503a",
+     "frame_num": 100,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 114.266,
+      "saa_sep": 36.843,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 10.96,
+      "finite_fraction": 0.977
+     },
+     "expected_target_xy": [
+      0.6928,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-92515a101-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-16T01:10:06Z",
+     "mjd": 58224.048683,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92515a101-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92515a101-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5a/92515a/101/92515a101-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92515a",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 109.978,
+      "saa_sep": 17.095,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 8.12,
+      "finite_fraction": 0.915
+     },
+     "expected_target_xy": [
+      0.6929,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-92770a105-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-24T10:11:36Z",
+     "mjd": 58232.424727,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92770a105-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92770a105-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/92770a/105/92770a105-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92770a",
+     "frame_num": 105,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 25.767,
+      "saa_sep": 106.846,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 4.56,
+      "finite_fraction": 0.948
+     },
+     "expected_target_xy": [
+      0.6934,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-98928a152-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-11-11T21:10:27Z",
+     "mjd": 58433.882262,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-98928a152-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-98928a152-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8a/98928a/152/98928a152-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "98928a",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 136.386,
+      "saa_sep": 101.953,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 7.08,
+      "finite_fraction": 0.899
+     },
+     "expected_target_xy": [
+      0.707,
+      0.4822
+     ]
+    },
+    {
+     "id": "neowiser-98936a151-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-11-12T03:27:16Z",
+     "mjd": 58434.143941,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-98936a151-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-98936a151-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/98936a/151/98936a151-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "98936a",
+     "frame_num": 151,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 138.749,
+      "saa_sep": 31.568,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 10.62,
+      "finite_fraction": 0.961
+     },
+     "expected_target_xy": [
+      0.707,
+      0.4822
+     ]
+    },
+    {
+     "id": "neowiser-04931r102-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-04-17T23:59:28Z",
+     "mjd": 58590.999636,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-04931r102-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-04931r102-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/04931r/102/04931r102-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "04931r",
+     "frame_num": 102,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 0,
+      "moon_sep": 56.332,
+      "saa_sep": 1.613,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 7.61,
+      "finite_fraction": 0.9
+     },
+     "expected_target_xy": [
+      0.7176,
+      0.4814
+     ]
+    },
+    {
+     "id": "neowiser-04945r024-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-04-18T10:58:51Z",
+     "mjd": 58591.457543,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-04945r024-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-04945r024-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/04945r/024/04945r024-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "04945r",
+     "frame_num": 24,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 62.134,
+      "saa_sep": 100.14,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 9.39,
+      "finite_fraction": 0.91
+     },
+     "expected_target_xy": [
+      0.7176,
+      0.4814
+     ]
+    },
+    {
+     "id": "neowiser-11242r177-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-11-10T10:11:32Z",
+     "mjd": 58797.424683,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-11242r177-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-11242r177-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2r/11242r/177/11242r177-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "11242r",
+     "frame_num": 177,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 111.307,
+      "saa_sep": -12.303,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 8.7,
+      "finite_fraction": 0.971
+     },
+     "expected_target_xy": [
+      0.7315,
+      0.4802
+     ]
+    },
+    {
+     "id": "neowiser-11264r128-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-11-11T03:27:44Z",
+     "mjd": 58798.14427,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-11264r128-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-11264r128-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/11264r/128/11264r128-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "11264r",
+     "frame_num": 128,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 103.929,
+      "saa_sep": 34.441,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 6.86,
+      "finite_fraction": 0.926
+     },
+     "expected_target_xy": [
+      0.7315,
+      0.4802
+     ]
+    },
+    {
+     "id": "neowiser-16059r101-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-04-15T22:46:49Z",
+     "mjd": 58954.949186,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-16059r101-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-16059r101-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9r/16059r/101/16059r101-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "16059r",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 151.759,
+      "saa_sep": -0.064,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 11.0,
+      "finite_fraction": 0.943
+     },
+     "expected_target_xy": [
+      0.7421,
+      0.4793
+     ]
+    },
+    {
+     "id": "neowiser-16077r066-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-04-16T12:53:47Z",
+     "mjd": 58955.537359,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-16077r066-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-16077r066-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7r/16077r/066/16077r066-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "16077r",
+     "frame_num": 66,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 153.441,
+      "saa_sep": 76.445,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 8.39,
+      "finite_fraction": 0.945
+     },
+     "expected_target_xy": [
+      0.7422,
+      0.4793
+     ]
+    },
+    {
+     "id": "neowiser-22480r152-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-11-11T21:40:28Z",
+     "mjd": 59164.903105,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-22480r152-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-22480r152-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/22480r/152/22480r152-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "22480r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 52.849,
+      "saa_sep": 102.011,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 8.92,
+      "finite_fraction": 0.974
+     },
+     "expected_target_xy": [
+      0.7563,
+      0.4782
+     ]
+    },
+    {
+     "id": "neowiser-22496r152-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-11-12T10:13:44Z",
+     "mjd": 59165.42621,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-22496r152-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-22496r152-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6r/22496r/152/22496r152-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "22496r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 58.676,
+      "saa_sep": -16.436,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 4.56,
+      "finite_fraction": 0.938
+     },
+     "expected_target_xy": [
+      0.7563,
+      0.4782
+     ]
+    },
+    {
+     "id": "neowiser-27199r026-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-15T03:45:25Z",
+     "mjd": 59319.156547,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27199r026-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27199r026-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9r/27199r/026/27199r026-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27199r",
+     "frame_num": 26,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 81.261,
+      "saa_sep": 38.73,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 8.1,
+      "finite_fraction": 0.961
+     },
+     "expected_target_xy": [
+      0.7667,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-27225r076-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-16T00:09:46Z",
+     "mjd": 59320.006782,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27225r076-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27225r076-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/27225r/076/27225r076-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27225r",
+     "frame_num": 76,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 0,
+      "moon_sep": 72.948,
+      "saa_sep": 4.365,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 11.73,
+      "finite_fraction": 0.965
+     },
+     "expected_target_xy": [
+      0.7667,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-27410r104-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-22T02:02:46Z",
+     "mjd": 59326.085264,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27410r104-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27410r104-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/27410r/104/27410r104-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27410r",
+     "frame_num": 104,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 29.63,
+      "saa_sep": 16.336,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 9.05,
+      "finite_fraction": 0.945
+     },
+     "expected_target_xy": [
+      0.7671,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-33618r175-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-11-10T22:10:58Z",
+     "mjd": 59528.924292,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-33618r175-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-33618r175-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8r/33618r/175/33618r175-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "33618r",
+     "frame_num": 175,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 151.45,
+      "saa_sep": 100.744,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 5.32,
+      "finite_fraction": 0.963
+     },
+     "expected_target_xy": [
+      0.7808,
+      0.4761
+     ]
+    },
+    {
+     "id": "neowiser-33626r094-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-11-11T04:26:41Z",
+     "mjd": 59529.185208,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-33626r094-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-33626r094-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6r/33626r/094/33626r094-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "33626r",
+     "frame_num": 94,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 151.789,
+      "saa_sep": 21.402,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 7.59,
+      "finite_fraction": 0.965
+     },
+     "expected_target_xy": [
+      0.7808,
+      0.4761
+     ]
+    },
+    {
+     "id": "neowiser-38455r101-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-04-17T21:24:28Z",
+     "mjd": 59686.891994,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-38455r101-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-38455r101-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/38455r/101/38455r101-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "38455r",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 85.343,
+      "saa_sep": -1.338,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 9.27,
+      "finite_fraction": 0.97
+     },
+     "expected_target_xy": [
+      0.7914,
+      0.4752
+     ]
+    },
+    {
+     "id": "neowiser-38465r078-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-04-18T05:14:37Z",
+     "mjd": 59687.218489,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-38465r078-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-38465r078-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/38465r/078/38465r078-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "38465r",
+     "frame_num": 78,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 89.564,
+      "saa_sep": 60.756,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 10.28,
+      "finite_fraction": 0.974
+     },
+     "expected_target_xy": [
+      0.7915,
+      0.4752
+     ]
+    },
+    {
+     "id": "neowiser-44770r176-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-09T20:27:19Z",
+     "mjd": 59892.85231,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44770r176-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44770r176-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/44770r/176/44770r176-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44770r",
+     "frame_num": 176,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 78.005,
+      "saa_sep": 99.728,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 10.46,
+      "finite_fraction": 0.967
+     },
+     "expected_target_xy": [
+      0.8053,
+      0.4741
+     ]
+    },
+    {
+     "id": "neowiser-44778r144-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-10T02:42:40Z",
+     "mjd": 59893.112971,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44778r144-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44778r144-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8r/44778r/144/44778r144-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44778r",
+     "frame_num": 144,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 75.449,
+      "saa_sep": 42.942,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.61,
+      "finite_fraction": 0.916
+     },
+     "expected_target_xy": [
+      0.8053,
+      0.4741
+     ]
+    },
+    {
+     "id": "neowiser-44976r149-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-16T13:33:19Z",
+     "mjd": 59899.564805,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44976r149-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44976r149-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6r/44976r/149/44976r149-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44976r",
+     "frame_num": 149,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 29.882,
+      "saa_sep": 10.994,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 8.55,
+      "finite_fraction": 0.96
+     },
+     "expected_target_xy": [
+      0.8058,
+      0.474
+     ]
+    },
+    {
+     "id": "neowiser-49615r018-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-04-16T12:25:37Z",
+     "mjd": 60050.517799,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-49615r018-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-49615r018-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/49615r/018/49615r018-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "49615r",
+     "frame_num": 18,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 146.75,
+      "saa_sep": 79.784,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 9.12,
+      "finite_fraction": 0.918
+     },
+     "expected_target_xy": [
+      0.816,
+      0.4732
+     ]
+    },
+    {
+     "id": "neowiser-49631r100-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-04-17T00:54:41Z",
+     "mjd": 60051.037975,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-49631r100-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-49631r100-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/49631r/100/49631r100-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "49631r",
+     "frame_num": 100,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 142.669,
+      "saa_sep": 12.677,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 8.39,
+      "finite_fraction": 0.969
+     },
+     "expected_target_xy": [
+      0.816,
+      0.4732
+     ]
+    },
+    {
+     "id": "neowiser-56074r174-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-11-11T20:55:05Z",
+     "mjd": 60259.871588,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-56074r174-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-56074r174-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/56074r/174/56074r174-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "56074r",
+     "frame_num": 174,
+     "quality": {
+      "qual_frame": 5,
+      "qual_scan": null,
+      "moon_sep": 74.633,
+      "saa_sep": 100.598,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 6.21,
+      "finite_fraction": 0.976
+     },
+     "expected_target_xy": [
+      0.8301,
+      0.472
+     ]
+    },
+    {
+     "id": "neowiser-56100r150-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-11-12T17:04:56Z",
+     "mjd": 60260.711764,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-56100r150-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-56100r150-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/56100r/150/56100r150-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "56100r",
+     "frame_num": 150,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 83.685,
+      "saa_sep": 57.97,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 9.72,
+      "finite_fraction": 0.899
+     },
+     "expected_target_xy": [
+      0.8301,
+      0.472
+     ]
+    },
+    {
+     "id": "neowiser-60871r018-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-14T11:27:21Z",
+     "mjd": 60414.477329,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60871r018-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60871r018-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/60871r/018/60871r018-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60871r",
+     "frame_num": 18,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 48.352,
+      "saa_sep": 94.637,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 8.36,
+      "finite_fraction": 0.946
+     },
+     "expected_target_xy": [
+      0.8405,
+      0.4712
+     ]
+    },
+    {
+     "id": "neowiser-60891r034-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-15T02:52:15Z",
+     "mjd": 60415.119622,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60891r034-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60891r034-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/60891r/034/60891r034-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60891r",
+     "frame_num": 34,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 42.969,
+      "saa_sep": 27.652,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 5.9,
+      "finite_fraction": 0.963
+     },
+     "expected_target_xy": [
+      0.8405,
+      0.4712
+     ]
+    },
+    {
+     "id": "neowiser-60993r075-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-18T09:30:49Z",
+     "mjd": 60418.396409,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60993r075-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60993r075-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/60993r/075/60993r075-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60993r",
+     "frame_num": 75,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 29.071,
+      "saa_sep": 114.119,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 7.94,
+      "finite_fraction": 0.96
+     },
+     "expected_target_xy": [
+      0.8407,
+      0.4711
+     ]
+    }
+   ],
+   "extra": [
+    {
+     "id": "neowiser-48534a112-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-05T03:23:02Z",
+     "mjd": 56782.141001,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48534a112-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48534a112-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/48534a/112/48534a112-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48534a",
+     "frame_num": 112,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 31.466,
+      "saa_sep": 59.201,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 8.01,
+      "finite_fraction": 0.904
+     },
+     "expected_target_xy": [
+      0.5957,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48614a115-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-07T18:33:47Z",
+     "mjd": 56784.773461,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48614a115-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48614a115-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/48614a/115/48614a115-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48614a",
+     "frame_num": 115,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 19.775,
+      "saa_sep": 8.115,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.12,
+      "finite_fraction": 0.944
+     },
+     "expected_target_xy": [
+      0.5958,
+      0.4915
+     ]
+    },
+    {
+     "id": "neowiser-48649a090-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-05-08T21:24:38Z",
+     "mjd": 56785.892116,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-48649a090-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-48649a090-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9a/48649a/090/48649a090-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "48649a",
+     "frame_num": 90,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 27.078,
+      "saa_sep": -0.938,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 2.86,
+      "finite_fraction": 0.977
+     },
+     "expected_target_xy": [
+      0.5959,
+      0.4914
+     ]
+    },
+    {
+     "id": "neowiser-54342a095-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-12T03:25:04Z",
+     "mjd": 56973.14241,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54342a095-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54342a095-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2a/54342a/095/54342a095-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54342a",
+     "frame_num": 95,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 32.185,
+      "saa_sep": 21.521,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 6.45,
+      "finite_fraction": 0.913
+     },
+     "expected_target_xy": [
+      0.6085,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54425b187-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-14T21:41:12Z",
+     "mjd": 56975.903613,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54425b187-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54425b187-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5b/54425b/187/54425b187-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54425b",
+     "frame_num": 187,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 20.81,
+      "saa_sep": 93.921,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.41,
+      "finite_fraction": 0.945
+     },
+     "expected_target_xy": [
+      0.6087,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-54452a161-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2014-11-15T18:11:46Z",
+     "mjd": 56976.758178,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-54452a161-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-54452a161-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2a/54452a/161/54452a161-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "54452a",
+     "frame_num": 161,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 25.477,
+      "saa_sep": 93.925,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 7.78,
+      "finite_fraction": 0.978
+     },
+     "expected_target_xy": [
+      0.6088,
+      0.4904
+     ]
+    },
+    {
+     "id": "neowiser-59538a111-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-05-01T19:51:47Z",
+     "mjd": 57143.827633,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-59538a111-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-59538a111-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8a/59538a/111/59538a111-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "59538a",
+     "frame_num": 111,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 60.508,
+      "saa_sep": 2.055,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.47,
+      "finite_fraction": 0.932
+     },
+     "expected_target_xy": [
+      0.62,
+      0.4894
+     ]
+    },
+    {
+     "id": "neowiser-59569a087-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-05-02T19:29:24Z",
+     "mjd": 57144.812085,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-59569a087-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-59569a087-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9a/59569a/087/59569a087-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "59569a",
+     "frame_num": 87,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 71.258,
+      "saa_sep": 3.811,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 8.61,
+      "finite_fraction": 0.974
+     },
+     "expected_target_xy": [
+      0.6201,
+      0.4894
+     ]
+    },
+    {
+     "id": "neowiser-65453b184-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-11-11T20:34:51Z",
+     "mjd": 57337.857545,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-65453b184-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-65453b184-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3b/65453b/184/65453b184-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "65453b",
+     "frame_num": 184,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 94.248,
+      "saa_sep": 111.63,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 6.33,
+      "finite_fraction": 0.96
+     },
+     "expected_target_xy": [
+      0.6331,
+      0.4884
+     ]
+    },
+    {
+     "id": "neowiser-65480a159-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2015-11-12T17:02:30Z",
+     "mjd": 57338.710074,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-65480a159-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-65480a159-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/65480a/159/65480a159-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "65480a",
+     "frame_num": 159,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 103.624,
+      "saa_sep": 73.772,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.9,
+      "finite_fraction": 0.948
+     },
+     "expected_target_xy": [
+      0.6332,
+      0.4884
+     ]
+    },
+    {
+     "id": "neowiser-70486a107-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-04-24T19:35:48Z",
+     "mjd": 57502.816537,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-70486a107-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-70486a107-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6a/70486a/107/70486a107-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "70486a",
+     "frame_num": 107,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 106.486,
+      "saa_sep": 6.063,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.46,
+      "finite_fraction": 0.934
+     },
+     "expected_target_xy": [
+      0.6442,
+      0.4874
+     ]
+    },
+    {
+     "id": "neowiser-70513a083-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-04-25T16:02:32Z",
+     "mjd": 57503.668429,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-70513a083-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-70513a083-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3a/70513a/083/70513a083-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "70513a",
+     "frame_num": 83,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 115.511,
+      "saa_sep": 25.108,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.59,
+      "finite_fraction": 0.97
+     },
+     "expected_target_xy": [
+      0.6443,
+      0.4874
+     ]
+    },
+    {
+     "id": "neowiser-76569b182-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2016-11-10T02:01:01Z",
+     "mjd": 57702.084046,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-76569b182-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-76569b182-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9b/76569b/182/76569b182-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "76569b",
+     "frame_num": 182,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 144.609,
+      "saa_sep": 45.908,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.64,
+      "finite_fraction": 0.97
+     },
+     "expected_target_xy": [
+      0.6577,
+      0.4863
+     ]
+    },
+    {
+     "id": "neowiser-81501a055-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-04-20T13:06:52Z",
+     "mjd": 57863.546438,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-81501a055-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-81501a055-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1a/81501a/055/81501a055-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "81501a",
+     "frame_num": 55,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 158.109,
+      "saa_sep": 65.273,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.03,
+      "finite_fraction": 0.962
+     },
+     "expected_target_xy": [
+      0.6686,
+      0.4854
+     ]
+    },
+    {
+     "id": "neowiser-81517a078-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-04-21T01:41:03Z",
+     "mjd": 57864.07018,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-81517a078-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-81517a078-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7a/81517a/078/81517a078-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "81517a",
+     "frame_num": 78,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 157.53,
+      "saa_sep": 22.277,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.98,
+      "finite_fraction": 0.932
+     },
+     "expected_target_xy": [
+      0.6686,
+      0.4854
+     ]
+    },
+    {
+     "id": "neowiser-87693b180-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-09T06:43:39Z",
+     "mjd": 58066.280322,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87693b180-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87693b180-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3b/87693b/180/87693b180-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87693b",
+     "frame_num": 180,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 31.145,
+      "saa_sep": 5.074,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 5.15,
+      "finite_fraction": 0.913
+     },
+     "expected_target_xy": [
+      0.6822,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-87800a153-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2017-11-12T17:59:51Z",
+     "mjd": 58069.7499,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-87800a153-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-87800a153-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0a/87800a/153/87800a153-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "87800a",
+     "frame_num": 153,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 35.729,
+      "saa_sep": 74.532,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 5.39,
+      "finite_fraction": 0.906
+     },
+     "expected_target_xy": [
+      0.6825,
+      0.4843
+     ]
+    },
+    {
+     "id": "neowiser-92503a102-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-15T15:44:47Z",
+     "mjd": 58223.6561,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92503a102-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92503a102-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3a/92503a/102/92503a102-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92503a",
+     "frame_num": 102,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 114.465,
+      "saa_sep": 37.224,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 11.68,
+      "finite_fraction": 0.968
+     },
+     "expected_target_xy": [
+      0.6928,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-92517a024-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-04-16T02:43:37Z",
+     "mjd": 58224.113625,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-92517a024-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-92517a024-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7a/92517a/024/92517a024-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "92517a",
+     "frame_num": 24,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 108.831,
+      "saa_sep": 30.578,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.98,
+      "finite_fraction": 0.954
+     },
+     "expected_target_xy": [
+      0.6929,
+      0.4834
+     ]
+    },
+    {
+     "id": "neowiser-98924a151-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-11-11T18:01:57Z",
+     "mjd": 58433.751359,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-98924a151-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-98924a151-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4a/98924a/151/98924a151-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "98924a",
+     "frame_num": 151,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 135.309,
+      "saa_sep": 70.316,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 3.99,
+      "finite_fraction": 0.922
+     },
+     "expected_target_xy": [
+      0.707,
+      0.4822
+     ]
+    },
+    {
+     "id": "neowiser-98932a151-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2018-11-12T00:18:46Z",
+     "mjd": 58434.013038,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-98932a151-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-98932a151-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2a/98932a/151/98932a151-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "98932a",
+     "frame_num": 151,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 137.727,
+      "saa_sep": 73.162,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 5.19,
+      "finite_fraction": 0.968
+     },
+     "expected_target_xy": [
+      0.707,
+      0.4822
+     ]
+    },
+    {
+     "id": "neowiser-04923r102-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-04-17T17:42:39Z",
+     "mjd": 58590.737956,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-04923r102-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-04923r102-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/04923r/102/04923r102-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "04923r",
+     "frame_num": 102,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 53.314,
+      "saa_sep": 18.868,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.49,
+      "finite_fraction": 0.937
+     },
+     "expected_target_xy": [
+      0.7176,
+      0.4814
+     ]
+    },
+    {
+     "id": "neowiser-04953r078-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-04-18T17:15:40Z",
+     "mjd": 58591.719223,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-04953r078-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-04953r078-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/04953r/078/04953r078-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "04953r",
+     "frame_num": 78,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 65.207,
+      "saa_sep": 21.21,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 8.86,
+      "finite_fraction": 0.968
+     },
+     "expected_target_xy": [
+      0.7176,
+      0.4814
+     ]
+    },
+    {
+     "id": "neowiser-11246r094-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-11-10T13:19:51Z",
+     "mjd": 58797.555459,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-11246r094-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-11246r094-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/6r/11246r/094/11246r094-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "11246r",
+     "frame_num": 94,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 110.129,
+      "saa_sep": 6.725,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 5.66,
+      "finite_fraction": 0.939
+     },
+     "expected_target_xy": [
+      0.7315,
+      0.4802
+     ]
+    },
+    {
+     "id": "neowiser-11260r152-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2019-11-11T00:19:14Z",
+     "mjd": 58798.013366,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-11260r152-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-11260r152-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/11260r/152/11260r152-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "11260r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 105.289,
+      "saa_sep": 76.223,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.39,
+      "finite_fraction": 0.934
+     },
+     "expected_target_xy": [
+      0.7315,
+      0.4802
+     ]
+    },
+    {
+     "id": "neowiser-16055r101-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-04-15T19:38:30Z",
+     "mjd": 58954.81841,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-16055r101-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-16055r101-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/16055r/101/16055r101-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "16055r",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 151.422,
+      "saa_sep": 12.841,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 9.18,
+      "finite_fraction": 0.964
+     },
+     "expected_target_xy": [
+      0.7421,
+      0.4793
+     ]
+    },
+    {
+     "id": "neowiser-16085r077-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-04-16T19:11:09Z",
+     "mjd": 58955.799421,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-16085r077-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-16085r077-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/16085r/077/16085r077-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "16085r",
+     "frame_num": 77,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 153.336,
+      "saa_sep": 14.77,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.36,
+      "finite_fraction": 0.961
+     },
+     "expected_target_xy": [
+      0.7422,
+      0.4793
+     ]
+    },
+    {
+     "id": "neowiser-22482r176-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-11-11T23:14:32Z",
+     "mjd": 59164.96843,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-22482r176-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-22482r176-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2r/22482r/176/22482r176-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "22482r",
+     "frame_num": 176,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 53.077,
+      "saa_sep": 88.234,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.54,
+      "finite_fraction": 0.919
+     },
+     "expected_target_xy": [
+      0.7563,
+      0.4782
+     ]
+    },
+    {
+     "id": "neowiser-22492r152-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2020-11-12T07:05:25Z",
+     "mjd": 59165.295434,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-22492r152-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-22492r152-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/2r/22492r/152/22492r152-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "22492r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 57.191,
+      "saa_sep": -1.424,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 9.73,
+      "finite_fraction": 0.924
+     },
+     "expected_target_xy": [
+      0.7563,
+      0.4782
+     ]
+    },
+    {
+     "id": "neowiser-27203r101-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-15T06:54:28Z",
+     "mjd": 59319.287833,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27203r101-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27203r101-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/27203r/101/27203r101-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27203r",
+     "frame_num": 101,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 80.009,
+      "saa_sep": 83.046,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.17,
+      "finite_fraction": 0.908
+     },
+     "expected_target_xy": [
+      0.7667,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-27229r077-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-04-16T03:18:05Z",
+     "mjd": 59320.137558,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-27229r077-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-27229r077-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9r/27229r/077/27229r077-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "27229r",
+     "frame_num": 77,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 71.7,
+      "saa_sep": 34.337,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 11.33,
+      "finite_fraction": 0.97
+     },
+     "expected_target_xy": [
+      0.7667,
+      0.4773
+     ]
+    },
+    {
+     "id": "neowiser-33614r175-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-11-10T19:02:50Z",
+     "mjd": 59528.793644,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-33614r175-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-33614r175-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/33614r/175/33614r175-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "33614r",
+     "frame_num": 175,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 150.888,
+      "saa_sep": 81.185,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 9.35,
+      "finite_fraction": 0.945
+     },
+     "expected_target_xy": [
+      0.7808,
+      0.4761
+     ]
+    },
+    {
+     "id": "neowiser-33628r151-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2021-11-11T06:01:29Z",
+     "mjd": 59529.251042,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-33628r151-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-33628r151-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/8r/33628r/151/33628r151-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "33628r",
+     "frame_num": 151,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 151.961,
+      "saa_sep": 4.557,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 5.45,
+      "finite_fraction": 0.963
+     },
+     "expected_target_xy": [
+      0.7808,
+      0.4761
+     ]
+    },
+    {
+     "id": "neowiser-38457r078-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-04-17T22:58:32Z",
+     "mjd": 59686.957318,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-38457r078-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-38457r078-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7r/38457r/078/38457r078-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "38457r",
+     "frame_num": 78,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 86.498,
+      "saa_sep": -2.192,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 9.09,
+      "finite_fraction": 0.916
+     },
+     "expected_target_xy": [
+      0.7915,
+      0.4752
+     ]
+    },
+    {
+     "id": "neowiser-38465r077-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-04-18T05:14:26Z",
+     "mjd": 59687.218361,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-38465r077-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-38465r077-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/38465r/077/38465r077-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "38465r",
+     "frame_num": 77,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 89.576,
+      "saa_sep": 60.481,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 8.74,
+      "finite_fraction": 0.973
+     },
+     "expected_target_xy": [
+      0.7915,
+      0.4752
+     ]
+    },
+    {
+     "id": "neowiser-44774r177-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-09T23:35:05Z",
+     "mjd": 59892.982704,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44774r177-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44774r177-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/44774r/177/44774r177-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44774r",
+     "frame_num": 177,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 76.776,
+      "saa_sep": 84.046,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 5.73,
+      "finite_fraction": 0.954
+     },
+     "expected_target_xy": [
+      0.8053,
+      0.4741
+     ]
+    },
+    {
+     "id": "neowiser-44780r152-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2022-11-10T04:16:33Z",
+     "mjd": 59893.178168,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-44780r152-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-44780r152-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/0r/44780r/152/44780r152-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "44780r",
+     "frame_num": 152,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 74.444,
+      "saa_sep": 22.375,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 4.03,
+      "finite_fraction": 0.974
+     },
+     "expected_target_xy": [
+      0.8053,
+      0.4741
+     ]
+    },
+    {
+     "id": "neowiser-49611r100-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-04-16T09:19:08Z",
+     "mjd": 60050.388297,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-49611r100-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-49611r100-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/1r/49611r/100/49611r100-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "49611r",
+     "frame_num": 100,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 147.347,
+      "saa_sep": 115.55,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 9.89,
+      "finite_fraction": 0.956
+     },
+     "expected_target_xy": [
+      0.8159,
+      0.4732
+     ]
+    },
+    {
+     "id": "neowiser-49633r027-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-04-17T02:27:39Z",
+     "mjd": 60051.102535,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-49633r027-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-49633r027-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/3r/49633r/027/49633r027-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "49633r",
+     "frame_num": 27,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 142.142,
+      "saa_sep": 25.791,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 7.26,
+      "finite_fraction": 0.917
+     },
+     "expected_target_xy": [
+      0.816,
+      0.4732
+     ]
+    },
+    {
+     "id": "neowiser-56104r150-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2023-11-12T20:11:03Z",
+     "mjd": 60260.841012,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-56104r150-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-56104r150-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/4r/56104r/150/56104r150-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "56104r",
+     "frame_num": 150,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": null,
+      "moon_sep": 85.034,
+      "saa_sep": 94.441,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 8.79,
+      "finite_fraction": 0.915
+     },
+     "expected_target_xy": [
+      0.8301,
+      0.472
+     ]
+    },
+    {
+     "id": "neowiser-60875r099-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-14T14:33:06Z",
+     "mjd": 60414.606322,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60875r099-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60875r099-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/5r/60875r/099/60875r099-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60875r",
+     "frame_num": 99,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 47.129,
+      "saa_sep": 54.56,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.59,
+      "finite_fraction": 0.923
+     },
+     "expected_target_xy": [
+      0.8405,
+      0.4712
+     ]
+    },
+    {
+     "id": "neowiser-60889r075-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-15T01:20:34Z",
+     "mjd": 60415.055953,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60889r075-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60889r075-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/9r/60889r/075/60889r075-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60889r",
+     "frame_num": 75,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 42.869,
+      "saa_sep": 14.674,
+      "target_finite": true,
+      "target_saturated": false,
+      "snr_at_target": 5.88,
+      "finite_fraction": 0.923
+     },
+     "expected_target_xy": [
+      0.8405,
+      0.4712
+     ]
+    },
+    {
+     "id": "neowiser-60997r041-w2",
+     "mission": "NEOWISE-R",
+     "date_utc": "2024-04-18T12:34:55Z",
+     "mjd": 60418.524256,
+     "epoch_start": null,
+     "epoch_end": null,
+     "preview": "/observation-lab/supplemental/wise-0855/neowiser-60997r041-w2.png",
+     "fits": "/observation-lab/supplemental/wise-0855/neowiser-60997r041-w2.fits.gz",
+     "source_url": "https://irsa.ipac.caltech.edu/ibe/data/wise/neowiser/p1bm_frm/7r/60997r/041/60997r041-w2-int-1b.fits",
+     "release": "neowiser",
+     "scan_id": "60997r",
+     "frame_num": 41,
+     "quality": {
+      "qual_frame": 10,
+      "qual_scan": 5,
+      "moon_sep": 29.305,
+      "saa_sep": 79.114,
+      "target_finite": false,
+      "target_saturated": false,
+      "snr_at_target": 6.07,
+      "finite_fraction": 0.971
+     },
+     "expected_target_xy": [
+      0.8408,
+      0.4711
+     ]
+    }
+   ]
+  }
+ ],
+ "discovery": {
+  "matched": 698,
+  "attempted": 209,
+  "downloaded": 209,
+  "valid": 204,
+  "per_date_limit": 2,
+  "failures": {
+   "discovery": [],
+   "download": [],
+   "coverage": [
+    "neowiser-16081r077-w1: predicted target at pixel (32,67) outside 121x68 cutout (frame edge)",
+    "neowiser-16081r077-w2: predicted target at pixel (32,67) outside 120x68 cutout (frame edge)",
+    "allsky-04238a115-w2: predicted target at pixel (60,60) outside 64x122 cutout (frame edge)",
+    "neowiser-04957r077-w2: predicted target at pixel (-26,66) outside 60x121 cutout (frame edge)",
+    "neowiser-04957r077-w1: predicted target at pixel (-28,66) outside 58x122 cutout (frame edge)"
+   ]
+  },
+  "method": "IRSA IBE search POS=<preset centre> over WISE all-sky, 3-band, post-cryo and NEOWISE-R L1b frame tables; up to per_date_limit best-quality exposures downloaded per band and UTC date."
+ }
+}

@@ -447,21 +447,29 @@ def cached_featured_session(field, options, job_id):
               (options['end_mjd'] is None or f['mjd'] < options['end_mjd'])]
     if not frames:
         return None
-    daily = default_preset(field, options)
+    preset = default_preset(field, options)
+    every = options.get('all_exposures', False)
+    daily = preset and not every
     available = len(frames)
-    limited = not daily and available > ALTERNATE_FRAME_LIMIT
+    date_count = len(observing_days(frames))
+    limited = not preset and not every and available > ALTERNATE_FRAME_LIMIT
     example = motion_examples().get(field['key'])
     matched_example = {point['sha256'] for point in example['points']} if example else set()
     if daily:
         frames = [next((frame for frame in day if frame['sha256'] in matched_example), day[0])
                   for day in observing_days(frames)]
         job_id = hashlib.sha256(f"daily-v2:{manifest['id']}".encode()).hexdigest()[:32]
+    elif every:
+        frames = sorted(frames, key=lambda f: (f['mjd'], f['detector'], f['id']))
+        if preset:
+            job_id = hashlib.sha256(f"all-v1:{manifest['id']}".encode()).hexdigest()[:32]
     else:
         frames = sample_frames(frames)
     path = CACHE / job_id
     path.mkdir(exist_ok=True)
     manifest.update(id=job_id, options=options, frames=[dict(frame, index=i) for i, frame in enumerate(frames)],
                     archive_matches=manifest['archive_matches'] if daily else None, matched_frames=available,
+                    date_count=date_count, exposure_count=available,
                     excluded_frames=[], limited=limited, daily_sequence=daily)
     if example:
         by_hash = {frame['sha256']: index for index, frame in enumerate(frames)}

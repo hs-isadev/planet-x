@@ -55,3 +55,14 @@ The default timeline keeps one frame per UTC date. The user clarified that **the
 | Lab timeline, counts and filtering | `web/observation-lab/app.js`, `web/observation-lab/index.html` |
 | Regression and deployment | `tests/lab_frame_render.mjs`, `tests/test_parallax_recovery.py`, `docs/RENDER_DEPLOYMENT.md` |
 
+## Status update 2026-11-17
+
+- Done: SPHEREx now has 222 dates for R Draconis (was 41) and 35 for RW Aurigae (was 27); five targets total 1,374 exposures (was 1,185). Barnard, Epsilon Indi B and WISE 0855 gained no new SPHEREx dates (archive census).
+- Done: WISE (2010) and NEOWISE-R (2014 to 2024) single-exposure epochs added for WISE 0855, Barnard's Star and Epsilon Indi B (about 35 MB). WISE 0855 W2 is detected; W1 is not.
+- Report: docs/coverage/epoch-report.md (tables, failures by stage, measured vs not measured, reproduce commands).
+- Tests as reported by the agents: pytest -m "not live" 90 passed, 2 failed (both pre-existing); lab render test PASS 1,561 frames.
+- Not done: live Render deployment; no cross-mission motion measured; 200-date goal met only for R Draconis.
+- Next steps, in order:
+  1. Commit and push to final-parallex-preview, redeploy Render with SPHEREX_PREWARM=0, and confirm the deployed SHA.
+  2. Optional: WISE series for rw-aur and r-dra.
+  3. Consider cross-mission astrometry only with shared reference stars and stated uncertainties.

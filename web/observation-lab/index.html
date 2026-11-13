@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/controls.css?v=15">
   <link rel="stylesheet" href="css/appbar.css?v=14">
   <link rel="stylesheet" href="css/menu.css?v=14">
-  <link rel="stylesheet" href="css/stage.css?v=15">
+  <link rel="stylesheet" href="css/stage.css?v=16">
   <link rel="stylesheet" href="css/inspector.css?v=14">
   <link rel="stylesheet" href="css/spectrum.css?v=15">
   <link rel="stylesheet" href="css/atlas.css?v=15">
@@ -279,11 +279,38 @@
           <div class="frames-block">
             <div class="timeline-heading">
               <span id="baseline">TIMELINE</span>
+              <span id="exposure-mode" class="segmented" role="group" aria-label="Frames shown" hidden>
+                <button type="button" id="mode-dates" aria-pressed="true">One per date</button>
+                <button type="button" id="mode-all" aria-pressed="false">All exposures</button>
+              </span>
+              <span id="exposure-counts"></span>
               <button type="button" id="motion-pair" class="btn-outline btn-compact" hidden>Motion pair</button>
               <label>Compare <select id="reference-date"></select></label>
             </div>
             <div class="filmstrip" id="filmstrip" role="toolbar" aria-label="Observation frames. Arrow keys to move, Enter to open."></div>
           </div>
+
+          <section id="older-epochs" class="older-epochs" aria-labelledby="older-title" hidden>
+            <h3 id="older-title" class="section-title">Older epochs from other missions</h3>
+            <p id="older-compare" class="older-note"></p>
+            <div id="older-series" class="older-series" role="group" aria-label="Series from other missions"></div>
+            <div class="older-view">
+              <div class="older-image"><img id="older-img" alt="Preview from another mission"><i id="older-marker" hidden></i></div>
+              <div class="older-side">
+                <div class="older-controls">
+                  <button id="older-play" type="button" class="btn-outline btn-compact" aria-pressed="false">Play</button>
+                  <button id="older-prev" type="button" class="btn-ghost btn-compact" aria-label="Previous epoch">Prev</button>
+                  <input id="older-range" type="range" min="0" max="0" value="0" aria-label="Epoch frame">
+                  <button id="older-next" type="button" class="btn-ghost btn-compact" aria-label="Next epoch">Next</button>
+                  <span id="older-counter" class="frame-counter"></span>
+                </div>
+                <label id="older-extra-label" class="older-note" hidden><input id="older-extra" type="checkbox"> Include all exposures</label>
+                <dl id="older-meta" class="older-meta"></dl>
+                <p id="older-marker-note" class="older-note" hidden>Marker: predicted position (catalog proper motion), not a measurement.</p>
+                <p id="older-notes" class="older-note"></p>
+              </div>
+            </div>
+          </section>
 
           <div class="stage-notes">
             <p class="comparison-note" id="comparison-note">ICRS grid</p>

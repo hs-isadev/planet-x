@@ -54,6 +54,28 @@ def install_lab_routes(app):
             from .observation_lab_core.warm_cache import run_forever
             Thread(target=run_forever, daemon=True, name='spherex-prewarm').start()
 
+    # Bundled WISE/NEOWISE epochs (scripts/fetch_wise_epochs.py). Registered before the proxy so they win the match.
+    from .archive import ROOT as PROJECT
+    supplemental = (PROJECT/'backend/data/supplemental-epochs').resolve()
+    field_key = re.compile(r'[a-z0-9][a-z0-9-]{0,40}')
+
+    @app.get(PREFIX+'/api/supplemental/{key}',include_in_schema=False)
+    def supplemental_series(key: str):
+        file = supplemental/key/'series.json'
+        if not field_key.fullmatch(key) or not file.is_file():
+            return JSONResponse({'error':'No supplemental epochs for this field.'},status_code=404)
+        return FileResponse(file,media_type='application/json',headers={'Cache-Control':'no-cache'})
+
+    @app.get(PREFIX+'/supplemental/{key}/{name}',include_in_schema=False)
+    def supplemental_file(key: str, name: str):
+        if not field_key.fullmatch(key) or not re.fullmatch(r'[\w-]+(?:\.png|\.fits\.gz)',name):
+            raise HTTPException(404)
+        file = (supplemental/key/name).resolve()
+        if not file.is_relative_to(supplemental) or not file.is_file():
+            raise HTTPException(404)
+        return FileResponse(file,media_type='image/png' if name.endswith('.png') else 'application/gzip',
+                            headers={'Cache-Control':'public, max-age=86400'})
+
     @app.api_route(PREFIX+'/{kind}/{path:path}',methods=['GET','POST'],include_in_schema=False)
     async def proxy(kind: str, path: str, request: Request):
         route = f'{kind}/{path}'

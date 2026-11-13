@@ -4,13 +4,13 @@ const state = { library: null, session: null, index: 0, reference: 0, mode: "sin
   zoom: 1, panX: 0, panY: 0, point: null, timer: null, loading: false, images: new Map(),
   maskCache: new Map(), hoverCache: new Map(),
   drawVersion: 0, inspectVersion: 0, title: "Vesta", field: "vesta", objectContext: null,
-  requestVersion: 0, pending: null, views: new Map() };
+  requestVersion: 0, pending: null, views: new Map(), allExposures: false };
 const hues = ["#b798f4", "#84b3ef", "#a5edcc", "#ebdf82", "#eec083", "#efac99"];
 const dateText = timestamp => new Date(timestamp).toISOString().slice(0, 10);
 const timeText = timestamp => new Date(timestamp).toISOString().slice(11, 16);
 // DR1 mosaic frames are wavelength channels stacked over many dates: label them by wavelength, never by a date.
 const frameLabel = frame => frame.mosaic ? `${Number(frame.mosaic_wavelength).toFixed(3)} µm` : dateText(frame.timestamp);
-const frameSub = frame => frame.mosaic ? `DR1 mosaic · ${frame.mosaic_hits} stacked` : `${timeText(frame.timestamp)} UTC · ${frame.release}`;
+const frameSub = frame => frame.mosaic ? `DR1 mosaic · ${frame.mosaic_hits} stacked` : `${timeText(frame.timestamp)} UTC · D${frame.detector}${frame.wavelength == null ? "" : ` · ${frame.wavelength.toFixed(2)} µm`} · ${frame.release}`;
 const numberText = (value, digits=3) => value == null ? "Unavailable" : Number(value).toFixed(digits);
 
 async function api(path, options={}) {
@@ -394,7 +394,7 @@ function sessionReady(session, request) {
     }
     button.append(img,caption); button.onclick = () => { stop(); setFrame(index); };
     $("filmstrip").append(button);
-    const option = new Option(frame.mosaic ? `${frameLabel(frame)} · DR1 mosaic` : `${dateText(frame.timestamp)} ${timeText(frame.timestamp)} · ${frame.release}`,index);
+    const option = new Option(frame.mosaic ? `${frameLabel(frame)} · DR1 mosaic` : `${dateText(frame.timestamp)} ${timeText(frame.timestamp)} · D${frame.detector} · ${frame.release}`,index);
     $("reference-date").append(option);
   });
   $("reference-date").value = state.reference;
@@ -471,7 +471,12 @@ function sessionReady(session, request) {
     $("fits-link").removeAttribute("href"); $("source-link").hidden = true; $("context-button").hidden = true;
     $("provenance").textContent = ""; $("checksum").textContent = "";
   }
-  const countText = session.daily_sequence ? `${session.frames.length} observation dates` :
+  const modeShown = session.exposure_count != null;
+  $("exposure-mode").hidden = !modeShown;
+  $("exposure-counts").textContent = modeShown ? `${session.date_count} dates · ${session.exposure_count} exposures` : "";
+  $("mode-dates").setAttribute("aria-pressed", String(!state.allExposures));
+  $("mode-all").setAttribute("aria-pressed", String(state.allExposures));
+  const countText = modeShown ? `${session.date_count} dates · ${session.exposure_count} exposures${state.allExposures ? " · all shown" : ""}` : session.daily_sequence ? `${session.frames.length} observation dates` :
     session.archive_matches == null ? `${session.frames.length} frames` : `${session.frames.length} / ${session.archive_matches} frames`;
   const capText = session.snapshot && !session.snapshot_complete ? " · saved observations" : "";
   status(`${countText}${session.mosaic ? " · DR1 mosaic channels" : ""}${capText}${session.failures.length ? ` · ${session.failures.length} errors` : ""}`);
@@ -484,7 +489,114 @@ function sessionReady(session, request) {
   url.searchParams.set("field",state.field);
   history.replaceState(null,"",url);
   window.dispatchEvent(new CustomEvent("sky-session-ready",{detail:session}));
+  loadOlder(state.field);
+  olderCompare();
 }
+
+for (const [id, all] of [["mode-dates", false], ["mode-all", true]]) $(id).onclick = () => {
+  if (state.allExposures === all) return;
+  state.allExposures = all;
+  stop();
+  search("saved");  // sessionReady keeps the frame nearest the current time
+};
+
+// ---- Older epochs from other missions: each series is its own sequence and its counts are never merged with SPHEREx ----
+const older = {field: null, data: null, series: null, index: 0, timer: null, token: 0};
+const olderDay = value => new Date(value).toISOString().slice(0, 10);
+const olderTime = frame => Date.parse(frame.date_utc || frame.epoch_start);
+const olderFrames = () => older.series ? [...older.series.frames, ...($("older-extra").checked ? older.series.extra || [] : [])]
+  .sort((a, b) => olderTime(a) - olderTime(b)) : [];
+
+function olderCompare() {
+  const session = state.session;
+  $("older-compare").textContent = session ? `SPHEREx for comparison: ${session.date_count ?? session.frames.length} distinct dates (separate series, never combined with the counts below).` : "";
+}
+
+function stopOlder() {
+  clearInterval(older.timer); older.timer = null;
+  $("older-play").setAttribute("aria-pressed", "false"); $("older-play").textContent = "Play";
+}
+
+async function loadOlder(field) {
+  if (older.field === field) return;
+  older.field = field; older.series = null; stopOlder();
+  $("older-epochs").hidden = true;
+  if (field === "custom" || field === "vesta") return;
+  const token = ++older.token;
+  try {
+    const response = await fetch(`/observation-lab/api/supplemental/${encodeURIComponent(field)}`);
+    if (!response.ok) return;  // no supplemental data for this field: stay hidden
+    const data = await response.json();
+    if (token !== older.token || !data.series?.length) return;
+    $("older-series").replaceChildren(...data.series.map(series => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = `${series.mission} · ${series.product} · ${series.band}`;
+      const small = document.createElement("small");
+      small.textContent = `${series.distinct_dates} date${series.distinct_dates === 1 ? "" : "s"} · ${series.first_date} to ${series.last_date}`;
+      button.append(small);
+      button.onclick = () => { stopOlder(); older.series = series; older.index = 0; showOlder(); };
+      return button;
+    }));
+    older.data = data;
+    // Open on the longest series; on a tie the later (longer-wavelength) band, where cold targets show up.
+    older.series = data.series.reduce((best, s) => s.distinct_dates >= best.distinct_dates ? s : best);
+    $("older-epochs").hidden = false;
+    olderCompare();
+    showOlder();
+  } catch { /* offline or malformed: the panel stays hidden */ }
+}
+
+function showOlder() {
+  const series = older.series, frames = olderFrames();
+  older.index = Math.min(older.index, Math.max(0, frames.length - 1));
+  const frame = frames[older.index];
+  [...$("older-series").children].forEach((button, i) => button.setAttribute("aria-pressed", String(older.data.series[i] === series)));
+  $("older-extra-label").hidden = !series.extra?.length;
+  $("older-range").max = Math.max(0, frames.length - 1);
+  $("older-range").value = older.index;
+  $("older-counter").textContent = `${frames.length ? older.index + 1 : 0} / ${frames.length}`;
+  for (const id of ["older-play", "older-prev", "older-next", "older-range"]) $(id).disabled = frames.length < 2;
+  $("older-notes").textContent = (series.notes || []).join(" ");
+  $("older-meta").replaceChildren();
+  $("older-marker").hidden = $("older-marker-note").hidden = true;
+  if (!frame) { $("older-img").removeAttribute("src"); return; }
+  $("older-img").src = frame.preview;
+  const coadd = frame.epoch_start && frame.epoch_end;
+  const q = frame.quality || {}, flags = [];
+  if (q.target_saturated) flags.push("target saturated");
+  if (q.target_finite === false) flags.push("no finite data at target");
+  if (q.snr_at_target != null) flags.push(`SNR at target ${Number(q.snr_at_target).toFixed(1)}`);
+  const rows = [["Mission", series.mission], ["Product", series.product], ["Band", `${series.band} · ${series.wavelength_um} µm`],
+    [coadd ? "Epoch (coadd)" : "Date", coadd ? `${olderDay(frame.epoch_start)} to ${olderDay(frame.epoch_end)}` : olderDay(frame.date_utc)],
+    ["Quality", flags.length ? flags.join(" · ") : "No flags reported"]];
+  for (const [label, value] of rows) {
+    const row = document.createElement("div"), term = document.createElement("dt"), item = document.createElement("dd");
+    term.textContent = label; item.textContent = value; row.append(term, item); $("older-meta").append(row);
+  }
+  if (/^https?:/.test(frame.source_url || "")) {
+    const link = document.createElement("a"), row = document.createElement("div"), term = document.createElement("dt"), item = document.createElement("dd");
+    link.href = frame.source_url; link.target = "_blank"; link.rel = "noreferrer"; link.textContent = "Source";
+    term.textContent = "Archive"; item.append(link); row.append(term, item); $("older-meta").append(row);
+  }
+  if (Array.isArray(frame.expected_target_xy)) {
+    const [x, y] = frame.expected_target_xy;
+    $("older-marker").style.left = `${x * 100}%`; $("older-marker").style.top = `${y * 100}%`;
+    $("older-marker").title = "Predicted position (catalog proper motion)";
+    $("older-marker").hidden = $("older-marker-note").hidden = false;
+  }
+}
+
+const olderStep = delta => { const n = olderFrames().length; older.index = (older.index + delta + n) % n; showOlder(); };
+$("older-prev").onclick = () => { stopOlder(); olderStep(-1); };
+$("older-next").onclick = () => { stopOlder(); olderStep(1); };
+$("older-range").oninput = event => { stopOlder(); older.index = Number(event.target.value); showOlder(); };
+$("older-extra").onchange = () => { older.index = 0; showOlder(); };
+$("older-play").onclick = () => {
+  if (older.timer) return stopOlder();
+  $("older-play").setAttribute("aria-pressed", "true"); $("older-play").textContent = "Pause";
+  older.timer = setInterval(() => olderStep(1), 1100);
+};
 
 const bandLabel = detector => Number(detector) ? `D${detector}` : "all detectors";
 
@@ -560,7 +672,7 @@ async function search(source="saved", archiveOffset=0) {
           title: `Loading ${where}`, detail: current.source === "saved" ? "Opening saved SPHEREx exposures for this sky patch." : "Searching IRSA for SPHEREx exposures covering this sky patch."});
         const task = window.SpaceLoader?.begin(current.source === "saved" ? `Loading ${where}` : `Searching IRSA · ${where}`);
         try {
-          const job = await api("/observation-lab/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...current.options,source:current.source,field:current.field,archive_offset:current.archiveOffset,mosaic:current.mosaic ?? "auto"})});
+          const job = await api("/observation-lab/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...current.options,source:current.source,field:current.field,archive_offset:current.archiveOffset,all_exposures:state.allExposures,mosaic:current.mosaic ?? "auto"})});
           result = job.result;
           let previewShown = false;
           while (!result && current.version === state.requestVersion) {

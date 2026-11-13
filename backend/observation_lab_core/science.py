@@ -75,9 +75,12 @@ def request_options(payload):
     end_mjd = float(Time(end).mjd) + 1 if end else None
     if start_mjd is not None and end_mjd is not None and start_mjd >= end_mjd:
         raise ValueError('The end date must be on or after the start date.')
-    return {'ra': float(sky.ra.deg), 'dec': float(sky.dec.deg), 'fov': width,
-            'detector': detector, 'start': start, 'end': end,
-            'start_mjd': start_mjd, 'end_mjd': end_mjd}
+    options = {'ra': float(sky.ra.deg), 'dec': float(sky.dec.deg), 'fov': width,
+               'detector': detector, 'start': start, 'end': end,
+               'start_mjd': start_mjd, 'end_mjd': end_mjd}
+    if payload.get('all_exposures') is True:
+        options['all_exposures'] = True  # only set when on, so existing session keys are unchanged
+    return options
 
 
 def grid_for(options):
