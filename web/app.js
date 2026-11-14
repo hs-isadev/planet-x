@@ -1,4 +1,4 @@
-import {installSatelliteView} from './satellite-view.js?v=3';
+import {installSatelliteView} from './satellite-view.js?v=4';
 const $=id=>document.getElementById(id);
 const icons={search:'<circle cx="7.5" cy="7.5" r="5"/><path d="m11.5 11.5 4 4"/>',close:'<path d="m4 4 10 10M14 4 4 14"/>',theme:'<circle cx="9" cy="9" r="5.5"/><path d="M9 3.5v11a5.5 5.5 0 0 0 0-11"/>',info:'<circle cx="9" cy="9" r="7"/><path d="M9 8v5M9 5v.2"/>',expand:'<path d="M2 6V2h4M12 2h4v4M16 12v4h-4M6 16H2v-4"/>',target:'<circle cx="9" cy="9" r="5"/><path d="M9 1v4M9 13v4M1 9h4M13 9h4"/>',arrow:'<path d="M3 9h12M10 4l5 5-5 5"/>',link:'<path d="m7 11 4-4M6 13l-1 1a3 3 0 0 1-4-4l4-4a3 3 0 0 1 4 0M12 5l1-1a3 3 0 0 1 4 4l-4 4a3 3 0 0 1-4 0"/>',play:'<path d="m5 3 9 6-9 6Z"/>',pause:'<path d="M6 3v12M12 3v12"/>',prev:'<path d="M4 4v10M14 4l-8 5 8 5Z"/>',next:'<path d="M14 4v10M4 4l8 5-8 5Z"/>',image:'<rect x="2" y="2" width="14" height="14" rx="2"/><circle cx="6" cy="6" r="1"/><path d="m2 13 5-5 4 4 2-2 3 3"/>'};
 function icon(k){return '<svg viewBox="0 0 18 18" aria-hidden="true">'+(icons[k]||icons.info)+'</svg>';}document.querySelectorAll('[data-icon]').forEach(e=>e.innerHTML=icon(e.dataset.icon));
@@ -6,14 +6,50 @@ export function toast(message){$('toast').textContent=message;$('toast').hidden=
 export async function api(url,options={}){let c=new AbortController(),timer=setTimeout(()=>c.abort(),100000);try{let r=await fetch(url,{...options,signal:c.signal});if(!r.ok){let t=await r.json().catch(()=>({detail:'Request failed ('+r.status+')'}));throw new Error(typeof t.detail==='string'?t.detail:JSON.stringify(t.detail));}return await r.json();}catch(e){if(e.name==='AbortError')throw new Error('The data service is taking too long. Please retry.');throw e;}finally{clearTimeout(timer);}}
 const state={mode:'solar',solar:null,stars:null,selected:'earth',presets:[],scope:'nearby'};let scene=null;let cosmicBusy=false,cosmicReady=null;
 function message(text){$('scene-message').textContent=text;$('scene-message').hidden=!text;}
-function facts(rows){$('object-facts').replaceChildren();for(let [label,value] of rows){let dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;$('object-facts').append(dt,dd);}}
+function facts(rows,id='object-facts'){
+ const list=$(id);
+ list.replaceChildren();
+ for(const [label,value] of rows){
+  const dt=document.createElement('dt'),dd=document.createElement('dd');
+  dt.textContent=label;dd.textContent=value;list.append(dt,dd);
+ }
+ list.hidden=!rows.length;
+}
 let selectionToken=0;
 function selectedData(){return state.mode==='solar'?state.solar?.objects.find(x=>x.id===state.selected):state.stars?.objects.find(x=>x.id===state.selected);}
 function contextParams(d){return new URLSearchParams({date:$('date').value,...(state.mode==='solar'||state.selected==='origin'?{body:state.selected==='origin'?'sun':state.selected}:{ra:d.ra,dec:d.dec,distance_pc:d.distance_pc})});}
 function select(id,focus=false){let token=++selectionToken;state.selected=id;scene?.select(id,focus);let d=selectedData();if(id==='origin')d={id,name:'Sun',kind:'G-type star',description:'Our star is the origin of this catalog-distance view.',distance_pc:0,teff_gspphot:5772};if(!d)return;
- $('object-name').textContent=d.name;$('object-kind').textContent=state.mode==='solar'?d.kind.toUpperCase():'CATALOG / '+(d.catalog||'SUN').toUpperCase();$('object-description').textContent=d.description||'An individual catalog source. Its direction and distance are measured; its photosphere is unresolved.';
- if(state.mode==='solar'){facts([['From Sun',d.distance_sun_au.toFixed(3)+' AU'],['Mean radius',d.radius_km.toLocaleString('en-US')+' km'],[d.effective_temperature_k?'Effective temperature':'Orbital period',d.effective_temperature_k?d.effective_temperature_k.toLocaleString()+' K':(d.orbital_period_days||0).toLocaleString()+' days']]);$('object-source').textContent=d.asset_error||(d.id==='sun'?'Computed plasma / granulation illustration at 5,772 K. It is not a map of current sunspots.':d.texture_note);$('observe-selected').hidden=true;
- }else{facts([['From Sun',d.distance_pc.toFixed(3)+' pc / '+(d.distance_pc*3.26156).toFixed(2)+' ly'],['Distance interval',d.distance_lower_pc?d.distance_lower_pc.toFixed(3)+'–'+d.distance_upper_pc.toFixed(3)+' pc':'Reference origin'],['Temperature',d.teff_gspphot?Math.round(d.teff_gspphot).toLocaleString()+' K':'Not measured here'],['Magnitude',d.phot_g_mean_mag!=null?d.phot_g_mean_mag.toFixed(2)+' G':'Unavailable'],['Direction',d.ra!=null?d.ra.toFixed(3)+'°, '+d.dec.toFixed(3)+'°':'Solar origin']]);$('object-source').textContent=(d.catalog||'Solar reference')+' · '+(d.uncertain?'uncertain / model distance. ':'parallax distance. ')+(d.teff_gspphot?'Gaia GSP-Phot temperature is a model estimate. ':'')+'Approach opens a computed photosphere illustration. Individual spots, planets and terrain are unresolved; none are claimed as observations.';$('observe-selected').hidden=id==='origin';}
+ $('object-name').textContent=d.name;
+ $('object-kind').textContent=d.kind || (d.spectral_type ? 'Spectral type '+d.spectral_type : 'Catalog source');
+ $('object-description').textContent=d.description||'';
+ $('object-description').hidden=!d.description;
+ if(state.mode==='solar'){
+  const rows=[['From Sun',d.distance_sun_au.toFixed(3)+' AU'],['Mean radius',d.radius_km.toLocaleString('en-US')+' km']];
+  if(d.effective_temperature_k)rows.push(['Temperature',d.effective_temperature_k.toLocaleString()+' K']);
+  else if(d.orbital_period_days)rows.push(['Orbital period',d.orbital_period_days.toLocaleString()+' days']);
+  facts(rows);
+  facts([],'object-extra-facts');
+  $('object-source').textContent=d.asset_error||(d.id==='sun'?'Illustrative plasma and granulation at 5,772 K.':d.texture_note||'');
+  $('observe-selected').hidden=true;
+ }else{
+  const rows=[['Distance from Sun',id==='origin'?'Solar origin':Number.isFinite(d.distance_pc)?(d.distance_pc*3.26156).toFixed(2)+' ly':'Unavailable']];
+  if(Number.isFinite(d.teff_gspphot)&&d.teff_gspphot>0)rows.push(['Estimated temperature',Math.round(d.teff_gspphot).toLocaleString()+' K']);
+  if(d.spectral_type&&d.kind)rows.push(['Spectral type',d.spectral_type]);
+  facts(rows);
+  const extra=[];
+  if(d.distance_lower_pc!=null&&d.distance_upper_pc!=null)extra.push(['Distance interval',d.distance_lower_pc.toFixed(3)+'–'+d.distance_upper_pc.toFixed(3)+' pc']);
+  if(d.phot_g_mean_mag!=null)extra.push(['Gaia G magnitude',d.phot_g_mean_mag.toFixed(2)]);
+  if(d.ra!=null&&d.dec!=null)extra.push(['RA / Dec',d.ra.toFixed(3)+'°, '+d.dec.toFixed(3)+'°']);
+  if(d.catalog)extra.push(['Catalog',d.catalog]);
+  if(d.object_type)extra.push(['Catalog type',d.object_type]);
+  if(d.bp_rp!=null)extra.push(['Gaia color (BP−RP)',d.bp_rp.toFixed(2)]);
+  facts(extra,'object-extra-facts');
+  $('object-source').textContent=(d.uncertain?'Distance is uncertain or model-based. ':'')+
+   (d.teff_gspphot&&id!=='origin'?'Temperature is a catalog estimate. ':'')+
+   'The close-up is an illustration of the source.';
+  $('observe-selected').hidden=id==='origin';
+ }
+ $('object-source').hidden=!$('object-source').textContent;
  $('trace-earth').hidden=id==='earth'||!!d.parent;$('context-note').textContent='';
  if(id!=='earth')api('/api/journey?'+contextParams(d)).then(c=>{if(token!==selectionToken)return;$('context-note').textContent='Seen from Earth: '+c.constellation+'. Light travel time: '+(c.light_time_years<.01?(c.light_time_years*365.25*24*60).toFixed(1)+' minutes':c.light_time_years.toFixed(2)+' years')+'.';}).catch(()=>{if(token===selectionToken)$('context-note').textContent='Earth sky context is unavailable.';});
  $('object-strip').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.id===id));let b=[...$('object-strip').children].find(x=>x.dataset.id===id);b?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
@@ -99,15 +135,17 @@ $('trace-earth').onclick=async()=>{
   if(token!==journeyGeneration)return;
   const reached=await scene.trace(context,solar,(title,note)=>{$('journey-title').textContent=title;$('journey-note').textContent=note;});
   if(token!==journeyGeneration||!reached)return;
+  const targetKey=scene.traceReturn.mode+'|'+scene.traceReturn.selected;
+  scene.earthTargets.pin(targetKey,data.name,context);
   syncSceneControls();$('journey-stay').hidden=false;$('journey-exit').hidden=false;$('journey-cancel').hidden=true;
   const skyButton=$('journey-sky');
   skyButton.hidden=false;skyButton.textContent='Show source sky chart';
   skyButton.onclick=async()=>{
    if(!$('earth-sky').hidden){await closeEarthSky();skyButton.textContent='Show source sky chart';return;}
    try{
-    const {earthSky}=await import('./journey.js');
+    const {earthSky}=await import('./journey.js?v=earth-target-1');
     if(token!==journeyGeneration)return;
-    skyButton.textContent='Show Earth';await earthSky(context,data.name,api);
+    skyButton.textContent='Show Earth';scene.earthTargets.showChart(targetKey);await earthSky(context,data.name,api);
    }catch(error){if(token===journeyGeneration)toast(error.message);}
   };
  }catch(error){if(token!==journeyGeneration)return;toast(error.message);await scene?.cancelTrace();if(token===journeyGeneration){syncSceneControls();$('journey-panel').hidden=true;document.body.classList.remove('journey-active');}}
@@ -140,14 +178,14 @@ async function loadSystems(){const home=document.createElement('button');home.cl
 
 let sceneReady=null;
 async function ensureScene(){
- if(!sceneReady)sceneReady=(async()=>{const {ObservatoryScene}=await import('./scene.js?v=earth-arc-1');scene=new ObservatoryScene(select);scene.theme(document.documentElement.dataset.theme==='light');$('activity-toggle').textContent='Activity '+(scene.activityEnabled?'on':'off');$('activity-toggle').setAttribute('aria-pressed',scene.activityEnabled);await showSolar();prefetchUniverse().catch(()=>{});})();
+ if(!sceneReady)sceneReady=(async()=>{const {ObservatoryScene}=await import('./scene.js?v=earth-target-1');scene=new ObservatoryScene(select);scene.theme(document.documentElement.dataset.theme==='light');$('activity-toggle').textContent='Activity '+(scene.activityEnabled?'on':'off');$('activity-toggle').setAttribute('aria-pressed',scene.activityEnabled);await showSolar();prefetchUniverse().catch(()=>{});})();
  try{await sceneReady;}catch(error){sceneReady=null;throw error;}
 }
 async function contextView(){observations?.close();document.body.classList.remove('observing');$('observations').hidden=true;$('search-panel').hidden=true;try{await ensureScene();scene.resize();}catch(e){message('3D is unavailable: '+e.message+'. Return to observations to continue.');}}
 // Wire navigation before importing optional views or starting catalog requests.
 $('universe-home').onclick=()=>contextView();
 $('observation-close').onclick=()=>contextView();
-let {ObservationDrawer}=await import('./observations.js?v=spectrum-1');observations=new ObservationDrawer({api,toast,icon});installSatelliteView(observations);observations.open();
+let {ObservationDrawer}=await import('./observations.js?v=inline-camera-1');observations=new ObservationDrawer({api,toast,icon});installSatelliteView(observations);observations.open();
 // Catalog availability must never gate navigation or shared-view initialization.
 presets();
 $('observation-close').onclick=()=>contextView();
@@ -156,8 +194,30 @@ let params=new URLSearchParams(location.search);if(params.has('fov')){$('fov').v
 
 function rotateSpaceVector(v,outward){let e=23.439291111*Math.PI/180,x=v.x,y=-v.z,z=v.y;if(outward)return v.set(x,Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y-Math.sin(e)*z));return v.set(x,-Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y+Math.sin(e)*z));}
 function prefetchUniverse(){if(!cosmicReady)cosmicReady=api('/api/space?'+new URLSearchParams({ra:133.79512916666667,dec:-7.245147222222222,fov:8,scope:'nearby',radius_pc:10,include_simbad:true})).then(data=>{if(scene){scene.universeData=data;scene.addCatalogSky(data);}return data;}).catch(e=>{cosmicReady=null;throw e;});return cosmicReady;}
-window.addEventListener('cosmic-exit',async()=>{if(cosmicBusy||state.mode!=='solar')return;cosmicBusy=true;try{let data=await prefetchUniverse(),offset=rotateSpaceVector(scene.camera.position.clone(),true).multiplyScalar(1/206264.806247),up=rotateSpaceVector(scene.camera.up.clone(),true);await scene.scaleTransition(()=>{state.mode='stars';state.stars=data;document.body.dataset.scene='stars';scene.stars(data,false);scene.selected='origin';scene.controls.target.set(0,0,0);scene.camera.position.copy(offset);scene.camera.up.copy(up);scene.controls.update();select('origin');strip(data.objects,false);$('scene-title').textContent='Beyond the Solar System';$('scene-subtitle').textContent='Catalog positions · zoom toward the Sun to return';$('size-note').textContent='Catalog distances in parsecs';$('star-filters').hidden=false;});}catch(e){toast(e.message);}finally{cosmicBusy=false;}});
-window.addEventListener('cosmic-enter',async()=>{if(cosmicBusy||state.mode!=='stars')return;cosmicBusy=true;let offset=rotateSpaceVector(scene.camera.position.clone(),false).normalize().multiplyScalar(55),up=rotateSpaceVector(scene.camera.up.clone(),false);try{await scene.scaleTransition(async()=>{await showSolar();scene.stopFlight();scene.selected='sun';scene.controls.target.set(0,0,0);scene.camera.position.copy(offset);scene.camera.up.copy(up);scene.controls.update();select('sun');});}finally{cosmicBusy=false;}});
+window.addEventListener('cosmic-exit',async()=>{
+ if(cosmicBusy||state.mode!=='solar')return;
+ cosmicBusy=true;
+ try{
+  const data=await prefetchUniverse();
+  if(state.mode!=='solar'||document.body.classList.contains('observing')||scene.journey)return;
+  const offset=rotateSpaceVector(scene.camera.position.clone(),true).setLength(3);
+  const up=rotateSpaceVector(scene.camera.up.clone(),true);
+  await scene.scaleTransition(()=>{
+   scene.stars(data,false);
+   scene.selected='origin';
+   scene.zoomImpulse=0;
+   scene.controls.target.set(0,0,0);
+   scene.camera.position.copy(offset);
+   scene.camera.up.copy(up);
+   scene.controls.update();
+   syncSceneControls();
+   $('scene-title').textContent='Beyond the Solar System';
+   $('scene-subtitle').textContent='Nearby stars · select a star and zoom to approach';
+  });
+ }catch(error){toast(error.message);}
+ finally{cosmicBusy=false;}
+});
+window.addEventListener('cosmic-enter',async()=>{if(cosmicBusy||state.mode!=='stars')return;cosmicBusy=true;let offset=rotateSpaceVector(scene.camera.position.clone(),false).normalize().multiplyScalar(55),up=rotateSpaceVector(scene.camera.up.clone(),false);try{await scene.scaleTransition(async()=>{await showSolar();scene.stopFlight();scene.selected='sun';scene.controls.target.set(0,0,0);scene.camera.position.copy(offset);scene.camera.up.copy(up);scene.zoomImpulse=0;scene.controls.update();select('sun');});}finally{cosmicBusy=false;}});
 window.addEventListener('cosmic-select',async event=>{if(cosmicBusy)return;cosmicBusy=true;try{let data=await prefetchUniverse();await scene.scaleTransition(()=>{state.mode='stars';state.stars=data;document.body.dataset.scene='stars';scene.stars(data,false);scene.selected=event.detail;let i=scene.items.find(i=>i.data.id===event.detail);if(i){scene.controls.target.copy(i.pos);scene.camera.position.copy(i.pos);scene.camera.position.z+=.7;}select(event.detail,false);strip(data.objects,false);$('scene-title').textContent=i?.data.name||'Catalog space';$('scene-subtitle').textContent='Catalog star · scroll or W/S to approach';});}finally{cosmicBusy=false;}});
 $('universe-home').onclick=()=>contextView();
 // Catalog volume is fetched only when optional 3D context is requested.

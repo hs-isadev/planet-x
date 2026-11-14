@@ -130,3 +130,72 @@ body.observing #solar-tab{display:none!important}
   #journey-panel button { min-height: 44px; }
   #stage canvas { touch-action: none; }
 }
+
+#look-direction {
+  position: absolute; left: 14px; bottom: 12px; z-index: 3;
+  margin: 0; padding: 5px 9px; border-radius: 4px;
+  background: #080d15e8; color: #e1ecf7; font-size: 11px;
+  pointer-events: none;
+}
+.journey-active #look-direction { top: 12px; bottom: auto; }
+#earth-targets { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.earth-target-marker {
+  color: #ffd196; background: #090e18e8; border-color: #a87944;
+  min-height: 36px; padding: 4px 9px; pointer-events: auto; gap: 7px;
+  font-size: 11px; line-height: 1.15;
+}
+.earth-target-reticle {
+  display: block; flex: 0 0 auto; position: relative;
+  width: 23px; height: 23px; border: 1px solid currentColor; border-radius: 50%;
+}
+.earth-target-reticle::before, .earth-target-reticle::after {
+  position: absolute; content: ""; background: currentColor; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.earth-target-reticle::before { width: 17px; height: 1px; }
+.earth-target-reticle::after { width: 1px; height: 17px; }
+#earth-targets > button, #earth-chart-target { position: absolute; }
+#earth-targets > button {
+  background: transparent; border-color: transparent; padding: 0;
+  width: 44px; height: 44px; transform: translate(-50%, -50%);
+}
+#earth-targets > button > span:last-child {
+  position: absolute; top: 50%; left: calc(50% + 16px); transform: translateY(-50%);
+  padding: 4px 7px; background: #080d15e8; border-radius: 4px; white-space: nowrap;
+  max-width: min(44vw, 220px); overflow: hidden; text-overflow: ellipsis;
+}
+#earth-targets > button.label-left > span:last-child { left: auto; right: calc(50% + 16px); }
+#earth-targets-offscreen {
+  position: absolute; left: 14px; bottom: 44px; z-index: 5;
+  display: flex; flex-wrap: wrap; gap: 5px; max-width: calc(100% - 28px);
+  max-height: 24%; overflow-y: auto;
+}
+.journey-active #earth-targets-offscreen { top: 45px; bottom: auto; }
+#earth-targets-offscreen > button { max-width: 100%; }
+#earth-targets-offscreen > button::after { content: "Off screen"; font-size: 9px; color: #c2ccd9; }
+#earth-chart-target {
+  top: 45%; left: 50%; width: 44px; height: 44px;
+  transform: translate(-50%, -50%); padding: 0;
+  background: transparent; border-color: transparent;
+}
+#earth-chart-target > span:last-child {
+  position: absolute; left: calc(50% + 16px); top: 50%; transform: translateY(-50%);
+  padding: 4px 7px; border-radius: 4px; background: #080d15e8;
+}
+#earth-target-popup h2 { margin: 0; }
+.earth-target-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+#satellite-direction { font-size: 12px; }
+@media (pointer: coarse) {
+  .earth-target-marker, .earth-target-actions button { min-height: 44px; }
+}
+
+.inspector #object-kind { margin-bottom: 4px; }
+.inspector #object-name { margin-bottom: 7px; font-size: clamp(24px, 2.4vw, 38px); }
+.inspector #object-description { margin: 0 0 8px; }
+.inspector #object-facts, .inspector #object-extra-facts { margin: 8px 0; padding: 7px 0; gap: 5px 8px; }
+.object-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.inspector .object-actions button { width: 100%; min-width: 0; margin: 0; padding-inline: 5px; }
+#object-details { margin-top: 7px; }
+#object-details summary { cursor: pointer; color: var(--muted); font-size: 11px; }
+#object-details[open] summary { margin-bottom: 6px; }
+#object-details > p { color: var(--muted); margin: 6px 0; font-size: 10px; }

@@ -5,9 +5,9 @@ import {travelDust} from './travel-dust.js';
 const $=id=>document.getElementById(id);
 export function installContext(C){
  const solar=C.prototype.solar,close=C.prototype.stellarCloseup,exit=C.prototype.exitLocal,stars=C.prototype.stars;
- C.prototype.solar=async function(data){
+ C.prototype.solar=async function(data,options){
   data.objects=data.objects.filter(d=>!d.parent);
-  const expectedVersion=(this.version||0)+1;await solar.call(this,data);if(this.version!==expectedVersion)return;const version=this.version;
+  const expectedVersion=(this.version||0)+1;await solar.call(this,data,options);if(this.version!==expectedVersion)return;const version=this.version;
   this.camera.far=100000;this.camera.updateProjectionMatrix();
   this.items.find(i=>i.data.id==='sun')?.mesh.add(corona(this.items[0].radius));
   for(const i of this.items){i.mesh.visible=!i.model;if(i.model)i.model.visible=true;}

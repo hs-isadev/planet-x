@@ -6,13 +6,13 @@ A science-first viewer for real SPHEREx infrared observations. Enter RA/Dec or s
 
 ## SPHEREx View and Free View
 
-**SPHEREx View** opens the image sequence. Choose **Satellite camera** from its toolbar to start from the selected archive exposure's detector orientation. The amber reticle marks the selected field. Drag or swipe to turn and scroll or pinch to zoom. Use **Center target** to return to the marker. Right-click a direction or use **Search view center** to search IRSA.
+**SPHEREx View** puts the satellite camera above the infrared playback on the same page. Before an exposure is available, it shows a catalog orientation. The first usable exposure anchors the camera to recorded detector pointing, and ordinary playback leaves that camera reference in place. **Use selected exposure** lets you change it. **Find images here** starts an IRSA search at the center of the camera. The amber reticle marks the selected field. Drag or swipe to turn and scroll or pinch to zoom. Use **Center field** to return to the marker. Right-click a direction to search the archive for that position.
 
-**Free View** keeps the 3D orbit, pan, zoom, and object selection controls. On a phone, drag with one finger to orbit and pinch with two fingers to zoom. Open **Destinations** to switch between the Solar System, nearby catalog stars, and target systems. You can also zoom out from the Solar System into the stellar neighborhood.
+**Free View** keeps the 3D orbit, pan, zoom, and object selection controls. On a phone, drag with one finger to orbit and pinch with two fingers to zoom. Open **Destinations** to switch between the Solar System, nearby catalog stars, and target systems. You can also zoom out from the Solar System into the stellar neighborhood. The transition begins at a presentation distance of 3 pc. Selecting a star makes its marker grow as you approach; the catalog geometry keeps its measured distances. **More about this object** shows extra measurements, catalog provenance, and the Earth trace action.
 
 The catalog sky is the celestial [NASA/Goddard Scientific Visualization Studio Deep Star Maps](https://svs.gsfc.nasa.gov/3895/) 4K image, based on the Bright Star, Tycho-2 and UCAC3 catalogs. It provides visible-light context. The archived infrared observations are in the SPHEREx sequence. The spacecraft position comes from the selected FITS header when present. Free look is an illustrative rotation at that viewpoint. The reticle marks the selected coordinates. The sky map is fetched on first use and cached locally. A coordinate grid remains available if the texture or WebGL fails.
 
-**Trace back to Earth** follows one illustrative, curved flight to the sunlit side. The camera turns during the flight with gentle sideways glances. The source sky chart is optional after arrival. The flight uses a single path and rebases from parsecs to AU without a scheduled stop.
+**Trace back to Earth** follows one illustrative, curved flight to the sunlit side. The camera turns during the flight with gentle sideways glances. The source sky chart is optional after arrival. The live **Looking at** readout shows the center direction as equatorial RA and Dec in Free View and the satellite camera. A completed Earth trace pins the source's computed sky direction for that trace epoch. The target is projected in the Solar System view and listed as **Off screen** when outside the camera. Tap either marker to open its details and choose **Remove target**. Pins are saved in the current browser. The flight uses a single path and rebases from parsecs to AU without a scheduled stop.
 
 ## Infrared spectrum and absorption bands
 
@@ -58,7 +58,7 @@ Keyboard: Space play/pause, arrows step, brackets change speed, slash opens sear
 
 ## Optional 3D context
 
-**Photos are flat. Stellar depth comes from catalog distances; Solar System positions are computed.** Images returns directly to the SPHEREx viewer. This context does not replace the observations.
+**Photos are flat. Stellar depth comes from catalog distances; Solar System positions are computed.** **SPHEREx View** returns directly to the observation workspace. This context does not replace the observations.
 
 Bottom navigation and direct body clicks share a smooth focus action. Approach changes distance deliberately. Camera zooms interpolate distance geometrically with quintic easing. Journeys accelerate and decelerate while keeping the camera facing forward. Return journeys turn toward the source before moving; they no longer turn back toward Earth during departure. Explicit transitions distinguish parsec, AU and normalized stellar-illustration scales; they are not physical spacecraft trajectories.
 

@@ -1,3 +1,4 @@
+import {formatDirection} from './sky-direction.js?v=1';
 import {loadCatalogSky} from './satellite-stars.js?v=1';
 
 // Look around from the detector pointing of the selected archive exposure.
@@ -76,29 +77,7 @@ function setupViewNavigation(byId) {
 export function installSatelliteView(view) {
   const byId = id => document.getElementById(id);
   setupViewNavigation(byId);
-  const dialog = document.createElement('dialog');
-  dialog.id = 'satellite-camera';
-  dialog.setAttribute('aria-labelledby', 'satellite-camera-title');
-  dialog.innerHTML = `
-    <div class="satellite-heading">
-      <h2 id="satellite-camera-title">SPHEREx View</h2>
-      <button type="button" id="satellite-close">Close</button>
-    </div>
-    <p id="satellite-exposure"></p>
-    <p class="micro"><a id="satellite-source" target="_blank" rel="noreferrer" hidden></a></p>
-    <div class="satellite-controls">
-      <button type="button" id="satellite-free">Free View</button>
-      <button type="button" id="satellite-images">Back to observations</button>
-      <button type="button" id="satellite-target">Center target</button>
-      <button type="button" id="satellite-search">Search view center</button>
-    </div>
-    <div class="satellite-stage">
-      <canvas id="satellite-sky" width="960" height="540" aria-hidden="true" hidden></canvas>
-      <canvas id="satellite-camera-canvas" width="960" height="540" tabindex="0" aria-label="SPHEREx sky view. Use arrow keys to look around."></canvas>
-    </div>
-    <p id="satellite-detail" class="micro"></p>
-    <p id="satellite-status" role="status"></p>`;
-  document.body.append(dialog);
+  const panel = byId('satellite-camera');
   const canvas = byId('satellite-camera-canvas'), ctx = canvas.getContext('2d');
   const status = byId('satellite-status'), sky = byId('satellite-sky');
   const defaultFocal = canvas.width * .85;
@@ -106,6 +85,19 @@ export function installSatelliteView(view) {
   const pointers = new Map();
   let camera, catalogDraw, catalogLoad, catalogFailed;
   let target, targetName, turn = 0, request = 0;
+  let referenceKey, pendingKey, attemptedJob;
+  const frameKey = frame => view.jobId + '|' + frame.id;
+  const fallbackDirection = {ra: 0, dec: 0};
+  const visible = () => panel.open && !byId('observations').hidden;
+
+  function catalogCamera({ra, dec}) {
+    const lon = ra * radians, lat = dec * radians;
+    return {
+      forward: skyVector({ra, dec}),
+      right: [Math.sin(lon), -Math.cos(lon), 0],
+      up: [-Math.sin(lat) * Math.cos(lon), -Math.sin(lat) * Math.sin(lon), Math.cos(lat)],
+    };
+  }
 
   function openCatalog() {
     if (catalogLoad) return;
@@ -113,7 +105,7 @@ export function installSatelliteView(view) {
     catalogLoad = loadCatalogSky(sky).then(render => { catalogDraw = render; }).catch(() => {
       catalogFailed = true;
       catalogLoad = null;
-    }).finally(() => { if (dialog.open) draw(); });
+    }).finally(() => { if (visible()) draw(); });
   }
 
   function centerTarget() {
@@ -126,7 +118,7 @@ export function installSatelliteView(view) {
     const arc = Math.acos(cosine);
     const tangent = cosine < -.9999999 ? start.right : orthogonal(end.forward, start.forward);
     function step(now) {
-      if (!dialog.open) return;
+      if (!visible()) return;
       const progress = reduced ? 1 : Math.min(1, (now - began) / 550);
       const ease = progress * progress * (3 - 2 * progress);
       if (progress === 1 || arc < 1e-8) camera = end;
@@ -182,14 +174,14 @@ export function installSatelliteView(view) {
       drawSkyGrid();
     }
     crosshair(canvas.width / 2, canvas.height / 2);
-    drawTarget(screenPosition(camera, target, canvas.width, canvas.height, focal));
+    if (target) drawTarget(screenPosition(camera, target, canvas.width, canvas.height, focal));
     const gesture = matchMedia('(pointer: coarse)').matches
       ? 'Swipe to turn. Pinch to zoom. Use Search view center to load a field.'
       : 'Drag to turn, scroll to zoom, and right-click to search SPHEREx.';
     showCenter(skyRay(camera, 0, 0), hasCatalog
       ? 'Catalog sky · NASA Goddard SVS. ' + gesture
       : catalogFailed ? 'Catalog map unavailable. ' + gesture
-        : 'Loading the catalog sky. Right-click to search SPHEREx.');
+        : 'Loading the catalog sky. ' + gesture);
   }
 
   function drawTarget(point) {
@@ -226,32 +218,30 @@ export function installSatelliteView(view) {
   }
 
   function showCenter(sky, message) {
-    byId('satellite-detail').textContent = 'Center RA ' + sky.ra.toFixed(5) +
-      '°, Dec ' + sky.dec.toFixed(5) + '°. ' + message;
+    byId('satellite-direction').textContent = 'Looking at · ' + formatDirection(sky);
+    byId('satellite-detail').textContent = message;
   }
 
   async function search(x, y) {
-    if (!camera || !dialog.open) return;
+    if (!camera || !visible()) return;
     cancelAnimationFrame(turn);
     const coords = skyRay(camera, (x - canvas.width / 2) / focal, (canvas.height / 2 - y) / focal);
     byId('object-query').value = '';
     byId('ra').value = coords.ra.toFixed(8);
     byId('dec').value = coords.dec.toFixed(8);
-    dialog.close();
     await view.search('Sky direction from SPHEREx');
   }
 
-  byId('satellite-close').onclick = () => dialog.close();
-  byId('satellite-free').onclick = () => { dialog.close(); byId('universe-home').click(); };
-  byId('satellite-images').onclick = () => { dialog.close(); view.open(); };
-  byId('satellite-target').onclick = () => { if (camera) centerTarget(); };
+  byId('satellite-target').onclick = () => { if (target) centerTarget(); };
   byId('satellite-search').onclick = () => search(canvas.width / 2, canvas.height / 2);
-  dialog.addEventListener('close', () => {
-    if (!dialog.open) {
+  panel.addEventListener('toggle', () => {
+    if (!panel.open) {
       cancelAnimationFrame(turn);
-      request++;
       pointers.clear();
+      return;
     }
+    openCatalog();
+    draw();
   });
   function canvasPoint(event) {
     const box = canvas.getBoundingClientRect();
@@ -310,52 +300,79 @@ export function installSatelliteView(view) {
     look(...moves[event.key]);
   });
 
-  byId('satellite-view-tab').onclick = async () => {
-    const frame = view.current();
-    if (!frame || !view.jobId) {
-      view.open();
-      view.toast('Load a sky field and select a SPHEREx exposure first.');
-      return;
-    }
-    const token = ++request;
-    view.stop();
-    const url = '/api/jobs/' + view.jobId + '/satellite-view/' + frame.index;
-    camera = null;
-    focal = defaultFocal;
-    targetName = byId('observation-title').textContent.trim() || 'Selected field';
-    byId('satellite-search').disabled = true;
-    byId('satellite-target').disabled = true;
-    byId('satellite-source').hidden = true;
-    byId('satellite-exposure').textContent = frame.date;
-    byId('satellite-detail').textContent = '';
-    status.textContent = 'Loading the spacecraft pointing for this exposure…';
-    draw();
-    if (!dialog.open) dialog.showModal();
-    openCatalog();
+  const referenceButton = byId('satellite-reference');
+  const exposure = byId('satellite-exposure');
+  const source = byId('satellite-source');
+
+  async function useExposure(frame, manual = false) {
+    if (!frame || !view.jobId) return;
+    const jobId = view.jobId, key = frameKey(frame), token = ++request;
+    if (manual) view.stop();
+    pendingKey = key;
+    referenceButton.disabled = true;
+    status.textContent = 'Loading pointing for the selected exposure…';
     try {
-      const result = await view.api(url + '?' + new URLSearchParams({exposure_id: frame.id, preview: 'false'}));
-      if (token !== request || !dialog.open) return;
+      const result = await view.api('/api/jobs/' + jobId + '/satellite-view/' + frame.index + '?' +
+        new URLSearchParams({exposure_id: frame.id, preview: 'false'}));
+      if (token !== request || jobId !== view.jobId) return;
       camera = cameraBasis(result);
       target = result.target ?? result.crop_center;
-      const position = result.spacecraft;
-      const provenance = position
-        ? 'Recorded spacecraft ' + position.sample + ' at ' + position.time + ' · geocentric XYZ ' +
-          position.xyz_km.map(n => n.toFixed(0)).join(', ') + ' km.'
-        : 'Spacecraft position is unavailable for this exposure.';
-      byId('satellite-exposure').textContent = result.date + ' · Detector ' + result.detector + '. ' + provenance;
-      if (result.archive_url?.startsWith('https://')) {
-        const source = byId('satellite-source');
-        source.href = result.archive_url;
-        source.textContent = result.observation ? 'Original exposure · ' + result.observation : 'Original archive exposure';
-        source.hidden = false;
-      }
-      byId('satellite-search').disabled = false;
+      targetName = byId('observation-title').textContent.trim() || 'Selected field';
+      focal = defaultFocal;
+      referenceKey = key;
       byId('satellite-target').disabled = false;
+      const position = result.spacecraft;
+      exposure.textContent = 'Camera reference · ' + result.date + ' · Detector ' + result.detector +
+        (position ? ' · Recorded spacecraft position (' + position.sample + '), geocentric XYZ ' +
+          position.xyz_km.map(n => n.toFixed(0)).join(', ') + ' km.'
+          : ' · Spacecraft position unavailable.');
+      source.hidden = !result.archive_url?.startsWith('https://');
+      if (!source.hidden) {
+        source.href = result.archive_url;
+        source.textContent = 'Open camera reference exposure';
+      }
       status.textContent = '';
-      draw();
-      centerTarget();
+      if (visible()) { draw(); centerTarget(); }
+      else camera = aimAt(camera, target);
     } catch (error) {
-      if (token === request) status.textContent = error.message;
+      if (token === request) status.textContent = 'Could not use this exposure. ' + error.message;
+    } finally {
+      if (token === request) {
+        pendingKey = null;
+        updateReference(view.current());
+      }
+    }
+  }
+
+  function updateReference(frame) {
+    const key = frame && view.jobId ? frameKey(frame) : null;
+    referenceButton.disabled = !key || key === referenceKey || key === pendingKey;
+  }
+
+  view.onCameraFrame = frame => {
+    if (!frame) {
+      request++;
+      cancelAnimationFrame(turn);
+      referenceKey = pendingKey = attemptedJob = target = null;
+      source.hidden = true;
+      byId('satellite-target').disabled = true;
+      exposure.textContent = 'Catalog orientation · waiting for an exposure.';
+      status.textContent = '';
+      updateReference(null);
+      if (visible()) draw();
+      return;
+    }
+    updateReference(frame);
+    // Anchor once per search. Chronological playback can then run without
+    // reorienting the camera or reading the FITS header on every frame.
+    if (view.jobId && attemptedJob !== view.jobId) {
+      attemptedJob = view.jobId;
+      useExposure(frame);
     }
   };
+  referenceButton.onclick = () => useExposure(view.current(), true);
+  camera = catalogCamera(fallbackDirection);
+  exposure.textContent = 'Catalog orientation · load an exposure for recorded spacecraft pointing.';
+  if (panel.open) openCatalog();
+  draw();
 }
