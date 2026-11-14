@@ -36,6 +36,31 @@ function savedTargets() {
   }
 }
 
+const satellitePinKey = 'satellite-selection';
+
+function satelliteRecord({name, ra, dec, source}) {
+  const lon = ra * radians, lat = dec * radians;
+  const east = Math.cos(lat) * Math.sin(lon), north = Math.sin(lat);
+  return {key: satellitePinKey, name, ra, dec, constellation: '', sourceId: source?.id, source, ecliptic: [
+    Math.cos(lat) * Math.cos(lon),
+    Math.cos(obliquity) * east + Math.sin(obliquity) * north,
+    Math.cos(obliquity) * north - Math.sin(obliquity) * east,
+  ]};
+}
+
+function saveTargets(records) {
+  try { localStorage.setItem(storageKey, JSON.stringify(records)); }
+  catch { /* The current session still retains its targets. */ }
+}
+
+export function readSatelliteTarget() {
+  return savedTargets().find(record => record.key === satellitePinKey) ?? null;
+}
+
+export function saveSatelliteTarget(target) {
+  saveTargets([...savedTargets().filter(record => record.key !== satellitePinKey), satelliteRecord(target)]);
+}
+
 export class EarthTargets {
   constructor(scene) {
     this.scene = scene;
@@ -53,11 +78,7 @@ export class EarthTargets {
   }
 
   persist() {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify([...this.targets.values()].map(({record}) => record)));
-    } catch {
-      // A blocked storage policy still allows pins for the current session.
-    }
+    saveTargets([...this.targets.values()].map(({record}) => record));
   }
 
   add(record) {
@@ -74,8 +95,12 @@ export class EarthTargets {
     button.setAttribute('aria-label', 'Target: ' + record.name);
     button.onclick = () => this.open(record.key);
     this.edge.append(button);
+    const east = record.ecliptic[1], north = record.ecliptic[2];
     this.targets.set(record.key, {
       record, button, direction: this.scene.vector(record.ecliptic).normalize(),
+      equatorial: this.scene.vector([record.ecliptic[0],
+        Math.cos(obliquity) * east - Math.sin(obliquity) * north,
+        Math.sin(obliquity) * east + Math.cos(obliquity) * north]).normalize(),
       projected: this.cameraDirection.clone(),
     });
   }
@@ -83,6 +108,11 @@ export class EarthTargets {
   pin(key, name, context) {
     const {ra, dec, constellation, direction_ecliptic: ecliptic} = context;
     this.add({key, name, ra, dec, constellation, ecliptic});
+    this.persist();
+  }
+
+  pinSatellite(target) {
+    this.add(satelliteRecord(target));
     this.persist();
   }
 
@@ -100,7 +130,7 @@ export class EarthTargets {
     this.activeKey = key;
     const {record} = target;
     byId('earth-target-name').textContent = record.name;
-    byId('earth-target-direction').textContent = formatDirection(record) + ' · ' + record.constellation;
+    byId('earth-target-direction').textContent = formatDirection(record) + (record.constellation ? ' · ' + record.constellation : '');
     this.popup.showModal();
   }
 
@@ -111,13 +141,15 @@ export class EarthTargets {
     this.activeKey = null;
     this.showChart(this.chartKey);
     this.persist();
+    if (key === satellitePinKey) document.dispatchEvent(new Event('satellite-target-removed'));
     const fallback = byId('earth-sky').hidden ? this.aim : byId('journey-sky');
     fallback.focus({preventScroll: true});
   }
 
   update(now) {
     const {scene} = this;
-    const applicable = scene.mode === 'solar' && !scene.surface && !scene.loading && this.targets.size > 0;
+    const solar = scene.mode === 'solar';
+    const applicable = (solar || scene.mode === 'stars') && !scene.surface && !scene.loading && this.targets.size > 0;
     this.layer.hidden = !applicable;
     this.edge.hidden = !applicable;
     if (!scene.surface && !scene.loading && scene.mode !== 'sizes' && now - (this.lastReadout ?? -Infinity) >= 100) {
@@ -130,9 +162,17 @@ export class EarthTargets {
     if (!applicable) return;
 
     scene.camera.getWorldDirection(this.cameraDirection);
-    for (const {button, direction, projected} of this.targets.values()) {
-      const ahead = direction.dot(this.cameraDirection) > 0;
-      projected.copy(scene.camera.position).addScaledVector(direction, 10).project(scene.camera);
+    for (const {record, button, direction, equatorial, projected} of this.targets.values()) {
+      button.hidden = !solar && record.key !== satellitePinKey;
+      if (button.hidden) continue;
+      const object = !solar && !scene.local && record.sourceId &&
+        scene.items.find(item => item.data.id === record.sourceId);
+      if (object) projected.copy(object.pos);
+      else projected.copy(scene.camera.position).addScaledVector(solar ? direction : equatorial, 10);
+      const ahead = (projected.x-scene.camera.position.x)*this.cameraDirection.x +
+        (projected.y-scene.camera.position.y)*this.cameraDirection.y +
+        (projected.z-scene.camera.position.z)*this.cameraDirection.z > 0;
+      projected.project(scene.camera);
       const x = (projected.x * .5 + .5) * scene.w;
       const y = (.5 - projected.y * .5) * scene.h;
       const onScreen = ahead && projected.z >= -1 && projected.z <= 1 &&

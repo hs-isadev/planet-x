@@ -1,4 +1,4 @@
-import {EarthTargets, stellarMarkerSize} from './sky-direction.js?v=1';
+import {EarthTargets, stellarMarkerSize} from './sky-direction.js?v=2';
 import {orbitPose,cruisePose,orbitDuration} from './camera-path.js?v=earth-sweep-1';
 import {installContext} from './context-scene.js?v=earth-sweep-1';
 import {installNavigation} from './navigation.js?v=earth-sweep-1';

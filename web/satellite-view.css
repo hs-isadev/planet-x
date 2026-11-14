@@ -11,13 +11,22 @@
   body.observing header nav, body.searching header nav { display: flex; }
 }
 
-body.observing #observations-home.spherex-hub { display: inline-flex; }
+header nav #observations-home { display: inline-flex; }
 
 .science-camera {
-  width: 100%; margin: 0 0 12px; padding: 8px 10px;
-  border: 1px solid var(--line); border-radius: 6px; background: var(--surface);
+  width: min(1100px, 100%); margin: 0 auto; padding: 18px 24px 32px;
 }
-.science-camera > summary { cursor: pointer; font-weight: 600; }
+.science-camera h1 { margin: 0; font-size: clamp(24px, 4vw, 34px); font-weight: 500; }
+body.satellite-view-active { overflow: auto; }
+body.satellite-view-active #workspace { display: block; height: auto; min-height: calc(100dvh - 78px); padding: 0; }
+body.satellite-view-active #workspace > :not(#satellite-camera) { display: none !important; }
+header { grid-template-columns: 1fr auto 1fr; }
+header nav button[aria-current="page"] { background: var(--surface-2); color: var(--text); }
+.observation-settings { display: flex; align-items: center; }
+.satellite-selection {
+  margin: 10px 0; padding: 8px 12px; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--surface);
+}
 .satellite-stage { position: relative; margin-top: 8px; background: #050910; }
 #satellite-sky, #satellite-camera-canvas { display: block; width: 100%; height: auto; }
 #satellite-sky { position: absolute; inset: 0; pointer-events: none; }
@@ -32,4 +41,13 @@ body.observing #observations-home.spherex-hub { display: inline-flex; }
 @media (max-width: 480px) {
   .drawer-header { flex-wrap: wrap; gap: 8px; }
   body.observing header nav { max-width: none; }
+}
+
+@media (max-width: 650px) {
+  header { height: auto; min-height: 62px; padding-block: 6px; display: flex; justify-content: space-between; }
+  header nav, body.observing header nav, body.searching header nav {
+    display: flex; max-width: none; overflow: visible; flex-wrap: wrap; justify-content: flex-end;
+  }
+  header nav button { white-space: nowrap; min-height: 34px; }
+  .science-camera { padding: 12px 14px 22px; }
 }
