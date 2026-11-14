@@ -192,3 +192,77 @@
 @media (max-width: 640px) {
   .sl-hud { min-width: 0; width: calc(100vw - 32px); }
 }
+
+/* ===================================================================
+ * Minimal theme (2026-11). Overrides the neon look above: one quiet
+ * accent, hairline progress, soft fades instead of pops. The markup and
+ * the SpaceLoader API are unchanged.
+ * =================================================================== */
+:root {
+  --sl-accent: #d9e2ec;
+  --sl-dim: rgba(217, 226, 236, .14);
+  --sl-glass: rgba(10, 13, 18, .72);
+  --sl-text: #e8edf2;
+  --sl-muted: #8a96a3;
+  --sl-deep: #080b10;
+  --sl-ease: cubic-bezier(.22, .8, .24, 1);
+}
+
+/* Top edge: a 1px hairline that slides, no glow, no rainbow. */
+.sl-beam { height: 1px; background: linear-gradient(90deg, transparent, var(--sl-accent) 50%, transparent);
+  background-size: 40% 100%; background-repeat: no-repeat; box-shadow: none; opacity: 0;
+  transform: none; transition: opacity .5s var(--sl-ease); }
+.sl-beam.sl-on { opacity: .75; transform: none; animation: sl-min-slide 1.6s var(--sl-ease) infinite; }
+.sl-beam::after { display: none; }
+
+/* Capsule: smaller, flatter, fades and lifts in. */
+.sl-hud { gap: 10px; padding: 7px 14px 7px 12px; min-width: 0; font-size: 12px; letter-spacing: .01em;
+  border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 8px 30px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transform: translate(-50%, -6px); transition: opacity .45s var(--sl-ease), transform .45s var(--sl-ease); }
+.sl-hud.sl-on { transform: translate(-50%, 0); }
+.sl-copy small { background: none; color: var(--sl-muted); -webkit-background-clip: border-box; background-clip: border-box;
+  animation: none; letter-spacing: .16em; font-weight: 500; }
+.sl-radar { width: 12px; height: 12px; background: none; border: 1px solid var(--sl-dim); }
+.sl-radar i, .sl-radar b { display: none; }
+.sl-radar::after { content: ""; position: absolute; inset: -1px; border-radius: 50%;
+  border: 1px solid transparent; border-top-color: var(--sl-accent); animation: sl-spin 1.1s linear infinite; background: none; }
+
+/* Progress: hairline track, single-colour fill. */
+.sl-meter { background: var(--sl-dim); border-radius: 0; }
+.sl-meter i { background: var(--sl-accent); box-shadow: none; width: 30%;
+  animation: sl-sweep 1.8s var(--sl-ease) infinite; }
+.sl-meter.sl-determinate i { animation: none; transition: width .6s var(--sl-ease); }
+.sl-meter-wide { height: 1px; width: min(220px, 60%); }
+
+/* Orbit glyph: one thin ring and a single moon. */
+.sl-orbit { width: 54px; height: 54px; margin-bottom: 26px; }
+.sl-ring-b, .sl-ring-c, .sl-ping, .sl-sat { display: none !important; }
+.sl-ring-a { width: 54px; height: 54px; margin: -27px; border: 1px solid var(--sl-dim) !important; box-shadow: none !important; animation-duration: 3.2s; }
+.sl-planet { width: 6px; height: 6px; margin: -3px; background: var(--sl-accent); box-shadow: none; animation: none; }
+.sl-moon { width: 5px !important; height: 5px !important; top: -3px !important; margin-left: -2.5px !important; background: var(--sl-accent) !important; box-shadow: none !important; }
+
+/* Covers: flat background, content rises in, whole cover cross-fades out. */
+.sl-cover, #scene-loading { background: var(--sl-deep) !important; }
+.sl-stars, #scene-loading::before { opacity: .25; animation-duration: 90s; }
+.sl-cover { transition: opacity .6s var(--sl-ease); }
+.sl-cover > *, #scene-loading > * { transition: opacity .7s var(--sl-ease), transform .7s var(--sl-ease); }
+.sl-cover:not(.sl-on) > * { opacity: 0; transform: translateY(6px); }
+.sl-eyebrow, #scene-loading .eyebrow { color: var(--sl-muted) !important; background: none !important;
+  -webkit-background-clip: border-box !important; background-clip: border-box !important; animation: none !important;
+  letter-spacing: .22em; font-size: 10px; }
+.sl-title, #scene-loading h2 { font-weight: 300 !important; letter-spacing: -.02em; }
+.sl-title::after, #scene-loading h2::after { content: none; }
+.sl-detail, #scene-loading p:last-of-type { max-width: 340px; font-size: 12px; opacity: .8; }
+
+/* The 3D cover used to vanish instantly via [hidden]; fade it instead. */
+#scene-loading { transition: opacity .8s var(--sl-ease), visibility 0s linear 0s; }
+#scene-loading[hidden] { display: flex !important; opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .8s var(--sl-ease), visibility 0s linear .8s; }
+#scene-loading[hidden] > * { opacity: 0; transform: translateY(-4px); }
+
+@keyframes sl-min-slide { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .sl-beam.sl-on, .sl-radar::after, .sl-meter i { animation: none; }
+  #scene-loading, #scene-loading[hidden], .sl-cover > * { transition: none; }
+}

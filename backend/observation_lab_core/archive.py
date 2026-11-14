@@ -331,7 +331,7 @@ def query_sia(config, ra, dec, radius=.001, start=None, end=None, timeout=(6,20)
     return sorted([value[1] for value in unique.values()], key=lambda r: (r['mjd'], r['detector']))
 
 
-def download(record, ra, dec, fov, cache, *, prefer_mirror=False, mirror_only=False):
+def download(record, ra, dec, fov, cache, *, prefer_mirror=False, mirror_only=False, cache_only=False):
     source = record.get('source', '')
     parsed = urlparse(source)
     if (parsed.scheme != 'https' or parsed.netloc != 'irsa.ipac.caltech.edu'
@@ -357,6 +357,8 @@ def download(record, ra, dec, fov, cache, *, prefer_mirror=False, mirror_only=Fa
             if path.stat().st_size == meta.get('file_bytes') and meta['id'] == record['id'] and meta['detector'] == record['detector']:
                 return dict(record, **meta, path=str(path), fits_url=f'/cache/{path.name}')
         if not path.exists():
+            if cache_only:
+                raise FileNotFoundError('Not cached yet.')
             if shutil.disk_usage(cache).free < 256_000_000:
                 raise OSError('Less than 256 MB disk space remains; download paused. Existing data is safe.')
             # Share Parallax's bounded transfer and official S3 range-read

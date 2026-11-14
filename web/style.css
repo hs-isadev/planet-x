@@ -198,7 +198,6 @@ body[data-sun-sky] #sky-target-marker{display:none}
 body[data-workspace="spherex"][data-lab="embedded"] #workspace{display:none}
 #observation-lab-host{position:relative}
 #observation-lab-frame{display:block;width:100%;height:calc(100dvh - 68px);border:0}
-#original-observation-tools{position:absolute;top:7px;right:12px;font-size:.72rem;padding:4px 7px;z-index:1}
 #context-star-results{display:grid;gap:6px;max-height:180px;overflow:auto}
 
 /* Keep scope, camera actions and catalog filters on separate rows. */
@@ -208,3 +207,18 @@ body[data-workspace=context] #context-scopes .scope-buttons button{display:flex;
 body[data-workspace=context] #star-filters{position:static;flex:0 0 100%;box-sizing:border-box;max-width:none;flex-wrap:wrap;justify-content:flex-end;padding:8px 0 0;margin-top:3px;border-top:1px solid var(--line)}
 @media(min-width:651px) and (max-width:1000px){body[data-workspace=context] .view-tools{width:calc(100% - 260px)}}
 @media(max-width:650px){body[data-workspace=context] .view-tools{top:14px;left:12px;right:12px;width:auto;gap:3px}body[data-workspace=context] #star-filters{gap:5px 12px;justify-content:flex-start}body[data-workspace=context] #visible-count{flex-basis:100%;font-size:9px}body[data-workspace=context] .scene-heading{display:none}}
+
+/* Small-body focus card and menu tools (asteroid-focus.js). */
+#small-body-card{position:absolute;right:20px;bottom:88px;z-index:30;width:min(320px,calc(100% - 40px));padding:16px 16px 12px;border:1px solid rgba(255,255,255,.09);border-radius:10px;background:rgba(9,12,17,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--text);opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .5s cubic-bezier(.22,.8,.24,1),transform .5s cubic-bezier(.22,.8,.24,1)}
+#small-body-card.sbc-on{opacity:1;transform:none;pointer-events:auto}
+#small-body-card .eyebrow{margin:0 0 4px;font-size:10px;letter-spacing:.14em;color:var(--muted)}
+#small-body-card h3{margin:0 0 8px;font-size:19px;font-weight:500;letter-spacing:-.02em}
+#sbc-note{margin:0 0 10px;font-size:12.5px;line-height:1.5;color:var(--muted)}
+#sbc-facts{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 8px;font-size:12px}
+#sbc-facts dt{color:var(--muted)}#sbc-facts dd{margin:0;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11.5px;font-variant-numeric:tabular-nums}
+#sbc-source{margin:0 0 10px;opacity:.7}
+.sbc-actions{display:flex;gap:6px;align-items:center}.sbc-actions #sbc-close{margin-left:auto;padding:2px 9px;font-size:16px;line-height:1}
+.small-body-tools{display:flex;flex-direction:column;gap:6px;margin:4px 0 2px}.small-body-tools label{display:flex;flex-direction:column;gap:4px}
+.small-body-row{display:flex;gap:6px;flex-wrap:wrap}.small-body-row button{flex:1 1 auto}
+@media(max-width:650px){#small-body-card{right:12px;bottom:72px;max-height:42vh;overflow:auto}}
+@media(prefers-reduced-motion:reduce){#small-body-card{transition:none}}

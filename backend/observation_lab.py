@@ -5,6 +5,7 @@ import os
 import uuid
 from http.server import ThreadingHTTPServer
 import re
+import time
 from threading import Lock, Thread
 from urllib.parse import urlsplit
 
@@ -48,6 +49,18 @@ def rewrite_paths(value):
 
 
 def install_lab_routes(app):
+    if os.environ.get('SPHEREX_WARM_LAB', '1') != '0' and 'PYTEST_CURRENT_TEST' not in os.environ:
+        @app.on_event('startup')
+        def warm_lab():
+            # Load the lab's archive index in the background so the first click is not the one that pays for it.
+            def run():
+                time.sleep(float(os.environ.get('SPHEREX_WARM_LAB_DELAY', '3')))
+                try:
+                    start_service()
+                except Exception:  # the first real request will retry and report the error
+                    pass
+            Thread(target=run, daemon=True, name='observation-lab-warm').start()
+
     if os.environ.get('SPHEREX_PREWARM') == '1':
         @app.on_event('startup')
         def start_cache_warmup():

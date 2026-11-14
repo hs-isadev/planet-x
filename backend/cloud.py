@@ -5,7 +5,6 @@ from contextlib import ExitStack
 from threading import BoundedSemaphore
 import xml.etree.ElementTree as ET
 from urllib.parse import quote, urlsplit
-import aiohttp
 import numpy as np
 import requests
 from astropy.io import fits
@@ -79,6 +78,7 @@ def cutout_from_mirror(key, fov, center=None):
     with MIRROR_SLOTS, ExitStack() as stack:
         source_file = local
         if not local:
+            import aiohttp
             import fsspec
             filesystem = fsspec.filesystem('https', client_kwargs={
                 'timeout': aiohttp.ClientTimeout(total=20), 'trust_env': True})

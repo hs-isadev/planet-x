@@ -4,8 +4,28 @@ const state = { library: null, session: null, index: 0, reference: 0, mode: "sin
   zoom: 1, panX: 0, panY: 0, point: null, timer: null, loading: false, images: new Map(),
   maskCache: new Map(), hoverCache: new Map(),
   drawVersion: 0, inspectVersion: 0, title: "Vesta", field: "vesta", objectContext: null,
-  requestVersion: 0, pending: null, views: new Map(), allExposures: false };
+  requestVersion: 0, pending: null, views: new Map(), lock: null, lockVersion: 0, allExposures: false };
 const hues = ["#b798f4", "#84b3ef", "#a5edcc", "#ebdf82", "#eec083", "#efac99"];
+
+// Inside the Parallax shell this page is an iframe. Its crest used to link to "/", which loaded the whole
+// shell inside the frame (a second header and a second lab). Embedded, the crest is a label, not a link.
+const embedded = window.parent !== window;
+document.documentElement.classList.toggle("embedded", embedded);
+if (embedded) {
+  const crest = document.querySelector("a.crest");
+  if (crest) {
+    const label = document.createElement("span");
+    label.className = crest.className;
+    label.setAttribute("role", "img");
+    label.setAttribute("aria-label", "SPHEREx");
+    label.append(...crest.childNodes);
+    crest.replaceWith(label);
+  }
+  document.addEventListener("click", event => {
+    const link = event.target.closest?.("a[href]");
+    if (link && new URL(link.href, location.href).pathname === "/" && !link.target) event.preventDefault();
+  }, true);
+}
 const dateText = timestamp => new Date(timestamp).toISOString().slice(0, 10);
 const timeText = timestamp => new Date(timestamp).toISOString().slice(11, 16);
 // DR1 mosaic frames are wavelength channels stacked over many dates: label them by wavelength, never by a date.
@@ -79,32 +99,132 @@ function drawCenter(ctx, x, y) {
   ctx.restore();
 }
 
-// Where the selected target is expected in this frame before any tracking: the archived Vesta
-// prediction, or the centre of a saved star field. An expected position, not a measurement.
-// ICRS position at epoch J2000 (deg) and proper motion (mas/yr, RA term includes cos Dec), SIMBAD 2026-11-13.
-// These targets move a SPHEREx pixel or more per year, so a saved field centre does not stay on them.
-const MOVERS = {
-  barnard: [269.4520769586, 4.6933649666, -801.551, 10362.394],
-  "epsilon-indi": [331.0441465885, -56.7828441951, 3981.977, -2466.832],
-  "wise-0855": [133.81890825, -7.247048, -8123.7, 673.2],
-};
+function catalogEntry() {
+  return state.field === "custom"
+    ? state.objectContext
+    : state.library?.fields?.find(field => field.key === state.field);
+}
+
+// Catalog position (with proper motion) on the preview grid, as fractions of the image. Not clipped to the frame.
+function catalogAt(frame) {
+  const catalog = catalogEntry();
+  if (!catalog) return null;
+  const astrometry = catalog.astrometry_j2000;
+  const [ra, dec, pmRa, pmDec] = astrometry ?? [catalog.ra, catalog.dec, 0, 0];
+  if (!Number.isFinite(ra) || !Number.isFinite(dec)) return null;
+
+  const radians = Math.PI / 180;
+  const epochYears = (Date.parse(frame.timestamp) - Date.UTC(2000, 0, 1, 12)) / 31557600000;
+  if (astrometry && !Number.isFinite(epochYears)) return null;
+  const targetRa = astrometry ? ra + pmRa * epochYears / (3600000 * Math.cos(dec * radians)) : ra;
+  const targetDec = (astrometry ? dec + pmDec * epochYears / 3600000 : dec) * radians;
+  const options = state.session.options;
+  const deltaRa = (targetRa - options.ra) * radians;
+  const viewDec = options.dec * radians;
+  const sinDec = Math.sin(targetDec);
+  const cosDec = Math.cos(targetDec);
+  const dot = sinDec * Math.sin(viewDec) + cosDec * Math.cos(viewDec) * Math.cos(deltaRa);
+  if (dot <= 0) return null;
+  const width = options.fov * radians / 60;
+  // The preview uses a north-up, east-left TAN grid.
+  const x = .5 - cosDec * Math.sin(deltaRa) / (dot * width);
+  const y = .5 - (sinDec * Math.cos(viewDec) - cosDec * Math.sin(viewDec) * Math.cos(deltaRa)) / (dot * width);
+  return [x, y];
+}
+
+function inFrame(at) {
+  return at && at[0] >= 0 && at[0] <= 1 && at[1] >= 0 && at[1] <= 1 ? at : null;
+}
+
 function targetAt(frame) {
-  // A Horizons track draws its own named box on Vesta, so the expected-position box steps aside
+  if (frame.mosaic) return null;
+  // The Horizons track can supply the Vesta guide instead.
   if (frame.marker) return typeof StarTracker !== "undefined" && Object.keys(StarTracker.kinds()).length ? null : frame.marker;
-  if (state.field === "custom" || state.field === "vesta") return null;
-  const m = MOVERS[state.field];
-  if (!m) return [.5,.5];
-  // shortcut: flat-sky offset from the view centre, exact to well under a pixel within a few arcmin; use a TAN projection if a target ever sits far from centre
-  const {ra, dec, fov} = state.session.options, years = (new Date(frame.timestamp) - Date.UTC(2000,0,1,12)) / 31557600000;
-  const east = (m[0]-ra)*Math.cos(m[1]*Math.PI/180)*3600 + m[2]*years/1000, north = (m[1]-dec)*3600 + m[3]*years/1000;  // arcsec
-  const x = .5 - east/(fov*60), y = .5 - north/(fov*60);
-  return x < 0 || x > 1 || y < 0 || y > 1 ? null : [x,y];
+  if (state.field === "vesta") return null;
+  return inFrame(catalogAt(frame));
+}
+
+// ---- Star lock ----
+// The guide box is locked to the star's measured position at the start of the time span, then moved by the
+// distance the star should have travelled since (catalog proper motion, or the drift measured across the span).
+// It is a straight-line estimate, not a trace of every frame.
+const dayOf = frame => Date.parse(frame.timestamp) / 86400000;
+
+function lockedAt(frame) {
+  const lock = state.lock?.value;
+  if (!lock || frame.mosaic || frame.marker || state.lock.session !== state.session) return null;
+  const size = state.lock.size, at = StarLock.positionAt(lock, dayOf(frame));
+  return [(at.x + .5) / size, (at.y + .5) / size];
+}
+
+function expectedAt(frame) {
+  const locked = lockedAt(frame);
+  return locked ? inFrame(locked) : targetAt(frame);
+}
+
+async function previewPixels(frame) {
+  const image = await imageFor(frame.preview);
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+  const context = canvas.getContext("2d", {willReadFrequently: true});
+  context.drawImage(image, 0, 0);
+  return {width: canvas.width, height: canvas.height, data: context.getImageData(0, 0, canvas.width, canvas.height).data};
+}
+
+async function computeLock(session) {
+  if (typeof StarLock === "undefined" || state.field === "vesta") return null;
+  const catalog = catalogEntry();
+  if (!catalog || (state.field === "custom" && catalog.kind !== "stars")) return null;
+  const hasCatalog = Array.isArray(catalog.astrometry_j2000);
+  // One usable frame per UTC date, oldest first.
+  const days = new Map();
+  for (const frame of session.frames) {
+    if (frame.mosaic || frame.marker || !(frame.coverage >= 80)) continue;
+    const key = dateText(frame.timestamp);
+    if (!days.has(key)) days.set(key, frame);
+  }
+  const frames = [...days.values()].sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+  if (frames.length < 2) return null;
+  const sample = frames.length <= 16 ? frames
+    : Array.from({length: 16}, (_, i) => frames[Math.round(i * (frames.length - 1) / 15)]);
+  const loaded = await Promise.all(sample.map(async frame => ({frame, image: await previewPixels(frame)})));
+  const size = loaded[0].image.width;
+  const items = loaded.map(({frame, image}) => {
+    const at = hasCatalog ? catalogAt(frame) : null;
+    return {t: dayOf(frame), image, prior: at && {x: at[0] * size - .5, y: at[1] * size - .5}};
+  });
+  let catalogRate = null;
+  if (hasCatalog) {
+    const first = frames[0], later = {timestamp: new Date(Date.parse(first.timestamp) + 365.25 * 86400000).toISOString()};
+    const a = catalogAt(first), b = catalogAt(later);
+    if (a && b) catalogRate = {vx: (b[0] - a[0]) * size / 365.25, vy: (b[1] - a[1]) * size / 365.25};
+  }
+  // Solve over the sampled dates, but reference the start of the whole span.
+  const lock = StarLock.solve(items, {size, catalogRate});
+  if (!lock) return null;
+  const shift = dayOf(frames[0]) - lock.t0;
+  lock.x0 += lock.vx * shift; lock.y0 += lock.vy * shift; lock.t0 = dayOf(frames[0]);
+  return {value: lock, size};
+}
+
+async function refreshLock(session) {
+  const stamp = ++state.lockVersion;
+  state.lock = null;
+  try {
+    const result = await computeLock(session);
+    if (stamp !== state.lockVersion || session !== state.session) return;
+    state.lock = result && {value: result.value, size: result.size, session};
+  } catch (error) { state.lock = null; }
+  if (stamp === state.lockVersion && session === state.session) { updateLegend(); draw(); }
 }
 
 function drawTarget(ctx, x, y) {
+  ctx.save();
   ctx.strokeStyle = "#eab354"; ctx.lineWidth = 1.6;
   ctx.strokeRect(x-21,y-21,42,42);
-  markLabel(ctx, state.title, x-21, y+36, "#eab354");  // below the box: tracker labels sit above it
+  ctx.textAlign = "center";
+  markLabel(ctx, "Expected position", x, y+36, "#eab354");
+  ctx.restore();
 }
 
 function drawClick(ctx, x, y) {
@@ -138,9 +258,9 @@ function updateLegend() {
   if (!box) return;
   const frame = state.session?.frames?.[state.index];
   const items = [];
-  if (frame && $("markers").checked) {
-    items.push(["center","Field center"]);
-    if (targetAt(frame)) items.push(["guide",`${state.title} · expected position, not measured`]);
+  if (frame && $("markers").checked) items.push(["center","Field center"]);
+  if (frame && $("expected-position").checked && expectedAt(frame)) {
+    items.push(["guide",`${state.title} · Expected position`]);
   }
   if (frame && state.point) items.push(["click","Clicked pixel"]);
   const kinds = frame && typeof StarTracker !== "undefined" ? StarTracker.kinds() : {};
@@ -180,9 +300,9 @@ async function paint(canvas, frame, version) {
     ctx.globalCompositeOperation = "source-over";
   }
   if (mask) ctx.drawImage(mask,left,top,side,side);
-  if ($("markers").checked) {
-    drawCenter(ctx,left+.5*side,top+.5*side);
-    const at = targetAt(frame);
+  if ($("markers").checked) drawCenter(ctx,left+.5*side,top+.5*side);
+  if ($("expected-position").checked) {
+    const at = expectedAt(frame);
     if (at) drawTarget(ctx,left+at[0]*side,top+at[1]*side);
     // Vesta crosses this fixed patch in under a day: say where it went instead of drawing nothing
     else if (state.field === "vesta" && !frame.marker && !(typeof StarTracker !== "undefined" && Object.keys(StarTracker.kinds()).length)) {
@@ -318,14 +438,19 @@ function setFrame(index) {
   if (state.point) inspect(state.point, index);
 }
 
+function savedCoverage(field) {
+  if (!field?.frames) return "Search archive";
+  const exposures = `${field.frames} saved exposures`;
+  return field.dates == null ? exposures : `${field.dates} dates · ${exposures}`;
+}
+
 // Toolbar target switcher (absent on older pages: every lookup is guarded).
 function syncSwitcher() {
   if (!$("switcher-name")) return;
   const field = state.library?.fields?.find(item => item.key === state.field);
-  const matches = field && state.session?.options.ra === field.ra && state.session?.options.dec === field.dec;
-  const count = field && !matches ? field.frames : state.session?.frames?.length ?? field?.frames;
   $("switcher-name").textContent = field ? field.name : state.title;
-  $("switcher-count").textContent = count == null ? "" : `${count} obs`;
+  $("switcher-count").textContent = field ? savedCoverage(field) :
+    state.session?.frames?.length ? `${state.session.frames.length} loaded exposures` : "";
   $("switcher-thumb").hidden = !field?.thumbnail;
   if (field?.thumbnail) $("switcher-thumb").src = field.thumbnail;
   $("switcher-icon").toggleAttribute("hidden", Boolean(field?.thumbnail));  // SVG has no .hidden property
@@ -343,7 +468,7 @@ function resetView() {
   draw();
 }
 
-function sessionReady(session, request) {
+function sessionReady(session, request, {keepView=false}={}) {
   if (!Array.isArray(session?.frames) || !session.options) {
     throw new Error("The archive returned an incomplete sky view. Try loading the field again.");
   }
@@ -441,8 +566,24 @@ function sessionReady(session, request) {
   $("view-message").textContent = session.empty_reason || "";
   if (!session.frames.length) emptyActions(session);
   $("archive-search").classList.toggle("primary-hint", !session.frames.length && !excluded.length);
+  const savedCounts = session.saved_dates != null && session.saved_exposures != null;
   $("next-live-batch").hidden = session.next_archive_offset == null;
-  $("next-live-batch").onclick = () => search("archive", session.next_archive_offset);
+  $("next-live-batch").textContent = session.new_dates_search ? "More new dates" : "More live observations";
+  $("next-live-batch").onclick = () => search("archive", session.next_archive_offset,
+    {newDates: session.new_dates_search, sampling: session.options.sampling});
+  $("search-new-dates").hidden = !savedCounts || !session.snapshot;
+  $("search-new-dates").onclick = () => search("archive", 0, {newDates: true});
+  $("exposure-sampling").hidden = !savedCounts || session.saved_dates === session.saved_exposures;
+  $("exposure-sampling").textContent = session.daily_sequence
+    ? `All ${session.saved_exposures} exposures` : `One per date (${session.saved_dates})`;
+  $("exposure-sampling").onclick = () => search("saved", 0, {sampling: session.daily_sequence ? "all" : "dates"});
+  $("view-saved-dates").hidden = !session.new_dates_search || session.snapshot;
+  $("view-saved-dates").onclick = () => search("saved");
+  const coverage = session.coverage_note || (session.new_dates_search && !session.snapshot
+    ? `${session.frames.length} additional dates loaded in this batch. Archive listed ${session.candidate_dates} candidate dates.`
+    : savedCounts ? `${session.saved_dates} UTC observing dates · ${session.saved_exposures} saved exposures` : "");
+  $("date-coverage-note").hidden = !coverage;
+  $("date-coverage-note").textContent = coverage;
   const pair = session.motion_example?.indices ?? motionPair(session.frames);
   $("motion-pair").hidden = !pair;
   $("motion-pair").onclick = () => {
@@ -455,7 +596,7 @@ function sessionReady(session, request) {
   };
   for (const id of ["play","previous","next","timeline","reference-date","export"]) $(id).disabled = !session.frames.length || (id === "play" && session.frames.length < 2);
   if (session.frames.length) {
-    resetView();
+    if (!keepView) resetView();
     setFrame(state.vestaDemo && vestaMarked.length ? vestaMarked[0] : state.index);
     state.vestaDemo = false;
   } else {
@@ -482,15 +623,16 @@ function sessionReady(session, request) {
   status(`${countText}${session.mosaic ? " · DR1 mosaic channels" : ""}${capText}${session.failures.length ? ` · ${session.failures.length} errors` : ""}`);
   $("source-state").textContent = `Synced ${new Date(session.created_utc).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`;
   const url = new URL(location.href);
-  for (const key of ["ra","dec","fov","detector","start","end"]) {
+  for (const key of ["ra","dec","fov","detector","start","end","sampling"]) {
     const value = session.options[key];
-    if (value !== "") url.searchParams.set(key,value); else url.searchParams.delete(key);
+    if (value != null && value !== "") url.searchParams.set(key,value); else url.searchParams.delete(key);
   }
   url.searchParams.set("field",state.field);
   history.replaceState(null,"",url);
   window.dispatchEvent(new CustomEvent("sky-session-ready",{detail:session}));
   loadOlder(state.field);
   olderCompare();
+  refreshLock(state.session);
 }
 
 for (const [id, all] of [["mode-dates", false], ["mode-all", true]]) $(id).onclick = () => {
@@ -644,11 +786,56 @@ function loadingMessage(label) {
   bar.firstChild.style.width = `${(now/total*100).toFixed(1)}%`;
 }
 
-async function search(source="saved", archiveOffset=0) {
-  const request = {options: inputs(), source, archiveOffset, mosaic: false, field: state.field, title: state.title, version: ++state.requestVersion};
+// The archive worker returns a limited number of observations per request. Keep asking for the next batch (each
+// reply holds everything fetched so far) until the archive list is exhausted or the user starts something else.
+async function chainBatches(first, request) {
+  let result = first, busy = 0;
+  const version = request.version;
+  $("next-live-batch").hidden = true;
+  try {
+    while (result.next_archive_offset != null && version === state.requestVersion) {
+      status(`${result.frames.length} observations loaded · fetching more from IRSA…`, "busy");
+      let job;
+      try {
+        job = await api("/observation-lab/api/jobs", {method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({...request.options, source:"archive", field:request.field,
+            archive_offset: result.next_archive_offset, new_dates: request.newDates, mosaic: false})});
+      } catch (error) {
+        // The single worker may still be finishing another request: wait and ask again a few times.
+        if (++busy > 6 || !/busy/i.test(error.message)) throw error;
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        continue;
+      }
+      let next = job.result;
+      while (!next && version === state.requestVersion) {
+        const progress = await api(`/observation-lab/api/jobs/${job.id}`);
+        if (progress.status === "failed") throw new Error(progress.stage);
+        if (progress.status === "complete") { next = progress.result; break; }
+        if (progress.stage) status(`${result.frames.length} loaded · ${progress.stage}`, "busy");
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      if (!next || version !== state.requestVersion) return;
+      busy = 0;
+      result = next;
+      sessionReady(result, request, {keepView: true});
+    }
+  } catch (error) {
+    if (version === state.requestVersion) status(`Stopped loading more observations: ${error.message}`, "error");
+  } finally {
+    // If it stopped early, the manual button picks up where it left off.
+    if (version === state.requestVersion && state.session) $("next-live-batch").hidden = state.session.next_archive_offset == null;
+  }
+}
+
+async function search(source="saved", archiveOffset=0, {sampling="dates", newDates=false}={}) {
+  const request = {options: {...inputs(), sampling}, source, archiveOffset, newDates, mosaic: false,
+    field: state.field, title: state.title, version: ++state.requestVersion};
   state.lastSource = source;
   state.pending = request;
   $("next-live-batch").hidden = true;
+  $("search-new-dates").hidden = true;
+  $("exposure-sampling").hidden = true;
+  $("view-saved-dates").hidden = true;
   $("motion-pair").hidden = true;
   stop();
   ++state.drawVersion;
@@ -672,7 +859,7 @@ async function search(source="saved", archiveOffset=0) {
           title: `Loading ${where}`, detail: current.source === "saved" ? "Opening saved SPHEREx exposures for this sky patch." : "Searching IRSA for SPHEREx exposures covering this sky patch."});
         const task = window.SpaceLoader?.begin(current.source === "saved" ? `Loading ${where}` : `Searching IRSA · ${where}`);
         try {
-          const job = await api("/observation-lab/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...current.options,source:current.source,field:current.field,archive_offset:current.archiveOffset,all_exposures:state.allExposures,mosaic:current.mosaic ?? "auto"})});
+          const job = await api("/observation-lab/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...current.options,source:current.source,field:current.field,archive_offset:current.archiveOffset,new_dates:current.newDates,all_exposures:state.allExposures,mosaic:current.mosaic ?? "auto"})});
           result = job.result;
           let previewShown = false;
           while (!result && current.version === state.requestVersion) {
@@ -709,6 +896,7 @@ async function search(source="saved", archiveOffset=0) {
         $("viewers").setAttribute("aria-busy","false");
         sessionReady(result,current);
         showAutoNote(current, result);
+        if (result.next_archive_offset != null && current.source === "archive") chainBatches(result, current);
         // A view that had to be fetched comes into focus; revisited views switch instantly.
         const stage = $("viewers");
         stage.classList.remove("resolve");
@@ -762,7 +950,7 @@ function bandOrder(origin) {
   return order;
 }
 function nextAutoStep(current, result) {
-  if (result.frames?.length || result.next_archive_offset != null ||
+  if (current.newDates || result.frames?.length || result.next_archive_offset != null ||
       (current.source === 'archive' && result.archive_error)) return null;
   const o = current.options;
   const auto = current.auto || {origin: {fov: Number(o.fov), detector: Number(o.detector)}, tried: new Set([`${Number(o.fov)}|${Number(o.detector)}`]),
@@ -851,7 +1039,7 @@ function emptyActions(session) {
   if (box.children.length) $("view-message").append(box);
 }
 
-function chooseField(field) {
+function chooseField(field, {sampling="dates"}={}) {
   state.title = field.name;
   state.field = field.key;
   state.objectContext = null;
@@ -865,7 +1053,7 @@ function chooseField(field) {
   for (const button of $("fields").children) button.setAttribute("aria-current",String(button.dataset.key === field.key));
   closeTargets();
   syncSwitcher();
-  search();
+  search("saved", 0, {sampling});
 }
 
 function setWorkspaceMode(mode) {
@@ -1112,13 +1300,13 @@ async function library() {
   const data = await api("/observation-lab/api/library");
   if (state.library?.sync?.completed !== data.sync?.completed) state.views.clear();
   state.library = data;
-  $("inventory").textContent = `${data.fields.reduce((n,f)=>n+f.frames,0).toLocaleString("en")} obs`;
+  $("inventory").textContent = `${data.fields.reduce((n,f)=>n+f.frames,0).toLocaleString("en")} saved exposures`;
   $("collections").textContent = data.config.collections.join(" · ");
   $("fields").replaceChildren();
   for (const field of data.fields) {
     const button = document.createElement("button"); button.className = "field"; button.dataset.key = field.key;
     button.setAttribute("aria-current",String(field.key===state.field));
-    const available = field.frames ? `${field.frames} obs` : "Live IRSA";
+    const available = savedCoverage(field);
     button.title = `${field.category} · ${available}`;
     const img = document.createElement("img");
     if (field.thumbnail) {
@@ -1200,6 +1388,7 @@ $("vesta-next-guide").onclick = () => {
 };
 for (const id of ["ra","dec"]) $(id).addEventListener("input", () => {
   state.title = "Sky patch"; state.field = "custom"; state.objectContext = null;
+  for (const control of ["search-new-dates","exposure-sampling","view-saved-dates","next-live-batch"]) $(control).hidden = true;
   for (const button of $("fields").children) button.setAttribute("aria-current","false");
 });
 $("play").onclick = play;
@@ -1213,9 +1402,9 @@ for (const mode of ["single","split"]) $("mode-"+mode).onclick = () => {
   for (const name of ["single","split"]) $("mode-"+name).setAttribute("aria-pressed",String(mode===name));
   if (state.session) { renderComparison(); draw(); }
 };
-for (const id of ["markers","quality","tint"]) $(id).onchange = () => {
+for (const id of ["markers","expected-position","quality","tint"]) $(id).onchange = () => {
   if ($("flag-legend")) $("flag-legend").hidden = !$("quality").checked;
-  if (id === "markers") updateLegend();
+  if (id === "markers" || id === "expected-position") updateLegend();
   if ($("hover-flag-badge") && !$("quality").checked) $("hover-flag-badge").hidden = true;
   if (id === "quality") {
     const label = $("quality-card")?.querySelector?.("span");
@@ -1314,6 +1503,7 @@ if (guideChapter === "motion" || guideChapter === "spectrum") {
   try {
     const data = await library();
     const params = new URL(location.href).searchParams;
+    const sampling = params.get("sampling") === "all" ? "all" : "dates";
     if (params.has("ra") && params.has("dec")) {
       for (const key of ["ra","dec","fov","detector","start","end"]) if (params.has(key)) $(key).value = params.get(key);
       const target = data.fields.find(field => field.key === params.get("field") ||
@@ -1321,12 +1511,12 @@ if (guideChapter === "motion" || guideChapter === "spectrum") {
          Math.abs(field.dec - Number(params.get("dec"))) < 0.00001));
       if (!params.has("detector") && !params.has("start") && !params.has("end") && target &&
           (!params.has("fov") || Number(params.get("fov")) === target.fov)) {
-        chooseField(target);
+        chooseField(target, {sampling});
       } else {
         state.field = target?.key || "custom";
         state.title = target?.name || "Selected sky patch";
         if (!params.has("detector") && (target || params.get("source") === "archive")) setBand(target?.detector ?? 0);
-        await search(params.get("source") === "archive" && !target ? "archive" : "saved");
+        await search(params.get("source") === "archive" && !target ? "archive" : "saved", 0, {sampling});
       }
     } else { $("fov").value="10"; chooseField(data.fields[0]); }
   } catch(error) { status(`Unable to load the local service. ${error.message}`,"error"); }

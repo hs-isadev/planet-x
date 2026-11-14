@@ -21,15 +21,17 @@ export function installNavigation(C){
   return this.fly(item.pos,item.pos.clone().addScaledVector(direction,distance),5000);
  };
  C.prototype.smoothExit=async function(){if(!this.local||this.surface){this.exitLocal();return;}this.local.followPlanet=null;await this.fly(new THREE.Vector3(),this.camera.position.clone().normalize().multiplyScalar(Math.max(this.local.entryDistance||300,(this.local.systemExtent||0)*6)),5500);await this.scaleTransition(()=>this.exitLocal());};
- C.prototype.zoomBy=function(factor){if(this.journey||this.surface)return;this.stopFlight();this.zoomImpulse=THREE.MathUtils.clamp((this.zoomImpulse||0)+Math.log(factor),-2,2);};
+ // zoomImpulse is the zoom still to be applied, in natural-log units of distance. Each wheel notch adds the same
+ // ratio, and the remainder is eased in at a fixed rate, so zooming is steady at every scale: no slow start, no runaway.
+ C.prototype.zoomBy=function(factor){if(this.journey||this.surface)return;this.stopFlight();this.zoomImpulse=THREE.MathUtils.clamp((this.zoomImpulse||0)+Math.log(factor),-3,3);};
  C.prototype.navigationTick=function(dt){
-  if(this.loading||this.journey||this.surface||this.flight)return;let body=this.items.find(i=>i.data.id===this.selected);let k=this.navKeys||new Set(),active=!document.body.classList.contains('observing')&&!document.body.classList.contains('searching');
-  let impulse=this.zoomImpulse||0;if(active){impulse+=((k.has('KeyS')?1:0)-(k.has('KeyW')?1:0))*dt*2.2;let orbit=((k.has('KeyD')?1:0)-(k.has('KeyA')?1:0))*dt*.8;if(orbit){let v=this.camera.position.clone().sub(this.controls.target);v.applyAxisAngle(this.camera.up,orbit);this.camera.position.copy(this.controls.target).add(v);}}
-  const escapingSolar=this.mode==='solar'&&!this.local&&impulse>0;
-  const maxSpeed=escapingSolar?2.6:(this.local ? .55 : .9);
-  const zoomStep=impulse*Math.min(1,dt*6)*(escapingSolar?2.6:1);
-  const factor=Math.exp(THREE.MathUtils.clamp(zoomStep,-dt*maxSpeed,dt*maxSpeed));
-  this.zoomImpulse=impulse*Math.exp(-dt*6);let offset=this.camera.position.clone().sub(this.controls.target),d=offset.length();if(Math.abs(impulse)>.00001){d=THREE.MathUtils.clamp(d*factor,this.controls.minDistance,this.controls.maxDistance);offset.setLength(d);this.camera.position.copy(this.controls.target).add(offset);}
+  if(!this.loading&&!this.journey&&!this.surface)this.smallBodyTick?.(dt);
+  if(this.loading||this.journey||this.surface||this.flight)return;if(this.smallFocus?.anim){this.zoomImpulse=0;return;}let body=this.items.find(i=>i.data.id===this.selected);let k=this.navKeys||new Set(),active=!document.body.classList.contains('observing')&&!document.body.classList.contains('searching');
+  let pending=this.zoomImpulse||0;if(active){pending+=((k.has('KeyS')?1:0)-(k.has('KeyW')?1:0))*dt*1.6;let orbit=((k.has('KeyD')?1:0)-(k.has('KeyA')?1:0))*dt*.8;if(orbit){let v=this.camera.position.clone().sub(this.controls.target);v.applyAxisAngle(this.camera.up,orbit);this.camera.position.copy(this.controls.target).add(v);}}
+  const step=pending*(1-Math.exp(-dt*(this.reduced?30:7.5)));
+  this.zoomImpulse=Math.abs(pending-step)<1e-5?0:pending-step;
+  const impulse=step/Math.max(dt,1e-4);
+  let offset=this.camera.position.clone().sub(this.controls.target),d=offset.length();if(step){const next=THREE.MathUtils.clamp(d*Math.exp(step),this.controls.minDistance,this.controls.maxDistance);if(next===this.controls.minDistance||next===this.controls.maxDistance)this.zoomImpulse=0;d=next;offset.setLength(d);this.camera.position.copy(this.controls.target).add(offset);}
   let i=this.items.find(i=>i.data.id===this.selected);
   if(this.mode==='stars'&&!this.local&&this.selected==='origin'&&d<.0004&&impulse<-.001){window.dispatchEvent(new Event('cosmic-enter'));return;}if(this.mode==='solar'&&!this.local&&d>70&&impulse>.001){window.dispatchEvent(new Event('cosmic-exit'));return;}if(this.mode==='stars'&&!this.local&&impulse<-.001&&i&&d<.18&&this.controls.target.distanceTo(i.pos)<.01&&i.data.id!=='origin'){let direction=offset.clone().normalize();this.stellarCloseup(i,300);this.camera.position.copy(direction).multiplyScalar(300);this.controls.target.set(0,0,0);const local=this.local;this.companionsReady?.then(()=>{if(this.local===local&&local.planets?.length)this.systemOverview();});}
   else if(this.local&&!this.surface){this.camera.near=Math.max(.0002,Math.min(.02,(d-1)*.015));this.camera.updateProjectionMatrix();if(d>Math.max(900,(this.local.systemExtent||0)*6)&&!this.journey){let direction=offset.clone().normalize(),saved=this.local;originalExit.call(this);this.controls.target.copy(saved.item.pos);this.camera.position.copy(saved.item.pos).addScaledVector(direction,.2);}}

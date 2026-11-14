@@ -5,7 +5,6 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS
-from scipy.stats import linregress
 from .archive import CONFIG, CACHE, output_grid, ensure_frame_files
 
 
@@ -122,6 +121,7 @@ def motion_fit(job,points):
     if np.ptp(years)<1/365.25:raise ValueError('Need epochs separated by at least one day.')
     skies=SkyCoord([sky_at_click(job,p['x'],p['y']) for p in points])
     origin=skies[0];east,north=origin.spherical_offsets_to(skies)
+    from scipy.stats import linregress  # deferred: scipy.stats is slow to import on a small host
     ex=east.arcsec;ny=north.arcsec;rx=linregress(years,ex);ry=linregress(years,ny)
     speed=float(np.hypot(rx.slope,ry.slope));_,_,scale=output_grid(job['ra'],job['dec'],job['fov'])
     # Nominal one-display-pixel mark error, not measured centroid/astrometric uncertainty.

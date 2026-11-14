@@ -38,7 +38,7 @@ function solarData(date) {
  }
  return initialSolar.promise;
 }
-const importScene=()=>import('./scene.js?v=prepared-context');
+const importScene=()=>import('./scene.js?v=free-orbit');
 function solarControls(){
  $('star-filters').hidden=true;document.body.dataset.scene='solar';
  $('solar-tab').setAttribute('aria-pressed','true');$('stars-tab').setAttribute('aria-pressed','false');
@@ -276,7 +276,6 @@ observations.search=function(title,...args){
  const ra=Number($('ra').value),dec=Number($('dec').value);
  if(Number.isFinite(ra)&&Number.isFinite(dec))openLabField({ra,dec,field:({barnard:'barnard',epsilon:'epsilon-indi',wise:'wise-0855',rw:'rw-aur',rdraconis:'r-dra'})[args[0]?.preset]});
 };
-$('original-observation-tools').onclick=()=>{labView=false;if(observations.job)observations.open();else observations.openFeatured('vesta',null,false);};
 satelliteView=installSatelliteView(observations,{
  pinTarget,
  getTarget:()=>skyTarget,

@@ -3,6 +3,7 @@ from functools import lru_cache
 import hashlib
 import json
 import math
+import os
 import shutil
 import uuid
 
@@ -13,7 +14,8 @@ CACHE = PLANET_CACHE / 'observation-lab'
 BUNDLE = ROOT / 'backend/data/spherex-seed'
 INDEX = 'featured-views'
 PRESET_FOV = 10
-ALTERNATE_FRAME_LIMIT = 60
+# Frames kept when a custom sky position (not a saved field) has more matching exposures than this.
+ALTERNATE_FRAME_LIMIT = max(60, int(os.environ.get('SPHEREX_VIEW_FRAME_LIMIT', 400)))
 NAMED_STARS = 50
 COLLECTION = ROOT / 'backend/observation_lab_core/data/collection.json'
 HISTORY = ROOT / 'backend/data/preset-archive-index.json'

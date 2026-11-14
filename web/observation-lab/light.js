@@ -156,6 +156,7 @@ const LightLab = (() => {
       chart.append(svg("text",{x:500,y:200,"text-anchor":"middle",fill:"#a1a1a6","font-size":13},"Adjust filters"));
       $("plot-note").textContent="Empty filter result";
       chart.setAttribute("aria-label","Measured light chart: no points match the current filters");
+      explainChart(rows);
       return;
     }
     const L=96,R=968,T=42,B=326;
@@ -202,6 +203,28 @@ const LightLab = (() => {
     const span=(values,f)=>{const lo=f(Math.min(...values)),hi=f(Math.max(...values));return lo===hi?lo:`${lo} to ${hi}`;};
     const xText=mode==="spectrum"?`wavelength ${span(rows.map(p=>p.wavelength),v=>v.toFixed(2))} µm`:`dates ${span(rows.map(p=>p.mjd),v=>new Date((v-40587)*86400000).toISOString().slice(0,10))}`;
     chart.setAttribute("aria-label",`${mode==="spectrum"?"Spectrum":"Flux over time"}: ${rows.length} point${rows.length===1?"":"s"} (${warning} flagged), ${xText}, flux ${span(rows.map(p=>p.flux),fmt)} µJy`);
+    explainChart(rows);
+  }
+
+  // Worded reading of the current graph, recomputed from exactly the plotted points.
+  function explainChart(rows) {
+    if(!window.SpectrumStory) return;
+    let box=$("light-explain");
+    if(!box){
+      box=document.createElement("section");box.id="light-explain";box.className="light-explain";
+      box.setAttribute("aria-live","polite");$("light-chart").after(box);
+    }
+    const context={ra:Number($("ra")?.value),dec:Number($("dec")?.value),name:state.session?.id||""};
+    const story=SpectrumStory.explain(rows,result,mode,context);
+    const head=document.createElement("p");head.className="light-explain-head";
+    const tag=document.createElement("span");tag.textContent=mode==="spectrum"?"What this spectrum shows":"What this light curve shows";
+    const strong=document.createElement("strong");strong.textContent=story.headline;head.append(tag,strong);
+    const body=document.createElement("div");body.className="light-explain-body";
+    for(const text of story.paragraphs){const p=document.createElement("p");p.textContent=text;body.append(p);}
+    const facts=document.createElement("dl");facts.className="light-explain-facts";
+    for(const [label,value] of story.facts){const dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=label;dd.textContent=value;facts.append(dt,dd);}
+    box.replaceChildren(head,body);if(story.facts.length)box.append(facts);
+    box.classList.remove("light-explain-in");void box.offsetWidth;box.classList.add("light-explain-in");
   }
 
   async function openPoint(p) {

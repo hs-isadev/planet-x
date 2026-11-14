@@ -4,6 +4,7 @@ const SOURCES = [
  ['IRSA spectral calibration and 102-channel products','https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-products/'],
  ['IRSA tutorial: extract a spectrum from the DR1 mosaic','https://caltech-ipac.github.io/irsa-tutorials/spherex-hipscube/'],
  ['Gaia DR3 at MAST','https://archive.stsci.edu/missions-and-data/gaia'],
+ ['WiseView: WISE/NEOWISE time-lapse viewer','http://byw.tools/wiseview'],
  ['Canadian Astronomy Data Centre','https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/'],
  ['CSA NEOSSat mission','https://www.asc-csa.gc.ca/eng/satellites/neossat/'],
  ['CSA NEOSSat dataset','https://data.asc-csa.gc.ca/dataset/neossat'],
@@ -78,7 +79,7 @@ export function installPartnerEvidence(view){
   if(!field||!frame)return;
   const evidence={field:{ra_deg:field.ra,dec_deg:field.dec,width_arcmin:field.fov},
    spherex:{id:frame.id,archive_url:frame.url,observed_utc:frame.date,detector:frame.detector,wavelength_um:frame.wavelength_um},
-   gaia_dr3:{overlay_enabled:$('gaia-overlay').checked,reference_epoch:'J2016.0',source:SOURCES[2][1]},
+   gaia_dr3:{overlay_enabled:$('gaia-overlay').checked,reference_epoch:'J2016.0',source:SOURCES.find(item=>item[0].startsWith('Gaia DR3'))[1]},
    wiseview_url:$('partner-wiseview').href,neossat:lookup,
    interpretation:'Different missions, epochs, bandpasses, resolutions and footprints. Partner results are independent follow-up evidence.'};
   const url=URL.createObjectURL(new Blob([JSON.stringify(evidence,null,2)],{type:'application/json'}));

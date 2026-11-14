@@ -61,3 +61,31 @@ For faint targets, check [time-resolved unWISE images](https://irsa.ipac.caltech
 
 - [Epoch coverage report](docs/coverage/epoch-report.md) includes bundle counts, retrieval results, reproduction commands, and the tested Barnard’s Star motion pair.
 - [SPHEREx discovery census](docs/coverage/spherex-census.md) records the providers, search geometry, and release collections already checked.
+
+## Session update (2026-11-19)
+
+- **Downloading more dates:** run `python -m scripts.download_more_dates --check`, then `python -m scripts.download_more_dates`, on a machine that can reach IRSA. It writes into `backend/data/spherex-seed/` and prints before/after dates per field. The Claude sandbox and its PC shell were blocked from IRSA and the AWS mirror (proxy 403), so no new FITS were fetched. The last discovery listed 364 exposures on 40 UTC dates for Barnard's Star (449 and 60 for Epsilon Indi B), so more dates depend on IRSA releasing newer data or on the approved WISE/NEOWISE supplement, which is not built yet.
+- **Live batch limit:** `SPHEREX_LIVE_BATCH` (default 60, was 12) and `SPHEREX_BATCH_SECONDS` (default 60). Each request returns everything fetched so far and the viewer chains the next batch itself. `SPHEREX_VIEW_FRAME_LIMIT` (default 400, was 60) caps frames for custom positions.
+- **Expected-position box:** `web/observation-lab/star-lock.js` finds the star in up to 16 frames, locks the start of the span, and moves the box by catalog proper motion (or a measured drift when large). Test: `node tests/star_lock.mjs`.
+- **Fixed:** the lab logo no longer loads the app inside itself; the "Planet X analysis tools" entry to the old screen is removed.
+
+
+## Update: Render free-tier speed (2026-11-19)
+
+What changed and why:
+- `backend/compression.py` + `app.add_middleware(TextGZipMiddleware)`: gzip for JS/CSS/HTML/JSON only (images, GLB and FITS are skipped). The first-load text assets go from about 6.5 MB to 1.6 MB.
+- `FreshStaticFiles`: `/vendor/*.js|css` cached 7 days, `assets/*.json|svg` 1 hour (images/GLB stay at 1 day), app JS/CSS/HTML still revalidate.
+- `Dockerfile`: `python -m compileall` before `USER observatory`. The runtime user cannot write `__pycache__`, so before this every cold start recompiled the whole backend.
+- Deferred slow imports: `aiohttp` (backend/cloud.py), `scipy.stats` (backend/analysis.py), unused `astroquery.simbad` (backend/main.py). `import backend.main` went 2.7 s to 2.3 s on a fast machine.
+- `backend/observation_lab.py`: the lab archive index now loads in a background thread 3 s after startup (`SPHEREX_WARM_LAB=0` turns it off, `SPHEREX_WARM_LAB_DELAY` changes the delay), so the first SPHEREx click no longer pays for it.
+- `web/partner-evidence.js`: the exported Gaia reference pointed at the wrong source entry (SOURCES[2]); fixed. WiseView added to the source list.
+
+Not fixable in code: Render's free plan sleeps after 15 minutes without traffic and takes about a minute to wake. Keep it awake with a free uptime pinger (UptimeRobot or cron-job.org) requesting `https://<service>.onrender.com/api/health` every 5-10 minutes. One always-on free service fits inside the 750 free instance hours a month.
+
+## Update: spectrum wording, 3D small bodies, controls, loader (2026-11-20)
+
+- **Spectrum explanations:** `web/observation-lab/spectrum-story.js` writes a plain-language reading under the Spectrum and Flux-over-time graphs, recomputed from exactly the plotted points: overall slope (λ^α) and what it implies, where the light peaks (rough temperature), which wavelengths actually have signal, dip-check results in words, scatter between dates, a small period search for light curves, and target-specific context for the five presets and Vesta. It only reports what the backend dip checks found.
+- **3D small bodies:** `web/small-bodies.js` now has ~4,500 bodies with the real belt structure (Kirkwood gaps, Hildas, Trojans at L4/L5, NEAs, Centaurs, cold classical Kuiper belt, Plutinos, scattered disk), 13 named bodies on published orbital elements (Ceres, Vesta, Pallas, Hygiea, Psyche, Eros, Bennu, Ryugu, Apophis, Arrokoth, Haumea, Makemake, Eris), rocks that keep a ~2 px minimum size but grow to true size up close, and an interplanetary dust cloud lit with a Henyey–Greenstein phase function (forward scattering toward the Sun plus a gegenschein back lobe). Positions along each orbit are illustrative.
+- **Focus on any rock:** `web/asteroid-focus.js`. Click a rock, use Scale / orbit → Fly to asteroid, Random asteroid, Random Kuiper object, or Asteroid belt. The camera follows the body along its orbit; a detailed, sunlit close-up model at true size replaces it, with an info card.
+- **Controls:** `web/free-controls.js` replaces OrbitControls in the 3D context. No pole lock (orbit over the top freely), right/middle/shift-drag or two fingers to pan, Q/E roll, frame-rate-independent damping. Zoom in `navigation.js` is now a constant ratio per wheel notch eased in at a fixed rate (no slow start, no runaway when leaving the Solar System).
+- **Loader:** a minimal theme at the end of `web/space-loader.css` (hairline progress, one accent, fade transitions; the 3D cover now fades out instead of vanishing).

@@ -17,11 +17,12 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-from astroquery.simbad import Simbad
 from .archive import CONFIG, CACHE, ROOT, discover, fetch_frame, atomic_json, prune_cache, ensure_frame_files, key_for, blink_levels
 from .coordinates import parse_coordinates
 
 app = FastAPI(title="Planet X / SPHEREx Observatory", version="1.0.0")
+from .compression import TextGZipMiddleware
+app.add_middleware(TextGZipMiddleware, minimum_size=1024, compresslevel=5)
 JOBS = {}
 GUARD = threading.RLock()
 CLIENTS = {}
@@ -560,10 +561,15 @@ if DIST.exists():
     class FreshStaticFiles(StaticFiles):
         async def get_response(self, path, scope):
             response = await super().get_response(path, scope)
-            if Path(path).suffix in (".js", ".css", ".html") or path in ("", "."):
+            suffix = Path(path).suffix
+            if path.startswith("vendor/") and suffix in (".js", ".css"):
+                response.headers["Cache-Control"] = "public, max-age=604800"
+            elif suffix in (".js", ".css", ".html") or path in ("", "."):
                 response.headers["Cache-Control"] = "no-cache"
-            elif path.startswith("assets/") and Path(path).suffix in (".png", ".jpg", ".glb"):
+            elif path.startswith("assets/") and suffix in (".png", ".jpg", ".glb"):
                 response.headers["Cache-Control"] = "public, max-age=86400"
+            elif path.startswith("assets/") and suffix in (".json", ".svg"):
+                response.headers["Cache-Control"] = "public, max-age=3600"
             return response
     from .observation_lab import install_lab_routes
     install_lab_routes(app)

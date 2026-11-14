@@ -5,6 +5,7 @@ import hashlib
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from io import BytesIO
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -47,7 +48,10 @@ REGISTRY = CACHE / 'imports.json'
 LOCK = threading.RLock()
 ACTIVE_JOBS = 1 if LOW_MEMORY else 3
 FINISHED_JOBS = 4 if LOW_MEMORY else 32
-LIVE_BATCH_SIZE = 12
+# Observations fetched per live request. Each request returns everything fetched so far, and the viewer asks for
+# the next batch by itself, so this only sets how often the picture refreshes, not how many dates can load.
+LIVE_BATCH_SIZE = max(4, int(os.environ.get('SPHEREX_LIVE_BATCH', 60)))
+BATCH_SECONDS = max(20.0, float(os.environ.get('SPHEREX_BATCH_SECONDS', 60)))
 POOL = ThreadPoolExecutor(max_workers=ACTIVE_JOBS)
 JOBS = {}
 CONFIG = json.loads((ROOT / 'archive-config.json').read_text())
@@ -145,14 +149,50 @@ def imported_records(records):
         RECORDS.extend(new)
 
 
+def expected_sky_position(field, mjd):
+    """Apply linear catalog proper motion in the same way as the viewer guide."""
+    astrometry = field.get('astrometry_j2000')
+    if astrometry is None:
+        return SkyCoord(field['ra'], field['dec'], unit='deg')
+    ra, dec, pm_ra, pm_dec = astrometry
+    years = (mjd - 51544.5) / 365.25
+    return SkyCoord(
+        (ra + pm_ra * years / (3.6e6 * math.cos(math.radians(dec)))) % 360,
+        dec + pm_dec * years / 3.6e6,
+        unit='deg',
+    )
+
+
+def date_search_cone(field, options):
+    if not field or 'astrometry_j2000' not in field:
+        return options['ra'], options['dec'], .001
+    start = max(Time('2025-03-11').mjd, options['start_mjd'] or 0)
+    end = max(start, options['end_mjd'] or Time.now().mjd)
+    center = expected_sky_position(field, (start + end) / 2)
+    radius = max(center.separation(expected_sky_position(field, t)).deg for t in (start, end))
+    return center.ra.deg, center.dec.deg, radius + .001
+
+
+def contains_expected_position(record, field):
+    with fits.open(record['path'], memmap=False) as hdus:
+        image = hdus['IMAGE']
+        sky = expected_sky_position(field, record['mjd'])
+        x, y = WCS(image.header, naxis=2).celestial.world_to_pixel(sky)
+        return (-.5 <= x < image.header['NAXIS1'] - .5
+                and -.5 <= y < image.header['NAXIS2'] - .5)
+
+
 def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_only=False, page=None):
     progress('Querying IRSA for SPHEREx observations…')
+    new_dates = bool(page and page.get('new_dates')) and archive_rows is None
+    field = catalog_field(None, options)
     if archive_rows is not None:
         rows = archive_rows
     else:
         try:
-            rows = archive_query(CONFIG, options['ra'], options['dec'], .001,
-                                 options['start_mjd'], options['end_mjd'])
+            cone = date_search_cone(field, options) if new_dates else (options['ra'], options['dec'], .001)
+            args = (CONFIG, *cone, options['start_mjd'], options['end_mjd'])
+            rows = archive_query(*args, latest=True) if new_dates else archive_query(*args)
         except RuntimeError:
             target = catalog_field(None, options)
             if not target or options['fov'] == PRESET_FOV and view_entry(target['key'])[1]:
@@ -168,25 +208,51 @@ def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_
                     for row in rows if (options['start_mjd'] is None or row['mjd'] >= options['start_mjd'])
                     and (options['end_mjd'] is None or row['mjd'] < options['end_mjd'])]
     rows = [row for row in rows if not options['detector'] or row['detector'] == options['detector']]
-    if not rows:
+    if not rows and not new_dates:
         return [], 0, []
     failures = list(dict.fromkeys(row['discovery_warning'] for row in rows if row.get('discovery_warning')))
     total = len(rows)
-    daily = default_preset(catalog_field(None, options), options)
-    if archive_rows is None and not daily:
+    preset = default_preset(field, options)
+    daily = preset and options.get('sampling') != 'all'
+    if new_dates:
+        _, saved = view_entry(field['key']) if preset else (None, None)
+        if not saved:
+            raise ValueError('Open a saved field before searching for additional dates.')
+        saved_days = {int(frame['mjd']) for frame in load_manifest(saved['session'])['frames']}
+        page['saved_days'] = saved_days
+        groups = observing_days(row for row in rows if int(row['mjd']) not in saved_days)
+        alternatives = {(group[0]['id'], group[0]['detector']): group[1:2] for group in groups}
+        rows = [group[0] for group in groups]
+        page['candidate_dates'] = len(rows)
+    if archive_rows is None and not preset:
         rows = sample_frames(rows)
-    if LOW_MEMORY and archive_rows is None and page is not None:
-        if daily:
+    if (LOW_MEMORY or new_dates) and archive_rows is None and page is not None:
+        representative_count = None
+        if daily and not new_dates:
             groups = observing_days(rows)
             representatives = [group[0] for group in groups]
+            representative_count = len(representatives)
             first = sample_frames(representatives, LIVE_BATCH_SIZE)
             identities = {(row['id'], row['detector']) for row in first}
             remainder = representatives + [row for group in groups for row in group[1:]]
             rows = first + [row for row in remainder if (row['id'], row['detector']) not in identities]
         offset = page['offset']
         batch = rows[offset:offset + LIVE_BATCH_SIZE]
-        deadline = time.monotonic() + 75
+        deadline = time.monotonic() + BATCH_SECONDS
         records = []
+        # Earlier batches are already on disk, so each request returns the whole set so far. Rows that were
+        # not fetched earlier are skipped here instead of being retried (and failing again).
+        for row in rows[:offset]:
+            for candidate in ([row, *alternatives.get((row['id'], row['detector']), [])] if new_dates else [row]):
+                try:
+                    record = archive_download(candidate, options['ra'], options['dec'], options['fov'],
+                                              CACHE, prefer_mirror=True, mirror_only=mirror_only, cache_only=True)
+                    if new_dates and not contains_expected_position(record, field):
+                        continue
+                    records.append(record)
+                    break
+                except Exception:
+                    continue
         preview_shown = False
         attempted = 0
         for row in batch:
@@ -194,15 +260,25 @@ def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_
                 break
             progress(f'Downloading observation {attempted + 1} of {len(batch)} from SPHEREx')
             attempted += 1
-            try:
-                records.append(archive_download(row, options['ra'], options['dec'], options['fov'],
-                                                CACHE, prefer_mirror=True, mirror_only=mirror_only))
-            except Exception as error:
-                failures.append(f"{row['id']}: {error}")
+            choices = [row, *alternatives.get((row['id'], row['detector']), [])] if new_dates else [row]
+            for candidate in choices:
+                try:
+                    record = archive_download(candidate, options['ra'], options['dec'], options['fov'],
+                                              CACHE, prefer_mirror=True, mirror_only=mirror_only)
+                    if new_dates and not contains_expected_position(record, field):
+                        raise ValueError('The detector does not cover the expected target position.')
+                    records.append(record)
+                    break
+                except Exception as error:
+                    failures.append(f"{candidate['id']}: {error}")
+                    if time.monotonic() >= deadline:
+                        break
             if preview and not preview_shown and 2 <= len(records) <= 6:
                 preview_shown = preview(records, total)
         next_offset = offset + attempted
-        page['next'] = next_offset if next_offset < len(rows) else None
+        # A one-frame-per-date view is complete once every date has its frame; later rows are same-day alternates.
+        last = len(rows) if representative_count is None else representative_count
+        page['next'] = next_offset if next_offset < last else None
         # This batch's immutable files and manifest are sufficient for tracking and replay.
         return records, total, failures
     if len(rows) > 4:
@@ -417,7 +493,7 @@ def publish_live_preview(job_id, options, records, total):
         if frame and frame[2]['center_inside'] and frame[2]['coverage'] > 0:
             prepared.append(frame)
     metadata = [frame[2] for frame in prepared]
-    daily = default_preset(catalog_field(None, options), options)
+    daily = default_preset(catalog_field(None, options), options) and options.get('sampling') != 'all'
     if daily:
         chosen = {(day[0]['id'], day[0]['detector']) for day in observing_days(metadata)}
         prepared = [frame for frame in prepared if (frame[2]['id'], frame[2]['detector']) in chosen]
@@ -471,6 +547,8 @@ def cached_featured_session(field, options, job_id):
                     archive_matches=manifest['archive_matches'] if daily else None, matched_frames=available,
                     date_count=date_count, exposure_count=available,
                     excluded_frames=[], limited=limited, daily_sequence=daily)
+    if preset:
+        manifest.update(saved_exposures=available, saved_dates=date_count)
     if example:
         by_hash = {frame['sha256']: index for index, frame in enumerate(frames)}
         if matched_example.issubset(by_hash):
@@ -507,10 +585,12 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
             refresh_featured()
         progress('Reading calibrated FITS data')
         archive_total = None
-        page = {'offset': int(payload.get('archive_offset', 0)), 'next': None}
+        new_dates = archive_requested and payload.get('new_dates') is True
+        page = {'offset': int(payload.get('archive_offset', 0)), 'next': None, 'new_dates': new_dates}
         archive_error = None
         failures = []
         records = cached_records
+        snapshot = None
         if archive_requested and (archive_rows is not None or cached_records is None):
             try:
                 if field and not preparing_cache:
@@ -526,11 +606,13 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
                         return False
 
                 records, archive_total, failures = fetch_archive(
-                    options, progress, archive_rows, preview if archive_rows is None else None,
+                    options, progress, archive_rows, preview if archive_rows is None and not new_dates else None,
                     mirror_only=payload.get('mirror_only', False), page=page)
+                if new_dates:
+                    records = [record for record in records if int(record['mjd']) not in page['saved_days']]
                 if cached_records:
                     records.extend(cached_records)
-                if not records and failures and not preparing_cache and field:
+                if not records and failures and not preparing_cache and field and not new_dates:
                     snapshot = cached_featured_session(field, options, job_id)
                     if snapshot:
                         snapshot.update(archive_error=failures[0], failures=failures,
@@ -543,6 +625,8 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
                 failures.append(f'Live IRSA archive search unavailable ({error}). Showing locally saved observations instead.')
                 snapshot = cached_featured_session(field, options, job_id) if field else None
                 if snapshot:
+                    if new_dates:
+                        snapshot['new_dates_search'] = True
                     snapshot.update(archive_error=archive_error, failures=failures)
                     return finish(snapshot, 'IRSA unavailable · showing cached observations')
         if records is None:
@@ -561,8 +645,9 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
             dedup.setdefault((record['id'], record['detector']), record)
         matched = len(dedup)
         limited = False
-        daily = not preparing_cache and default_preset(catalog_field(None, options), options)
-        if not preparing_cache and not daily:
+        preset = default_preset(catalog_field(None, options), options)
+        daily = not preparing_cache and preset and options.get('sampling') != 'all'
+        if not preparing_cache and not preset:
             limited = max(matched, archive_total or 0) > ALTERNATE_FRAME_LIMIT
             ordered = sorted(dedup.values(), key=lambda r: (r['mjd'], r['detector'], r['id']))
             dedup = {(r['id'], r['detector']): r for r in sample_frames(ordered)}
@@ -641,6 +726,17 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
             except Exception as error:
                 failures.append(f'SPHEREx DR1 all-sky mosaic unavailable ({error}).')
         frames = prepared.metadata if isinstance(prepared, FrameBuffer) else [frame[2] for frame in prepared]
+        if new_dates and not frames and snapshot:
+            candidates = page.get('candidate_dates', 0)
+            note = (
+                'The archive listed additional dates, but this batch returned no usable frames.'
+                if candidates else 'The available archive search found no additional dates for this field.'
+            )
+            if failures and not candidates:
+                note = 'Archive discovery was incomplete. The available results had no additional dates.'
+            snapshot.update(new_dates_search=True, coverage_note=note, next_archive_offset=page['next'],
+                            failures=failures)
+            return finish(snapshot, 'Showing saved observations')
         if len({frame['unit'] for frame in frames}) > 1:
             raise ValueError('These images have different units and cannot share a display scale.')
         progress('Rendering aligned frames with a shared brightness scale')
@@ -655,6 +751,8 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
             'mosaic': mosaic_used,
             'daily_sequence': daily,
             'next_archive_offset': page['next'],
+            'new_dates_search': new_dates,
+            'candidate_dates': page.get('candidate_dates'),
             'mosaic_note': ('DR1 mosaic channels stack many dates. Motion and time variability cannot be measured from them.'
                             if mosaic_used else ''),
             'empty_reason': ('' if frames else archive_error or (
@@ -942,6 +1040,7 @@ class Handler(SimpleHTTPRequestHandler):
                     raise ValueError('Invalid archive batch offset.')
                 job_key = json.dumps({'source': options.get('source', 'saved'),
                                       'mosaic': options.get('mosaic', 'auto'), 'archive_offset': offset,
+                                      'new_dates': options.get('new_dates') is True,
                                       **normalized}, sort_keys=True)
                 with LOCK:
                     trim_finished_jobs()
