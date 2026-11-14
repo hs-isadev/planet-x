@@ -4,15 +4,15 @@ A science-first viewer for real SPHEREx infrared observations. Enter RA/Dec or s
 
 **The release is not all-pass.** See [the complete acceptance report](docs/CURRENT_STATUS.md) for every requested item, current evidence, unresolved science results and verification limits. No catalog motion is substituted for a failed image measurement.
 
-## SPHEREx View and Free View
+## Satellite View, SPHEREx View, and 3D Context
 
-**SPHEREx View** opens the image sequence. Choose **Satellite camera** from its toolbar to start from the selected archive exposure's detector orientation. The amber reticle marks the selected field. Drag or swipe to turn and scroll or pinch to zoom. Use **Center target** to return to the marker. Right-click a direction or use **Search view center** to search IRSA.
+**Satellite View** is the look-around camera. Drag or swipe to turn and scroll or pinch to zoom. The optical background is the celestial [NASA Goddard SVS Deep Star Maps](https://svs.gsfc.nasa.gov/3895/) image. The circled, interactive stars come from the app's nearby stellar catalog and NASA Exoplanet Archive host catalog. A click or tap shows the source name and distance where available. **Open in 3D Context** selects that catalog star in the 3D scene. An uncataloged click can still open its sky direction in 3D without assigning a distance. When a real exposure is available, its detector orientation anchors the camera. **Use selected exposure** lets you choose a different reference.
 
-**Free View** keeps the 3D orbit, pan, zoom, and object selection controls. On a phone, drag with one finger to orbit and pinch with two fingers to zoom. Open **Destinations** to switch between the Solar System, nearby catalog stars, and target systems. You can also zoom out from the Solar System into the stellar neighborhood.
+Right-click anywhere in the camera to open **SPHEREx View** at the exact cursor coordinates. On a phone, tap a direction and choose **Open SPHEREx View**, or use **Find images here** for the center. SPHEREx View handles real infrared cutouts, chronological playback, and measurements. The selected direction remains pinned in **3D Context**. Catalog-star selections are pinned to the 3D object when loaded. Open the target marker and choose **Remove target** to clear it.
 
-The catalog sky is the celestial [NASA/Goddard Scientific Visualization Studio Deep Star Maps](https://svs.gsfc.nasa.gov/3895/) 4K image, based on the Bright Star, Tycho-2 and UCAC3 catalogs. It provides visible-light context. The archived infrared observations are in the SPHEREx sequence. The spacecraft position comes from the selected FITS header when present. Free look is an illustrative rotation at that viewpoint. The reticle marks the selected coordinates. The sky map is fetched on first use and cached locally. A coordinate grid remains available if the texture or WebGL fails.
+**3D Context** keeps the free orbit, pan, zoom, and object selection controls. Drag through either pole. On a phone, drag with one finger and pinch with two. Use **Destinations** inside the 3D view to open the Solar System, nearby catalog stars, or target systems. You can also zoom out from the Solar System into the stellar neighborhood. **More about this object** shows extra measurements and the Earth trace action.
 
-**Trace back to Earth** follows one illustrative, curved flight to the sunlit side. The camera turns during the flight with gentle sideways glances. The source sky chart is optional after arrival. The flight uses a single path and rebases from parsecs to AU without a scheduled stop.
+**Trace back to Earth** uses a single accelerated camera path. At 75% of its run time it starts a 270° sweep past the night side, then stops above the sunlit side. The renderer changes from parsecs to AU during the same flight. Scattered debris is illustrative and appears only during that flight. Ordinary zoom has no travel effects. Choose **Solar System overview** after arrival to pull back from Earth and frame the system. The source sky chart remains optional. Reduced motion shortens the route and disables debris. The live **Looking at** readout shows the center direction as equatorial RA and Dec in 3D Context and Satellite View. A completed Earth trace pins the source's computed sky direction for that trace epoch. The target is projected in the Solar System view and listed as **Off screen** when outside the camera. Tap either marker to open its details and choose **Remove target**. Pins are saved in the current browser. The flight uses a single path and rebases from parsecs to AU without a scheduled stop.
 
 ## Infrared spectrum and absorption bands
 
@@ -58,7 +58,7 @@ Keyboard: Space play/pause, arrows step, brackets change speed, slash opens sear
 
 ## Optional 3D context
 
-**Photos are flat. Stellar depth comes from catalog distances; Solar System positions are computed.** Images returns directly to the SPHEREx viewer. This context does not replace the observations.
+**Photos are flat. Stellar depth comes from catalog distances; Solar System positions are computed.** **SPHEREx View** returns directly to the observation workspace. This context does not replace the observations.
 
 Bottom navigation and direct body clicks share a smooth focus action. Approach changes distance deliberately. Camera zooms interpolate distance geometrically with quintic easing. Journeys accelerate and decelerate while keeping the camera facing forward. Return journeys turn toward the source before moving; they no longer turn back toward Earth during departure. Explicit transitions distinguish parsec, AU and normalized stellar-illustration scales; they are not physical spacecraft trajectories.
 
