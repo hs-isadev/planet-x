@@ -1,10 +1,10 @@
 import {EarthTargets, stellarMarkerSize} from './sky-direction.js?v=1';
-import {orbitPose,cruisePose,orbitDuration} from './camera-path.js?v=earth-arc-1';
-import {installContext} from './context-scene.js?v=earth-target-1';
-import {installNavigation} from './navigation.js?v=neighborhood-1';
+import {orbitPose,cruisePose,orbitDuration} from './camera-path.js?v=earth-sweep-1';
+import {installContext} from './context-scene.js?v=earth-sweep-1';
+import {installNavigation} from './navigation.js?v=earth-sweep-1';
 import {flares,dust} from './activity.js';
 import * as THREE from 'three';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {FreeOrbitControls} from './free-orbit-controls.js?v=1';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {photosphere,halo} from './stellar.js';
 const $=id=>document.getElementById(id);
@@ -12,7 +12,7 @@ export class ObservatoryScene {
  constructor(onSelect){
   this.starSize=2.5;this.makeHalo=halo;this.onSelect=onSelect;this.items=[];this.mode='solar';this.selected=null;this.showLabels=true;this.showPaths=true;this.filterRadius=5;this.filterMagnitude=12;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   this.renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});this.renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.5:2));this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;$('scene').append(this.renderer.domElement);
-  this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#080b10');this.camera=new THREE.PerspectiveCamera(38,1,.000001,30000);this.camera.position.set(0,2,3);this.controls=new OrbitControls(this.camera,this.renderer.domElement);this.controls.enableDamping=!this.reduced;this.controls.dampingFactor=.075;this.controls.rotateSpeed=.72;this.controls.minDistance=.000001;this.controls.maxDistance=10000;this.controls.zoomSpeed=.65;
+  this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#080b10');this.camera=new THREE.PerspectiveCamera(38,1,.000001,30000);this.camera.position.set(0,2,3);this.controls=new FreeOrbitControls(this.camera,this.renderer.domElement);this.controls.enableDamping=!this.reduced;this.controls.dampingFactor=.075;this.controls.rotateSpeed=.72;this.controls.minDistance=.000001;this.controls.maxDistance=10000;this.controls.zoomSpeed=.65;
   this.ambient=new THREE.AmbientLight(0xffffff,.13);this.scene.add(this.ambient);this.light=new THREE.PointLight(0xffffff,3,0,0);this.scene.add(this.light);
   this.content=new THREE.Group();this.scene.add(this.content);this.orbits=new THREE.Group();this.content.add(this.orbits);this.ray=new THREE.Raycaster();this.pointer=new THREE.Vector2();
   const canvas=this.renderer.domElement, pointers=new Set();

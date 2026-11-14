@@ -126,7 +126,7 @@ async function closeEarthSky(){
 $('trace-earth').onclick=async()=>{
  const token=++journeyGeneration,data=selectedData()||{name:'Sun'};
  try{
-  $('journey-panel').hidden=false;$('journey-sky').hidden=true;$('journey-stay').hidden=true;$('journey-exit').hidden=true;$('journey-cancel').hidden=false;
+  $('journey-panel').hidden=false;$('journey-sky').hidden=true;$('journey-overview').hidden=true;$('journey-stay').hidden=true;$('journey-exit').hidden=true;$('journey-cancel').hidden=false;
   $('journey-title').textContent='Preparing Earth journey';$('journey-note').textContent='Computing the direction to Earth.';document.body.classList.add('journey-active');
   if(scene.mode==='sizes')await scene.scaleTransition(()=>scene.solar(state.solar));
   const context=await api('/api/journey?'+contextParams(data));if(token!==journeyGeneration)return;
@@ -137,7 +137,7 @@ $('trace-earth').onclick=async()=>{
   if(token!==journeyGeneration||!reached)return;
   const targetKey=scene.traceReturn.mode+'|'+scene.traceReturn.selected;
   scene.earthTargets.pin(targetKey,data.name,context);
-  syncSceneControls();$('journey-stay').hidden=false;$('journey-exit').hidden=false;$('journey-cancel').hidden=true;
+  syncSceneControls();$('journey-overview').hidden=false;$('journey-stay').hidden=false;$('journey-exit').hidden=false;$('journey-cancel').hidden=true;
   const skyButton=$('journey-sky');
   skyButton.hidden=false;skyButton.textContent='Show source sky chart';
   skyButton.onclick=async()=>{
@@ -152,13 +152,22 @@ $('trace-earth').onclick=async()=>{
 };
 $('journey-exit').onclick=async()=>{
  const generation=++journeyGeneration,button=$('journey-exit');button.disabled=true;await closeEarthSky();if(generation!==journeyGeneration){button.disabled=false;return;}
- $('journey-stay').hidden=true;$('journey-sky').hidden=true;$('journey-cancel').hidden=false;document.body.classList.add('journey-active');$('journey-panel').hidden=false;
+ $('journey-stay').hidden=true;$('journey-sky').hidden=true;$('journey-overview').hidden=true;$('journey-cancel').hidden=false;document.body.classList.add('journey-active');$('journey-panel').hidden=false;
  try{await scene?.returnFromTrace((title,note)=>{if(generation===journeyGeneration){$('journey-title').textContent=title;$('journey-note').textContent=note;}});if(generation===journeyGeneration)syncSceneControls();}
  catch(error){if(generation===journeyGeneration){toast(error.message);await scene?.cancelTrace();syncSceneControls();}}
  finally{if(generation===journeyGeneration){$('journey-panel').hidden=true;document.body.classList.remove('journey-active');}button.disabled=false;}
 };
 $('journey-stay').onclick=async()=>{journeyGeneration++;await closeEarthSky();scene.stayOnEarth();syncSceneControls();$('journey-panel').hidden=true;document.body.classList.remove('journey-active');};
 $('journey-cancel').onclick=async()=>{journeyGeneration++;await closeEarthSky();await scene?.cancelTrace();syncSceneControls();$('journey-panel').hidden=true;document.body.classList.remove('journey-active');};
+$('journey-overview').onclick=async()=>{
+ const generation=++journeyGeneration;
+ await closeEarthSky();
+ if(generation!==journeyGeneration)return;
+ scene.stayOnEarth();
+ $('journey-panel').hidden=true;document.body.classList.remove('journey-active');
+ syncSceneControls();
+ scene.overview();
+};
 $('return-object').onclick=()=>$('journey-exit').click();
 $('activity-toggle').onclick=()=>{if(!scene)return;scene.activityEnabled=!scene.activityEnabled;$('activity-toggle').textContent='Activity '+(scene.activityEnabled?'on':'off');$('activity-toggle').setAttribute('aria-pressed',scene.activityEnabled);};
 
@@ -178,7 +187,7 @@ async function loadSystems(){const home=document.createElement('button');home.cl
 
 let sceneReady=null;
 async function ensureScene(){
- if(!sceneReady)sceneReady=(async()=>{const {ObservatoryScene}=await import('./scene.js?v=earth-target-1');scene=new ObservatoryScene(select);scene.theme(document.documentElement.dataset.theme==='light');$('activity-toggle').textContent='Activity '+(scene.activityEnabled?'on':'off');$('activity-toggle').setAttribute('aria-pressed',scene.activityEnabled);await showSolar();prefetchUniverse().catch(()=>{});})();
+ if(!sceneReady)sceneReady=(async()=>{const {ObservatoryScene}=await import('./scene.js?v=earth-sweep-1');scene=new ObservatoryScene(select);scene.theme(document.documentElement.dataset.theme==='light');$('activity-toggle').textContent='Activity '+(scene.activityEnabled?'on':'off');$('activity-toggle').setAttribute('aria-pressed',scene.activityEnabled);await showSolar();prefetchUniverse().catch(()=>{});})();
  try{await sceneReady;}catch(error){sceneReady=null;throw error;}
 }
 async function contextView(){observations?.close();document.body.classList.remove('observing');$('observations').hidden=true;$('search-panel').hidden=true;try{await ensureScene();scene.resize();}catch(e){message('3D is unavailable: '+e.message+'. Return to observations to continue.');}}

@@ -1,4 +1,4 @@
-import {cruiseDuration,earthApproach} from './camera-path.js?v=earth-arc-1';
+import {cruiseDuration,earthApproach} from './camera-path.js?v=earth-sweep-1';
 import * as THREE from 'three';
 import {flares} from './activity.js';
 const $=id=>document.getElementById(id);
@@ -24,7 +24,7 @@ export function installNavigation(C){
  C.prototype.zoomBy=function(factor){if(this.journey||this.surface)return;this.stopFlight();this.zoomImpulse=THREE.MathUtils.clamp((this.zoomImpulse||0)+Math.log(factor),-2,2);};
  C.prototype.navigationTick=function(dt){
   if(this.loading||this.journey||this.surface||this.flight){this.pinchDistance=null;return;}let k=this.navKeys||new Set(),active=!document.body.classList.contains('observing')&&!document.body.classList.contains('searching');
-  let impulse=this.zoomImpulse||0;if(active){impulse+=((k.has('KeyS')?1:0)-(k.has('KeyW')?1:0))*dt*2.2;let orbit=((k.has('KeyD')?1:0)-(k.has('KeyA')?1:0))*dt*.8;if(orbit){let v=this.camera.position.clone().sub(this.controls.target);v.applyAxisAngle(this.camera.up,orbit);this.camera.position.copy(this.controls.target).add(v);}}
+  let impulse=this.zoomImpulse||0;if(active){impulse+=((k.has('KeyS')?1:0)-(k.has('KeyW')?1:0))*dt*2.2;let orbit=((k.has('KeyD')?1:0)-(k.has('KeyA')?1:0))*dt*.8;if(orbit)this.controls.rotateLeft(-orbit);}
   const maxSpeed=this.local ? .55 : this.mode==='stars' ? 2.2 : .9;let factor=Math.exp(THREE.MathUtils.clamp(impulse*Math.min(1,dt*(this.mode==='stars'&&!this.local?10:6)),-dt*maxSpeed,dt*maxSpeed));this.zoomImpulse=impulse*Math.exp(-dt*6);let offset=this.camera.position.clone().sub(this.controls.target),d=offset.length();if(Math.abs(impulse)>.00001){d=THREE.MathUtils.clamp(d*factor,this.controls.minDistance,this.controls.maxDistance);offset.setLength(d);this.camera.position.copy(this.controls.target).add(offset);}
   const pinchDelta=this.touchPinch&&this.pinchDistance?Math.log(d/this.pinchDistance):0;
   this.pinchDistance=this.touchPinch?d:null;
@@ -85,11 +85,12 @@ export function installNavigation(C){
   const approach=earthApproach(origin,earth,sun.sub(earth).normalize(),up,radius,viewDirection,this.reduced);
   const originalFar=this.camera.far;
   const initialUp=fromStars?frame(viewUp.clone(),false):viewUp;
-  const leveling=new THREE.Quaternion().setFromUnitVectors(initialUp.clone().normalize(),up);
-  const duration=this.reduced?2200:THREE.MathUtils.clamp(6500+Math.log10(1+origin.distanceTo(earth))*750,6500,13000);
-  progress('Flying to Earth','Illustrative flight arc toward the sunlit side.');
+  const arcUp=approach(1).arcUp;
+  const leveling=new THREE.Quaternion().setFromUnitVectors(initialUp.clone().normalize(),arcUp);
+  const duration=this.reduced?2500:THREE.MathUtils.clamp(12000+Math.log10(1+origin.distanceTo(earth))*600,12000,16500);
+  progress('Flying to Earth','Accelerated travel and scattered debris are illustrative.');
   const reached=await new Promise(done=>{
-   this.flight={start:performance.now(),duration,done,pose:progress=>{
+   this.flight={start:performance.now(),duration,done,earthTravel:true,pose:progress=>{
     const pose=approach(progress);
     const levelingStep=new THREE.Quaternion().slerp(leveling,THREE.MathUtils.smoothstep(progress,0,1));
     const viewUp=initialUp.clone().applyQuaternion(levelingStep);
@@ -118,8 +119,8 @@ export function installNavigation(C){
   if(!reached)throw new Error('The Earth flight could not finish.');
   this.camera.far=originalFar;
   this.camera.updateProjectionMatrix();
-  this.selected='earth';this.controls.target.copy(earth);this.camera.up.copy(up);this.camera.lookAt(earth);
-  progress('Arrived at Earth','Stay and explore Earth, or retrace the journey to your object.');
+  this.selected='earth';this.controls.target.copy(earth);this.camera.up.copy(arcUp);this.camera.lookAt(earth);
+  progress('Above the sunlit side of Earth','Stay near Earth, pull back to see the Solar System, or return to your object.');
   return valid();
  };
  C.prototype.returnFromTrace=async function(progress=()=>{}){

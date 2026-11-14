@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {corona} from './plasma.js';
 import {addMoons,addPlanets} from './companions.js';
-import {travelDust} from './travel-dust.js';
+import {travelDust} from './travel-dust.js?v=2';
 const $=id=>document.getElementById(id);
 export function installContext(C){
  const solar=C.prototype.solar,close=C.prototype.stellarCloseup,exit=C.prototype.exitLocal,stars=C.prototype.stars;
