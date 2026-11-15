@@ -127,3 +127,7 @@ Rebuild after adding data (minutes per target; `MOTION_STUDY_CACHE=<dir>` makes 
     python -m backend.observation_lab_core.motion_study vesta
 
 **Loader:** a soft spectral accent (blue → violet → amber) on the minimal loader.
+
+## Update: nearby-star bundle
+
+`python -m scripts.download_more_dates --within-pc 5 --daily-only` (new `--within-pc` option) downloaded the star fields within 5 parsecs. The bundle now indexes 107 fields (3,090 frames). Only files referenced by an indexed session are committed. Local leftovers are not committed: exact duplicate cutouts of the same exposure at a different size (237), unreferenced FITS (244, 0.23 GB) and 119 superseded session folders. They can be deleted locally. The next tier (`--within-pc 10`) would add roughly as much again; check the push size first (GitHub rejects pushes over 2 GB).

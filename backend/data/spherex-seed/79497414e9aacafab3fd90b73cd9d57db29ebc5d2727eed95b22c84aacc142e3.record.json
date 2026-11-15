@@ -1,0 +1,29 @@
+{
+  "id": "2026W02_2A_0200_1",
+  "detector": 1,
+  "timestamp": "2026-01-09T10:17:26.364Z",
+  "mjd": 61049.428777361114,
+  "version": "7.0.5",
+  "unit": "MJy / sr",
+  "exposure": 113.5826,
+  "native_shape": [
+    195,
+    193
+  ],
+  "center": [
+    26.016686378775354,
+    -15.936882020283875
+  ],
+  "radius_deg": 0.23763002965550337,
+  "processed_mjd": 61254.2081034375,
+  "sha256": "ace5c7766b0edb3ce7fca5dc7d7a71bb8e8ea7bf2b88a89bf25129d7d8bfa059",
+  "file_bytes": 803520,
+  "requested_source_width_deg": 0.25,
+  "download_center": [
+    26.017185,
+    -15.93748
+  ],
+  "download_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/dr1/level2/2026W02_2A/l2b-v27-2026-213/1/level2_2026W02_2A_0200_1D1_spx_l2b-v27-2026-213.fits",
+  "provenance": "IRSA public cloud mirror; native FITS pixels; observation and detector verified",
+  "transport": "IRSA public cloud mirror"
+}

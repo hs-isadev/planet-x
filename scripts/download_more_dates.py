@@ -83,8 +83,16 @@ def main():
     parser.add_argument('--all-fields', action='store_true', help='Every saved field, not only the five presets.')
     parser.add_argument('--mirror-only', action='store_true', help='Use the saved exposure index and the AWS mirror; do not call IRSA.')
     parser.add_argument('--daily-only', action='store_true', help='Fetch one exposure per UTC date only (fastest way to gain dates).')
+    parser.add_argument('--within-pc', type=float, help='The five presets plus every catalog star field within this distance '
+                        '(parsecs), nearest first. Example: --within-pc 5')
     parser.add_argument('--check', action='store_true', help='Test the connection and show what is saved; download nothing.')
     args = parser.parse_args()
+    if args.within_pc is not None:
+        from backend.observation_lab_core.featured_views import fields
+        near = sorted((f for f in fields() if f.get('distance_pc') is not None and f['distance_pc'] <= args.within_pc
+                       and f['key'] not in PRESETS), key=lambda f: f['distance_pc'])
+        args.field = PRESETS + [f['key'] for f in near]
+        print(f'{len(near)} catalog star fields within {args.within_pc:g} pc, plus the five presets.')
 
     print('Checking the connection...')
     reachable = check_connection()
