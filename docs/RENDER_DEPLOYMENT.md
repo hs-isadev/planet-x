@@ -49,4 +49,4 @@ You can also use **New → Blueprint** and point Render at the repository and `r
 
 [Render deploy walkthrough](https://render.com/docs/your-first-deploy) · [Docker settings](https://render.com/docs/docker) · [Secrets](https://render.com/docs/configure-environment-variables) · [Free instance limits](https://render.com/docs/free)
 
-The hosted Vesta example fetches two archived exposures from IRSA and caches them after the first load.
+During a Docker build, the server tries for up to 90 seconds to warm up to 22 specific IRSA cutouts across six featured fields. The cache is baked into that deploy’s image. If IRSA is unavailable, a featured field retries when opened. Custom RA/Dec searches still query the archive.

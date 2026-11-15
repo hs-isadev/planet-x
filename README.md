@@ -164,6 +164,8 @@ For the public web service, see [Deploying on Render](docs/RENDER_DEPLOYMENT.md)
 
 ### Observation lab tools
 
+The SPHEREx viewer opens the Vesta field automatically. Quick-start fields use the teammate project’s dated IRSA exposure list, with six curated targets. Choose **Search full archive** to discover additional exposures. **Spectrum & absorption** opens the measured flux-versus-wavelength chart and activates aperture measurement for clicked sources. Candidate dips are screened using neighboring samples from the same detector, date and release.
+
 Open **Track a moving source** in SPHEREx and choose **Load archived Vesta example** for two D3 IRSA observations from 4–5 August 2025. **Measure track** compares native centroids against JPL Horizons, using exposure midpoints when provided by FITS. The observer is identified in the result. A geocentric fallback lacks the spacecraft parallax. For an unnamed source, use **Mark motion** on one frame for a fixed search position or two frames for a straight between-epoch search guide. Fits can be rejected when a source is masked, blends with another, or falls outside the field. Speed is projected on the sky and measured between successful fits.
 
 **Inspect native pixel** reads the original cutout brightness, uncertainty, wavelength, and flags. **Detector flag overlay** shows pixels excluded by the display mask. **Identify clicked source** checks SIMBAD and IMCCE SkyBoT in parallel at the exposure time. A positional match is a lead to verify.

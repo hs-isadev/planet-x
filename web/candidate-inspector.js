@@ -13,7 +13,7 @@ export function strongestSpectralDip(points) {
  for(const p of points){
   if(p.status!=='ok'||!p.date||!p.detector||![p.wavelength_um,p.flux_ujy,p.error_ujy].every(Number.isFinite)||
      p.error_ujy<=0||p.flux_ujy<0)continue;
-  const key=p.date.slice(0,10)+'/'+p.detector;
+  const key=p.date.slice(0,10)+'/'+p.detector+'/'+(p.release||'unknown');
   if(!bands.has(key))bands.set(key,[]);
   bands.get(key).push(p);
  }
@@ -141,6 +141,7 @@ export function installCandidateInspector(view){
   $('spectrum-date-a').replaceChildren(new Option('All dates (mixed epochs)','all'),...dates.map(d=>new Option(d,d)));
   $('spectrum-date-b').replaceChildren(new Option('No second date','none'),...dates.map(d=>new Option(d,d)));
   $('candidate-lightcurve').disabled=!r.normalized_position;
+  $('spectrum-features').checked=true;
   render();this.draw();
  };
  function render(){
@@ -160,7 +161,7 @@ export function installCandidateInspector(view){
   note+=good.filter(p=>p.calibration_url).length+' use released wavelength calibration. ';
   note+=a==='all'?'Different dates are mixed; variability can resemble a spectral feature. ':'Date A is blue; date B is amber. No fitted chemical match. ';
   $('spectrum-dip').textContent='';
-  if(!plot.length){ctx.fillText('Insufficient unmasked native data for a spectrum.',20,40);$('spectrum-coverage').textContent=note;return;}
+  if(!plot.length){ctx.fillText('Insufficient unmasked native flux for this position.',20,40);$('spectrum-coverage').textContent=note;$('spectrum-dip').textContent='No absorption assessment for these samples. Try an unsaturated source or search the full archive for more coverage.';return;}
   const min=Math.min(...plot.map(p=>p.wavelength_min_um??p.wavelength_um)),max=Math.max(...plot.map(p=>p.wavelength_max_um??p.wavelength_um));
   const lo=Math.min(0,...plot.map(p=>p.flux_ujy-p.error_ujy)),hi=Math.max(...plot.map(p=>p.flux_ujy+p.error_ujy));
   const x=v=>48+(v-min)/(max-min||1)*450,y=v=>250-(v-lo)/(hi-lo||1)*210;
@@ -174,7 +175,7 @@ export function installCandidateInspector(view){
    ctx.strokeStyle='#ffb764';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x(dip.wave),y(dip.point.flux_ujy),8,0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;
    const matches=shifted.filter(ref=>Math.abs(ref.lambda-dip.wave)<=Math.max(dip.halfBand,ref.lambda/(2*ref.R)));
    $('spectrum-dip').textContent='Strongest supported dip: '+dip.wave.toFixed(4)+' µm · '+dip.point.date.slice(0,10)+' · D'+dip.point.detector+
-    ' · '+Math.round(dip.depth*100)+'% below nearby samples. '+(matches.length?'Reference overlap: '+matches.map(ref=>ref.name).join(', ')+'. ':'No listed reference feature overlaps. ')+
+    ' · '+Math.round(dip.depth*100)+'% below nearby samples (nominal '+dip.sigma.toFixed(1)+'σ). '+(matches.length?'Reference overlap: '+matches.map(ref=>ref.name).join(', ')+'. ':'No listed reference feature overlaps. ')+
     'Candidate only. Check another epoch and calibrated spectrum before assigning a species.';
   }else $('spectrum-dip').textContent='No supported absorption dip in the usable samples. A dip needs two nearby continuum samples from the same detector and date.';
   $('spectrum-coverage').textContent=note+'Coverage '+min.toFixed(3)+'–'+max.toFixed(3)+' µm is discontinuous. Absorption depends on source and intervening material, response, resolution and signal-to-noise. No identification is made.';

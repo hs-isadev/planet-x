@@ -26,7 +26,6 @@ JOBS = {}
 GUARD = threading.RLock()
 CLIENTS = {}
 PRESET_LOCK = threading.Lock()
-EXAMPLE_LOCK = threading.Lock()
 PRESETS = [
     dict(id="barnard", name="Barnard’s Star", simbad="Barnard's Star", kind="NEARBY STAR", description="A nearby red dwarf with exceptionally fast proper motion."),
     dict(id="epsilon", name="Epsilon Indi B", simbad="eps Indi B", kind="BROWN DWARF", description="A nearby brown-dwarf system, bright in the infrared."),
@@ -45,20 +44,37 @@ from .partner_data import install_partner_routes
 install_partner_routes(app)
 
 
-@app.post('/api/examples/vesta')
-def open_vesta():
-    from .example_field import vesta_example
-    if not EXAMPLE_LOCK.acquire(blocking=False):
-        raise HTTPException(429,'The archived Vesta example is already being prepared. Retry shortly.')
-    try:
-        job = vesta_example()
-    except (ValueError,OSError) as exc:
-        raise HTTPException(503,'The Vesta observations could not be loaded from IRSA. Retry shortly.') from exc
-    finally:
-        EXAMPLE_LOCK.release()
+@app.get('/api/examples/{key}')
+@app.post('/api/examples/{key}')
+def open_example(key: str):
+    from .example_field import featured, prepare_starter, prepared_starter
+    item = featured().get(key)
+    if item is None:
+        raise HTTPException(404,'Unknown featured target.')
+    identity = 'example-'+key
     with GUARD:
-        JOBS[job['id']] = job
-    return dict(id=job['id'])
+        current = JOBS.get(identity)
+        if not current or current['status']=='error':
+            snapshot = prepared_starter(key)
+            if snapshot:
+                JOBS[identity] = dict(snapshot,created=time.monotonic())
+            else:
+                current = dict(id=identity,example=key,source='example',title=item['title'],
+                               status='querying',stage='loading',created=time.monotonic(),
+                               ra=item['ra'],dec=item['dec'],fov=item['fov'],frames=[],contrast=None)
+                JOBS[identity] = current
+
+                def prepare():
+                    try:
+                        job = prepare_starter(key)
+                    except (OSError, ValueError) as exc:
+                        with GUARD:
+                            current.update(status='error',message='The featured cutouts could not be loaded from IRSA.',detail=str(exc))
+                        return
+                    with GUARD:
+                        current.update(job)
+                threading.Thread(target=prepare,daemon=True,name='featured-'+key).start()
+    return dict(id=identity,job=job_status(identity))
 
 
 @app.get("/api/archive/prefetch-status")
@@ -310,7 +326,7 @@ def get_job(identity):
 def pause_job(identity:str):
     with GUARD:
         job=get_job(identity)
-        if job.get('source')!='cloud' and job['status'] in ('querying','fetching'):
+        if job.get('source') not in ('cloud','example') and job['status'] in ('querying','fetching'):
             job['prefetch_paused']=True
             job['status']='paused'
             progress(job,'paused')

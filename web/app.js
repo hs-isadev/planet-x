@@ -236,7 +236,7 @@ async function contextView(){setWorkspace('context');observations?.close();docum
 // Wire navigation before importing optional views or starting catalog requests.
 $('universe-home').onclick=()=>contextView();
 $('observation-close').onclick=()=>contextView();
-let {ObservationDrawer}=await import('./observations.js?v=observation-lab');observations=new ObservationDrawer({api,toast,icon});satelliteView=installSatelliteView(observations,{
+let {ObservationDrawer}=await import('./observations.js?v=quick-start');observations=new ObservationDrawer({api,toast,icon});satelliteView=installSatelliteView(observations,{
  pinTarget,
  getTarget:()=>skyTarget,
  openContext:()=>openTargetContext(true)
@@ -246,8 +246,35 @@ observations.open();
 presets();
 $('observation-close').onclick=()=>contextView();
 $('search-toggle').onclick=()=>{observations.open();$('search-panel').hidden=false;document.body.classList.toggle('mobile-search');$('object-query').focus();};
-$('vesta-example-open').onclick=()=>observations.openVesta();
-let params=new URLSearchParams(location.search);if(params.has('fov')){$('fov').value=params.get('fov');$('fov').oninput();}if(params.get('example')==='vesta')observations.openVesta(/^[0-9a-f]{24}$/.test(params.get('exposure')||'')?params.get('exposure'):null);else if(params.has('ra')&&params.has('dec')){$('ra').value=params.get('ra');$('dec').value=params.get('dec');const exposure=params.get('exposure');const legacy=params.get('frame');const frame=legacy!=null&&/^[0-9]+$/.test(legacy)&&Number.isSafeInteger(Number(legacy))?Number(legacy):null;observations.search('Shared sky field',frame,/^[0-9a-f]{24}$/.test(exposure||'')?exposure:null);}else if(params.get('key'))observations.openFile(params.get('key'));
+$('vesta-example-open').onclick=()=>observations.openFeatured('vesta');
+$('featured-field').onchange=()=>observations.openFeatured($('featured-field').value);
+$('open-full-archive').onclick=()=>{
+ const job=observations.job;
+ if(job?.source!=='example')return;
+ $('ra').value=String(job.ra);$('dec').value=String(job.dec);$('fov').value=String(job.fov);$('fov').oninput();
+ observations.search(job.title);
+};
+$('open-spectrum').onclick=()=>{
+ const section=$('spectrum-controls');
+ section.open=true;
+ $('click-action').value='spectrum';$('click-action').dispatchEvent(new Event('change'));
+ section.scrollIntoView({block:'nearest'});
+ if(observations.current())$('measure-center-spectrum').click();
+ else $('measurement-note').textContent='The spectrum is available once the first exposure loads.';
+};
+const params=new URLSearchParams(location.search);
+if(params.has('fov')){$('fov').value=params.get('fov');$('fov').oninput();}
+const validExposure=/^[0-9a-f]{24}$/.test(params.get('exposure')||'')?params.get('exposure'):null;
+const chosen=params.get('example');
+if([...$('featured-field').options].some(option=>option.value===chosen)){
+ observations.openFeatured(chosen,validExposure,false);
+}else if(params.has('ra')&&params.has('dec')){
+ $('ra').value=params.get('ra');$('dec').value=params.get('dec');
+ const legacy=params.get('frame');
+ const frame=legacy!=null&&/^[0-9]+$/.test(legacy)&&Number.isSafeInteger(Number(legacy))?Number(legacy):null;
+ observations.search('Shared sky field',frame,validExposure);
+}else if(params.get('key'))observations.openFile(params.get('key'));
+else observations.openFeatured('vesta',null,false);
 
 function rotateSpaceVector(v,outward){let e=23.439291111*Math.PI/180,x=v.x,y=-v.z,z=v.y;if(outward)return v.set(x,Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y-Math.sin(e)*z));return v.set(x,-Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y+Math.sin(e)*z));}
 function prefetchUniverse(){if(!cosmicReady)cosmicReady=api('/api/space?'+new URLSearchParams({ra:133.79512916666667,dec:-7.245147222222222,fov:8,scope:'nearby',radius_pc:10,include_simbad:true})).then(data=>{if(scene){scene.universeData=data;}return data;}).catch(e=>{cosmicReady=null;throw e;});return cosmicReady;}
