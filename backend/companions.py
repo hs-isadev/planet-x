@@ -1,4 +1,5 @@
 """Catalog orbit summaries for illustrative companion layouts, not ephemerides."""
+import gzip
 import json
 from functools import lru_cache
 import numpy as np
@@ -22,6 +23,23 @@ def planets_for(ra,dec,name=''):
                  note='Catalog period and orbital scale. Circular face-on layout, phase, inclination, display size and appearance are illustrative; not a measured planet position.')
             for r in rows if r.get('pl_orbsmax') and r.get('pl_orbper')]
 
+@lru_cache(maxsize=1)
+def teammate_gaia_stars():
+    path = ROOT/'backend/data/gaia-teammate-stars.json.gz'
+    if not path.exists():
+        return []
+    with gzip.open(path,'rt',encoding='utf8') as stream:
+        rows = json.load(stream)['rows']
+    result = []
+    for sid, ra, dec, distance, mag, color in rows:
+        lon, lat = np.deg2rad([ra,dec])
+        result.append(dict(id='gaia:'+sid,name='Gaia DR3 '+sid,ra=ra,dec=dec,distance_pc=distance,
+            xyz_pc=[distance*np.cos(lat)*np.cos(lon),distance*np.cos(lat)*np.sin(lon),distance*np.sin(lat)],
+            catalog='Gaia DR3',catalog_ids={'Gaia DR3':sid},provenance='catalog',
+            ref_epoch=2016,phot_g_mean_mag=mag,bp_rp=color,expanded_catalog=True))
+    return result
+
+
 def install_companion_routes(app):
     from fastapi import Query
     @app.get('/api/companions')
@@ -39,7 +57,8 @@ def install_companion_routes(app):
                 distance_pc=distance,xyz_pc=[distance*np.cos(dec)*np.cos(ra),distance*np.cos(dec)*np.sin(ra),distance*np.sin(dec)],
                 teff_gspphot=r.get('st_teff'),catalog='NASA Exoplanet Archive',provenance='catalog',phot_g_mean_mag=None)
         expansion = json.loads((ROOT/'web/assets/expanded-stars.json').read_text(encoding='utf-8'))
-        return dict(objects=list(objects.values())+expansion['objects'], added_stars=expansion['count'],
-            sources=['NASA Exoplanet Archive', 'Hipparcos / HYG 4.1', 'Yale Bright Star / HYG 4.1', 'Gliese / HYG 4.1'],
+        gaia = teammate_gaia_stars()
+        return dict(objects=list(objects.values())+expansion['objects']+gaia, added_stars=expansion['count']+len(gaia), teammate_gaia_count=len(gaia),
+            sources=['Gaia DR3 via NOIRLab Astro Data Lab','NASA Exoplanet Archive', 'Hipparcos / HYG 4.1', 'Yale Bright Star / HYG 4.1', 'Gliese / HYG 4.1'],
             attribution=expansion['attribution'], license=expansion['license'],
-            note='Incomplete mixed catalog: exoplanet hosts plus 240 HYG records. HYG epoch J2000.0; catalog memberships overlap. Display point sizes adapted for visibility; V magnitude is not Gaia G. Catalog distances have no new uncertainty estimate. Photos are flat; depth comes from catalog distances.')
+            note='Incomplete mixed catalog: exoplanet hosts, HYG stars, and the teammate Gaia DR3 sample. HYG epoch J2000.0; catalog memberships overlap. Display point sizes adapted for visibility; V magnitude is not Gaia G. Catalog distances have no new uncertainty estimate. Photos are flat; depth comes from catalog distances.')
