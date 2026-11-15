@@ -5,6 +5,7 @@ import time
 import uuid
 import numpy as np
 from astropy.io import fits
+from astropy.time import Time
 from fastapi import HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from .archive import CONFIG,CACHE,atomic_json,key_for,prune_cache,ensure_frame_files
@@ -149,25 +150,35 @@ def install_analysis_routes(app,jobs,guard,clients):
             return motion_fit(job,[p.model_dump() for p in body.points])
         except ValueError as exc:raise HTTPException(422,str(exc))
 
+    @app.get('/api/jobs/{identity}/calibrated-pair')
+    def calibrated_pair(identity: str, request: Request,
+                        a: str = Query(max_length=64), b: str = Query(max_length=64),
+                        x: float = Query(ge=0, le=1), y: float = Query(ge=0, le=1)):
+        from .calibrated_comparison import compare_pair
+        throttle_client(request, 'calibrated-pair', 12)
+        with guard:
+            job = job_for(identity)
+            by_id = {f['id']:f for f in job['frames'] if f['status']=='ready'}
+            if a == b or a not in by_id or b not in by_id:
+                raise HTTPException(422, 'Select two distinct ready exposures.')
+            first, second = sorted((dict(by_id[a]), dict(by_id[b])), key=lambda f: f['mjd'])
+            field = {key:job[key] for key in ('ra','dec','fov')}
+        return compare_pair(field, first, second, x, y, include_image=True)
+
     @app.get('/api/jobs/{identity}/spectrum')
     def spectrum(identity:str,request:Request,x:float=Query(ge=0,le=1),y:float=Query(ge=0,le=1),radius:float=Query(default=18.45,ge=6.15,le=45)):
+        from .calibrated_comparison import cached_aperture_calibration
         throttle_client(request,'spectrum',20)
         job=job_for(identity);position=sky_at_click(job,x,y);points=[]
-        with guard:
-            frames=[dict(frame) for frame in job['frames'] if frame['status']=='ready']
-        for frame in frames:
+        for frame in list(job['frames']):
+            if frame['status']!='ready':continue
+            calibration_url=None
             try:
+                if not (CACHE/(frame["cache_id"]+".fits")).exists():
+                    raise FileNotFoundError('Native FITS not cached. Reload this exposure before measuring; no display pixels substituted.')
                 with fits.open(CACHE/(frame['cache_id']+'.fits'),memmap=False) as hdus:
-                    measurement=aperture_measure(hdus,position,radius)
-            except (ValueError, KeyError, OSError):
-                measurement=dict(status='missing',reason='Native FITS is unavailable or could not be measured.')
-            points.append(dict(measurement,frame=frame['index'],exposure_id=frame['id'],
-                               observation=frame.get('observation'),date=frame.get('date'),
-                               archive_url=frame.get('url'),mjd=frame['mjd'],detector=frame.get('detector')))
-        return dict(provenance='computed',source_pixels='observed',ra=float(position.ra.deg),
-                    dec=float(position.dec.deg),radius_arcsec=radius,points=points,notes=[
-                        'Quicklook aperture brightness at one fixed sky position. Moving objects require epoch-specific positions.',
-                        'The spectrum uses loaded exposures with cached native FITS, conservative masks, and a local background annulus.',
-                        'Wavelengths use approximate per-pixel WCS-WAVE. Horizontal bars show the wavelength spread across the aperture, not the detector bandpass.',
-                        'Vertical bars include native variance and estimated background uncertainty. PSF, calibration and source confusion systematics are omitted.',
-                    ])
+                    calibration,calibration_url=cached_aperture_calibration(hdus,frame)
+                    measurement=aperture_measure(hdus,position,radius,calibration)
+            except (ValueError,KeyError,OSError) as exc:measurement=dict(status='missing',reason=str(exc))
+            points.append(dict(measurement,frame=frame['index'],exposure_id=frame.get('id'),date=frame.get('date') or Time(frame['mjd'],format='mjd').isot+'Z',mjd=frame['mjd'],detector=frame.get('detector'),source_url=frame.get('url') or frame.get('cutout_url'),quality_flags=frame.get('source_flag_values',[]),wavelength_calibration='released CWAVE/CBAND' if calibration_url else 'approximate WCS-WAVE',calibration_url=calibration_url))
+        return dict(provenance='computed',source_pixels='observed',ra=float(position.ra.deg),dec=float(position.dec.deg),radius_arcsec=radius,normalized_position=[x,y],points=points,notes=['Quicklook aperture flux, not a calibrated or aperture-corrected source spectrum.','Native pixels and conservative flags are used; background is estimated in a local annulus. No resampled display pixels are measured.','Measurements identify which wavelength map was used. Released CWAVE/CBAND is used where cached. Other measurements use approximate WCS-WAVE.','Error bars include native variance and annulus background uncertainty; calibration and confusion systematics are omitted.','Observations are taken at different times. Variability can shape this wavelength plot.'])

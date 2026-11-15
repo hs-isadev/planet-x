@@ -9,9 +9,9 @@ from pathlib import Path
 from urllib.parse import urlencode, urljoin, urlparse
 import numpy as np
 import pyvo
+from .saved_archive import CUTOUTS, STORAGE_ROOT, saved_original, local_rows, restore_cutout, preserve_cutout
 import requests
 from filelock import FileLock, Timeout
-import astropy.units as u
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
@@ -19,10 +19,11 @@ from scipy.ndimage import map_coordinates
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = json.loads((ROOT / "backend/config.json").read_text())
-CACHE = ROOT / CONFIG["cache_directory"]
-CACHE.mkdir(exist_ok=True)
+CACHE = STORAGE_ROOT / CONFIG["cache_directory"]
+CACHE.mkdir(parents=True, exist_ok=True)
 _lock = threading.Lock()
 _last_request = 0.0
+_ibe_busy_until = 0.0
 
 
 def throttle():
@@ -37,11 +38,27 @@ def throttle():
 def atomic_json(file, value):
     temporary = file.with_name(file.name + "." + uuid.uuid4().hex + ".tmp")
     temporary.write_text(json.dumps(value, allow_nan=False), encoding="utf-8")
-    temporary.replace(file)
+    try:
+        for attempt in range(7):
+            try:
+                temporary.replace(file)
+                break
+            except PermissionError:
+                if attempt == 6:
+                    raise
+                # Windows readers/scanners can briefly prevent atomic replacement.
+                time.sleep(.025 * 2**attempt)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def key_for(value):
     return hashlib.sha256(value.encode()).hexdigest()[:24]
+
+
+def same_calibration_release(first, second):
+    # DR1 and QR3 are a uniformly processed set. Older QR2 products use a different calibration.
+    return bool(first and second and (first == second or {first, second} == {"dr1", "qr3"}))
 
 
 def discovery_query(ra, dec):
@@ -70,44 +87,44 @@ def verify_service_schema(session):
         if not required<=got:raise ValueError('Live archive schema is incompatible with configured tables. No columns are guessed.')
 
 
-def discover(ra, dec):
-    query = discovery_query(ra, dec)
-    cache = CACHE / ("query-" + key_for(query) + ".json")
-    if cache.exists() and time.time() - cache.stat().st_mtime < CONFIG["query_ttl_seconds"]:
-        return json.loads(cache.read_text())
-    session = requests.Session()
-    # pyvo uses this requests session for TAP. Bound every network operation.
-    original = session.request
-    def bounded(*args, **kwargs):
-        kwargs.setdefault("timeout", CONFIG["timeout_seconds"])
-        return original(*args, **kwargs)
-    session.request = bounded
-    verify_service_schema(session)
-    throttle()
-    table = pyvo.dal.TAPService(CONFIG["tap_endpoint"], session=session).search(
-        query, maxrec=CONFIG["tap_max_records"]).to_table()
-    if len(table) >= CONFIG["tap_max_records"]:
-        raise RuntimeError("Archive result limit reached. No incomplete sequence will be presented; raise tap_max_records in config.")
+class DiscoveryRows(list):
+    def __init__(self, rows, source, complete, detail=None):
+        super().__init__(rows)
+        self.source = source
+        self.complete = complete
+        self.detail = detail
+
+
+def normalized_discovery(records):
     rows = []
-    for row in table:
-        uri = str(row["uri"])
+    for raw_uri, raw_mjd, raw_band in records:
+        uri = str(raw_uri)
         if not uri.endswith(".fits"):
             continue
         url = urljoin(CONFIG["origin"], uri)
         if urlparse(url).hostname != "irsa.ipac.caltech.edu" or not urlparse(url).path.startswith("/ibe/data/spherex/"):
             continue
-        mjd = float(row["time_bounds_lower"])
+        try:
+            mjd = float(raw_mjd)
+        except (TypeError, ValueError):
+            continue
         if not np.isfinite(mjd):
             continue
-        detector_match = re.search(r"D([1-6])", str(row["energy_bandpassname"]))
+        detector_match = re.search(r"D([1-6])", str(raw_band))
         detector = int(detector_match.group(1)) if detector_match else None
-        release = next((r for r in CONFIG["releases"] if f"/{r}/" in url), "unknown")
+        release = urlparse(url).path.removeprefix("/ibe/data/spherex/").split("/", 1)[0]
+        if release not in CONFIG["releases"]:
+            continue
         obs = re.search(r"level2_(.*?)_spx", url)
         rows.append(dict(id=key_for(url), url=url, mjd=mjd,
                          date=Time(mjd, format="mjd").isot + "Z",
-                         band=str(row["energy_bandpassname"]), detector=detector,
+                         band=str(raw_band), detector=detector,
                          release=release, observation=obs.group(1) if obs else url))
-    # Prefer newest release for each actual exposure; never duplicate epochs with QR2/QR3 reprocessing.
+    return unique_observations(rows)
+
+
+def unique_observations(rows):
+    # Prefer the configured current release for duplicate versions of the same exposure and detector.
     unique = {}
     for row in rows:
         obs = row["observation"]
@@ -115,8 +132,93 @@ def discover(ra, dec):
         if old is None or CONFIG["releases"].index(row["release"]) < CONFIG["releases"].index(old["release"]):
             unique[obs] = row
     rows = sorted(unique.values(), key=lambda r: (r["mjd"], r["band"], r["id"]))
-    atomic_json(cache, rows)
     return rows
+
+
+
+def discover_tap(query):
+    with requests.Session() as session:
+        original = session.request
+
+        def bounded(*args, **kwargs):
+            kwargs.setdefault("timeout", (6, CONFIG.get("tap_discovery_read_timeout", 18)))
+            return original(*args, **kwargs)
+
+        session.request = bounded
+        verify_service_schema(session)
+        throttle()
+        table = pyvo.dal.TAPService(CONFIG["tap_endpoint"], session=session).search(
+            query, maxrec=CONFIG["tap_max_records"]).to_table()
+    if len(table) >= CONFIG["tap_max_records"]:
+        raise RuntimeError("IRSA TAP reached the result limit.")
+    return normalized_discovery((r["uri"], r["time_bounds_lower"], r["energy_bandpassname"]) for r in table)
+
+
+def discover_sia(ra, dec):
+    from io import BytesIO
+    from astropy.io.votable import parse
+    params = [("COLLECTION", collection) for collection in CONFIG["collections"]]
+    params.extend([("POS", f"CIRCLE {float(ra)} {float(dec)} 0"), ("MAXREC", CONFIG["tap_max_records"])])
+    throttle()
+    response = requests.get(CONFIG["sia_endpoint"], params=params, timeout=(6, 20))
+    response.raise_for_status()
+    votable = parse(BytesIO(response.content))
+    statuses = [str(info.value).upper() for res in votable.resources for info in res.infos
+                if info.name == "QUERY_STATUS"]
+    if not statuses or any(status != "OK" for status in statuses):
+        raise ValueError("IRSA SIA returned an error, an incomplete result, or no query status.")
+    table = votable.get_first_table().to_table(use_names_over_ids=True)
+    if len(table) >= CONFIG["tap_max_records"]:
+        raise RuntimeError("IRSA SIA reached the result limit.")
+    return normalized_discovery((r["access_url"], r["t_min"], r["energy_bandpassname"]) for r in table)
+
+
+def saved_manifest(name):
+    paths = (CACHE / name, CUTOUTS / name) if CACHE == STORAGE_ROOT / CONFIG["cache_directory"] else (CACHE / name,)
+    for path in paths:
+        try:
+            rows = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(rows, list) and all(isinstance(row, dict) and "url" in row for row in rows):
+                return rows, path.stat().st_mtime
+        except (OSError, ValueError):
+            continue
+    return None, 0
+
+
+def discover(ra, dec):
+    query = discovery_query(ra, dec)
+    name = "query-" + key_for(query) + ".json"
+    saved, modified = saved_manifest(name)
+    if saved is not None and time.time() - modified < CONFIG["query_ttl_seconds"]:
+        return DiscoveryRows(saved, "Saved IRSA TAP manifest", True)
+    try:
+        rows = discover_tap(query)
+        atomic_json(CACHE / name, rows)
+        preserve_cutout(CACHE / name)
+        return DiscoveryRows(rows, "IRSA TAP", True)
+    except Exception as tap_error:
+        if saved:
+            return DiscoveryRows(saved, "Saved IRSA TAP manifest", False,
+                "Live IRSA TAP failed. Showing a previously saved field; newer releases may be missing.")
+        errors = [f"TAP: {type(tap_error).__name__}"]
+    try:
+        rows = discover_sia(ra, dec)
+        if rows:
+            directory = CUTOUTS if CACHE == STORAGE_ROOT / CONFIG["cache_directory"] and CUTOUTS.is_dir() else CACHE
+            atomic_json(directory / ("sia-" + name), rows)
+            return DiscoveryRows(rows, "IRSA SIA", False,
+                "IRSA SIA fallback. The latest weekly ingestion may be missing.")
+        errors.append("SIA: no exposures returned")
+    except Exception as sia_error:
+        errors.append(f"SIA: {type(sia_error).__name__}")
+    saved_sia, _ = saved_manifest("sia-" + name)
+    local = local_rows(ra, dec)
+    rows = unique_observations([*(saved_sia or []), *local])
+    if rows:
+        return DiscoveryRows(rows, "Saved IRSA observations", False,
+            "Live IRSA discovery is unavailable for this search. Showing the locally saved subset.")
+    raise RuntimeError("Live IRSA discovery did not return coverage and no saved exposure covers this position. "
+        + "; ".join(errors) + ".")
 
 
 def output_grid(ra, dec, fov):
@@ -150,10 +252,8 @@ def align_cutout(hdus, ra, dec, fov):
     wavelength = None
     try:
         x, y = source.world_to_pixel_values(ra, dec)
-        swcs = WCS(image.header, fobj=hdus, key="W")
-        swcs.sip = None
-        wave, _ = swcs.pixel_to_world(x, y)
-        wavelength = float(wave.to(u.um).value)
+        from .analysis import wavelength_map
+        wavelength = float(wavelength_map(hdus, np.array([x]), np.array([y]))[0])
         if not np.isfinite(wavelength):
             wavelength = None
     except (ValueError, KeyError, TypeError, AttributeError):
@@ -168,6 +268,57 @@ def align_cutout(hdus, ra, dec, fov):
         provenance="observed", transform="computed WCS registration; no source motion added")
 
 
+def download_cutout(source_url, cutout_url, destination, ra, dec, fov):
+    global _ibe_busy_until
+    from .cloud import cutout_from_mirror, mirror_key
+
+    key = mirror_key(source_url)
+    temporary = destination.with_suffix(".part")
+    transport = "IRSA cutout service"
+    local = saved_original(key) if key else None
+    try:
+        with _lock:
+            primary_available = time.monotonic() >= _ibe_busy_until
+        if key is None or (primary_available and local is None):
+            throttle()
+            try:
+                deadline = time.monotonic() + 35
+                with requests.get(cutout_url, timeout=(8, 18), stream=True) as response:
+                    response.raise_for_status()
+                    size = 0
+                    with temporary.open("wb") as out:
+                        for chunk in response.iter_content(256 * 1024):
+                            if time.monotonic() >= deadline:
+                                raise requests.Timeout("IRSA cutout transfer exceeded 35 seconds.")
+                            size += len(chunk)
+                            if size > 25_000_000:
+                                raise ValueError("Cutout unexpectedly large; download refused.")
+                            out.write(chunk)
+            except requests.RequestException as error:
+                response = error.response
+                status = response.status_code if response is not None else None
+                if key is None or (status is not None and status not in (404, 408, 429) and status < 500):
+                    raise
+                if status in (429, 502, 503, 504):
+                    delay = response.headers.get("Retry-After", "5")
+                    seconds = min(30, max(5, int(delay))) if delay.isdecimal() else 5
+                    with _lock:
+                        _ibe_busy_until = max(_ibe_busy_until, time.monotonic() + seconds)
+                transport = "IRSA public cloud mirror"
+        else:
+            transport = "IRSA saved original" if local else "IRSA public cloud mirror"
+        if transport != "IRSA cutout service":
+            hdus, _, _ = cutout_from_mirror(key, fov, center=(ra, dec))
+            with hdus:
+                hdus.writeto(temporary, overwrite=True)
+        with fits.open(temporary) as hdus:
+            hdus.verify("exception")
+        temporary.replace(destination)
+        return transport
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def _fetch_frame(row, ra, dec, fov, native=False):
     identity = key_for(f"{row['url']}|{ra}|{dec}|{fov}|native-analysis-v2")
     array_file = CACHE / (identity + ".npy")
@@ -177,24 +328,11 @@ def _fetch_frame(row, ra, dec, fov, native=False):
     fits_file = CACHE / (identity + ".fits")
     url = row["url"] + "?" + urlencode({"center": f"{ra},{dec}d", "size": f"{fov / 60 * 1.5:.8f}"})
     if not fits_file.exists():
-        for attempt in range(3):
-            try:
-                throttle()
-                response = requests.get(url, timeout=CONFIG["timeout_seconds"])
-                response.raise_for_status()
-                if len(response.content) > 25_000_000:
-                    raise RuntimeError("Cutout unexpectedly large; download refused.")
-                temp = fits_file.with_suffix(".part")
-                temp.write_bytes(response.content)
-                with fits.open(temp) as hdus:
-                    hdus.verify("exception")
-                temp.replace(fits_file)
-                break
-            except (requests.RequestException, OSError):
-                if attempt == 2:
-                    raise
-                time.sleep(0.5 * 2 ** attempt)
+        transport = download_cutout(row["url"], url, fits_file, ra, dec, fov)
+    else:
+        transport = None
     with fits.open(fits_file, memmap=False) as hdus:
+        native_header = hdus[0].header
         values, metadata = align_cutout(hdus, ra, dec, fov)
         from .analysis import aligned_products
         np.savez_compressed(CACHE / (identity + ".npz"), **aligned_products(hdus, ra, dec, fov))
@@ -202,6 +340,10 @@ def _fetch_frame(row, ra, dec, fov, native=False):
         raise ValueError("This cutout contains no usable pixels under the conservative quality mask.")
     np.save(array_file, values, allow_pickle=False)
     metadata["cutout_url"] = url
+    if transport:
+        metadata["transport"] = transport
+    elif "PXORIGIN" in native_header:
+        metadata["transport"] = native_header["PXORIGIN"]
     atomic_json(meta_file, metadata)
     return identity, metadata
 
@@ -213,11 +355,13 @@ def fetch_frame(row,ra,dec,fov,native=False):
     global _cache_writes
     identity=key_for(f"{row['url']}|{ra}|{dec}|{fov}|native-analysis-v2")
     with FileLock(str(CACHE/(identity+'.lock')),timeout=180):
+        restore_cutout(CACHE, identity)
         result=_fetch_frame(row,ra,dec,fov,native=native)
         now=time.time()
         for ext in ('.fits','.npy','.npz','.json'):
             p=CACHE/(identity+ext)
             if p.exists():
+                preserve_cutout(p)
                 try:__import__('os').utime(p,(now,now))
                 except OSError:pass
     _cache_writes+=1

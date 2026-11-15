@@ -2,23 +2,13 @@
 
 A science-first viewer for real SPHEREx infrared observations. Enter RA/Dec or select Barnard's Star, Epsilon Indi B, WISE 0855, RW Aurigae or R Draconis. The first screen is the science viewer; optional catalog/ephemeris 3D context is loaded separately. This is an independent project, not an official NASA service.
 
-**The release is not all-pass.** See [the complete acceptance report](docs/CURRENT_STATUS.md) for every requested item, current evidence, unresolved science results and verification limits. No catalog motion is substituted for a failed image measurement.
+See [the 14-item follow-up](docs/ISSUE_STATUS.md) and [the November 11 pipeline validation](docs/PIPELINE_VALIDATION.md) for current live browser, archive and model evidence. [Earlier acceptance evidence](docs/CURRENT_STATUS.md) covers the previous release.
 
-## SPHEREx View and Free View
+## SPHEREx view
 
-**SPHEREx View** opens the image sequence. Choose **Satellite camera** from its toolbar to start from the selected archive exposure's detector orientation. The amber reticle marks the selected field. Drag or swipe to turn and scroll or pinch to zoom. Use **Center target** to return to the marker. Right-click a direction or use **Search view center** to search IRSA.
+Open **Satellite View** directly from the top navigation to explore the sky. **SPHEREx View** and **3D Context** share the pinned sky direction. Switching views preserves the observation session. The amber reticle marks the search coordinates. Drag or use the arrow keys to look around, and use **Center target** to reacquire the marked field. Right-click a direction to pin its ICRS coordinates and start an IRSA coordinate search. Click a marked catalog star and choose **Open in 3D Context** to focus its catalog position. The 3D reticle marks an angular direction. An arbitrary sky pin has no assigned distance. **Loaded cutout** shows the native detector pixels, while **Detector footprint** locates the cutout within the full detector when the FITS alternate pixel WCS is available.
 
-**Free View** keeps the 3D orbit, pan, zoom, and object selection controls. On a phone, drag with one finger to orbit and pinch with two fingers to zoom. Open **Destinations** to switch between the Solar System, nearby catalog stars, and target systems. You can also zoom out from the Solar System into the stellar neighborhood.
-
-The catalog sky is the celestial [NASA/Goddard Scientific Visualization Studio Deep Star Maps](https://svs.gsfc.nasa.gov/3895/) 4K image, based on the Bright Star, Tycho-2 and UCAC3 catalogs. It provides visible-light context. The archived infrared observations are in the SPHEREx sequence. The spacecraft position comes from the selected FITS header when present. Free look is an illustrative rotation at that viewpoint. The reticle marks the selected coordinates. The sky map is fetched on first use and cached locally. A coordinate grid remains available if the texture or WebGL fails.
-
-**Trace back to Earth** follows one illustrative, curved flight to the sunlit side. The camera turns during the flight with gentle sideways glances. The source sky chart is optional after arrival. The flight uses a single path and rebases from parsecs to AU without a scheduled stop.
-
-## Infrared spectrum and absorption bands
-
-In **SPHEREx View**, load a field, open **Measure a source**, choose **Infrared spectrum**, and tap or click the object in an observed frame. The chart uses aperture measurements from cached native SPHEREx FITS at that sky position. Select a UTC observation date to inspect its samples and uncertainties, and optionally overlay a second date. **Show reference absorption bands** displays approximate methane, carbon dioxide, and carbon monoxide windows for visual comparison. The exposure list gives dates, detector IDs, flux and uncertainty or an exclusion reason, plus links to the archive.
-
-The quicklook uses approximate pixel wavelengths and lacks PSF deblending and aperture correction. Reference windows are approximate guides based on the [AKARI brown dwarf study](https://hero.epa.gov/reference/2669638/). Different dates and wavelengths can sample variable brightness. An unresolved companion can be blended with its host. A moving Solar System body needs an ephemeris at each exposure. A visual match alone cannot establish composition. IRSA provides a [PSF-based spectrophotometry tool](https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html) for a source with a known position.
+The catalog sky is the celestial [NASA/Goddard Scientific Visualization Studio Deep Star Maps](https://svs.gsfc.nasa.gov/3895/) 4K image, based on the Bright Star, Tycho-2 and UCAC3 catalogs. It provides visible-light context. The archived infrared detector cutout is separate. The spacecraft position comes from the selected FITS header when present. Free look is an illustrative rotation at that viewpoint. The reticle marks the selected coordinates. The sky map is fetched on first use and cached locally. A coordinate grid remains available if the texture or WebGL fails.
 
 ## Run
 
@@ -43,14 +33,15 @@ Public hosting requires a Python-capable host, HTTPS, persistent cache storage a
 
 ## Observations and analysis
 
-- Degrees or sexagesimal RA/Dec, selectable 2–20 arcmin field, all five named presets and `?ra=&dec=&fov=&frame=` links.
+- Search by RA/Dec in degrees or sexagesimal. Choose a 2–20 arcmin field or one of five named presets. A link with `?ra=&dec=&fov=&exposure=` identifies a specific archive product and prioritizes its download. Older `frame=` links still open by index.
+- Discovery searches IRSA’s current DR1 and QR3 spectral-image releases. Duplicate processing versions collapse to one exposure per detector. The manual archive browser lets you browse either current release. If the IRSA cutout endpoint is busy, a bounded cloud-mirror range read retrieves native IMAGE, FLAGS, VARIANCE and ZODI pixels and samples the exposure’s WCS-WAVE. See the [IRSA archive guide](https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-access/).
 - Genuine IRSA native FITS, WCS registration, original quality masks, chronological playback, speed, loop, scrubber, date and metadata. Missing pixels remain unknown.
-- Default playback includes every available detector in chronological order, with pending/unavailable exposures marked in the full timeline. Detector and wavelength filters are optional. Narrow 0.025 micrometer groups, fixed per-detector contrast, six-array stacking and compatible-frame add/subtract reduce cross-band confusion. They do not remove PSF/calibration systematics.
-- Click an aperture for a quicklook spectrum using native per-pixel wavelengths. Aperture flux is not precision aperture-corrected spectrophotometry.
+- Default playback includes every available detector in chronological order, with pending/unavailable exposures marked in the full timeline. The viewer buffers up to 24 upcoming cutouts as soon as a frame opens, with four background image requests at a time. The backend prepares up to four archive cutouts in parallel after the first frame, with archive request pacing applied across jobs. Open **Date and wavelength coverage** to jump to a real exposure or find earlier and later dates in the selected detector within 0.025 µm at field center. Select a matching date and choose **Blink selected pair** to alternate the two registered exposures on the main canvas. **Measure pair at field center** requests a calibrated displacement check with mask, band overlap, PSF, and nearby field-star checks. It reports when a measurement is unsupported. Download a CSV of the complete field manifest or the selected wavelength matches, with dates, exposure IDs, status and original FITS URLs. Detector and wavelength filters are optional. Narrow 0.025 micrometer groups, fixed per-detector contrast, six-array stacking and compatible-frame add/subtract reduce cross-band confusion. They do not remove PSF/calibration systematics.
+- Click a source with Aperture spectrum selected to inspect flux, uncertainty, date groups and optional cited feature windows. Choose an aperture radius and export measurements with flux uncertainty, calibration, and the original exposure URLs. Use the evidence card to save coordinates, original observations and a volunteer classification. The fixed aperture uses cached native FITS and approximate WCS-WAVE wavelengths.
 - Barnard comparison samples the wavelength map at the predicted source position, selects a compatible time baseline, shows a real difference and predicted markers, and attempts a free native PSF-wing fit. Masked or poor fits remain unavailable; the catalog's roughly 10.4 arcsec/year is not called a measured shift.
 - Light curves search compatible loaded groups. If native apertures fail, a fixed common footprint of valid registered pixels can supply a brightness index. Masked cores are excluded in every epoch, not reconstructed. Statistical errors omit resampling correlations, PSF and calibration systematics. A plotted change alone does not establish intrinsic variability.
 - Gaia overlays apply available angular proper motion. WISE date-dependent markers use Gaia astrometry only for unique associations at the documented MJD 55400 AllWISE motion-fit position, within 1 arcsec. Unmatched/blend-swapped sources retain stationary WISE positions. AllWISE apparent motions are **not** extrapolated: IRSA advises that they cannot predict positions at other epochs. Annual parallax is omitted from these overlays.
-- Tour captions, optional Aladin Lite coordinate selection, exports and provenance labels remain. Aladin survey tiles require CDS network access.
+- SPHEREx observing perspective uses the native FITS footprint and recorded spacecraft position endpoints when available. The dashed orbit is illustrative. Tour captions, optional Aladin Lite coordinate selection, exports and provenance labels remain. Aladin survey tiles require CDS network access.
 
 Observed, catalog and computed layers are distinct. A loaded field or red residual is not a source identification, a motion detection, or evidence for Planet X. Red highlighting and noise suppression are computed quicklooks; they never alter preserved observed arrays. Wavelength changes, confusion and artifacts can mimic change.
 
@@ -66,9 +57,13 @@ A persistent Solar System button, a stellar-strip home entry and a target-menu e
 
 Ten selected major moons are present: Moon, Phobos, Deimos, Io, Europa, Ganymede, Callisto, Titan, Titania and Triton. JPL mean orbital scales/periods and radii are attributed in web/assets/moons.json. Display radii and separations are enlarged independently. Circular layouts/phases are illustrative, not satellite ephemerides or a complete moon census.
 
-A real catalog host-star backdrop supplies surrounding context. It is an incomplete sample; point sizes are adapted for visibility, not measured brightness. Plasma, faster sunspots, a faint white coronal illustration, magnetic loops, dust and travel streaks are computed illustrations, not observed events or measured surface maps. Planet rotation is independently accelerated for visibility rather than tied to orbital playback. The Solar System loading cover remains for at least five seconds and waits for all requested appearance maps and models to settle before revealing the scene. Closeups with unknown temperature carry a persistent warning that appearance may be inaccurate. Unknown temperature does not supply an invented temperature or reliable distance.
+The catalog backdrop includes exoplanet host stars and 240 additional HYG 4.1 records with Hipparcos, Yale Bright Star Catalog or Gliese identifiers. Search names or filter sources in Satellite View. The HYG subset is attributed and licensed CC BY-SA 4.0 in the assets directory. It is an incomplete sample; point sizes are adapted for visibility, not measured brightness. Plasma, faster sunspots, a faint white coronal illustration, magnetic loops, dust and travel streaks are computed illustrations, not observed events or measured surface maps. Planet rotation is independently accelerated for visibility rather than tied to orbital playback. The Solar System loading cover waits for requested appearance maps and models to settle. The surrounding catalog backdrop is rendered in one batch and its displayed stars can be selected. Closeups with unknown temperature carry a persistent warning that appearance may be inaccurate. Unknown temperature does not supply an invented temperature or reliable distance.
 
-Earth landing actions appear only for selected Earth. Location-specific terrain requests compiled Mapzen elevation tiles for the clicked/visible direction. Missing elevation remains an error; a different site is not substituted. Colors, astronaut geometry, water context and lighting are illustrative. No current weather or measured local temperature is claimed. No verified terrain walker for other bodies is installed.
+## Laya analysis report and Groq guide
+
+After Laya completes a crop comparison, open **Experimental AI review → Analysis report** in SPHEREx View. The report shows coverage, possible shifts, brightening or fading, artifacts or missing data, and uncertain comparisons. Download the JSON for exact exposure IDs, dates, detectors, and crop bounds. Counts are for overlapping comparisons. Use **Date and wavelength coverage → Measure pair at field center** for a calibrated displacement check, or **Target light curve** for same-band aperture photometry.
+
+**Explain report with AI guide** opens a question and attaches the report when you choose **Send**. Groq receives the counts, coverage, and up to eight representative comparisons. FITS files and image pixels stay local. Set `GROQ_API_KEY` in the PowerShell environment before running `python start.py` to enable the optional guide. Its instructions are in [GROQ_SYSTEM_PROMPT.md](docs/GROQ_SYSTEM_PROMPT.md).
 
 ## Local Laya review
 
@@ -83,9 +78,9 @@ python start.py
 
 Git and an initial network connection are required. Runtime weights and the isolated virtual environment are not included in the source archive. The core app runs without Laya. Configuration is in backend/laya_config.json; the existing installer pins source commit `9e1e2419d855ad3e1a2af4d4bd1ef6be5418842c` and checkpoint revision `f2fe3c12cb6d04c59d8a190250bf3fb40fc828dc` of `thaitea/laya-vision`.
 
-Full-sequence review attempts every discovered exposure and reports failed downloads explicitly. Long temporal batches retain earliest/latest context and count unique reviewed frames. Candidate tracks require compatible per-source-pixel wavelengths, at least four independent nights, a 30-day span, a five-sigma velocity, low residuals and leave-one-out stability. Coherent field-wide translations are rejected as possible registration/bulk-motion effects. Single-frame groups cannot establish change.
+Sequence review consumes the same ready frames as playback and starts with available compatible crops. It saves exposure IDs, dates, assigned references and completed crops in local receipts. Cancel stops active inference and keeps completed crops. Review / resume continues the same field using the saved receipt. The browser reports preparation, model and inference stages, preliminary compatibility, unique reviewed exposures and last progress.
 
-Laya supplies batch-level visual judgments, not validated source identifications or calibrated detection probabilities. Faint real motion can be filtered out. Zero candidates does not establish that no object moves. The latest actual loaded-cache validation reviewed 188/188 available WISE exposures from a discovered 256-frame sequence; the remaining 68 were outside that run. See docs/revision-laya-loaded.json.
+Laya produces visual suggestions. A counted exposure has every eligible crop reviewed. Masked or unmatched pixels and exposures without a suitable reference remain unassessed. See the validation report for measured false flags, missed injections and calibration limits.
 
 Laya Vision source is Apache-2.0; the selected checkpoint declares **CC-BY-NC-SA-4.0**, a separate noncommercial license. It is derived from HuggingFaceTB/SmolVLM-256M-Instruct. Model weights are not relicensed or bundled with this application's Apache-2.0 source. See third_party/laya-vision/ and the checkpoint model card.
 
@@ -140,3 +135,28 @@ This writes release/planet-x-observatory.zip, including current source and accep
 - [Mapzen terrain formats and contributor attribution](https://github.com/tilezen/joerd/blob/master/docs/attribution.md).
 
 Original application code is Apache-2.0 (LICENSE). Vendored Three.js retains MIT licensing. Aladin retains its included LGPL/CDS terms. NASA imagery/models and external catalog data retain their own credits and applicable terms; they are not claimed as original application imagery. No AI-generated astronomical image or simulated source motion is used as an observed SPHEREx frame.
+
+In the image viewer, use +, −, Fit image, or scroll over the cutout. Drag to pan when zoomed. Wider sky field fetches a larger archive cutout at the same coordinates.
+
+Sun sky keeps the camera at a fixed radius around the Sun. Drag to look outward, then right-click any sky position to search IRSA. Load images at center offers the same action for the central reticle.
+
+
+### Saving SPHEREx data locally beyond the preset targets
+
+Field search uses IRSA TAP. On a TAP timeout it can reuse the exact field's saved manifest or query IRSA SIA. If both live options fail, the viewer can use saved manifests and verified originals with WCS coverage at the requested coordinates. The UI flags fallback coverage as potentially incomplete. Searches prepare cutouts in chronological order and reuse saved originals when available.
+
+The bulk prefetch uses IRSA's public S3 mirror and enumerates all released DR1 and QR3 Level 2 spectral image files, independently of the app's target list. It saves native FITS files and SHA-256 receipts outside the disposable playback cache. The SQLite inventory records progress and errors. Raising the budget does not increase transfer concurrency.
+
+```powershell
+python scripts/prefetch_archive.py --status
+python scripts/prefetch_archive.py --budget-gib 70 --keep-free-gib 40
+```
+
+Resume with the same command. Add `--retry-failed` to retry failed files after connectivity returns. The budget is the maximum total size of saved originals, and the free-space reserve can stop the run first. The complete archive spans many terabytes. Inspect **Saved archive originals** in the SPHEREx view for the number of files indexed and the number actually saved. The `saved-spherex` folder is excluded from Git. Back it up or move it separately if you migrate the app.
+
+
+### Cross-mission evidence
+
+Open **Cross-mission evidence** beside the SPHEREx frames. The panel can show Gaia DR3 reference stars, pass the same ICRS coordinates and field size to WiseView for an older infrared blink, or query public NEOSSat footprints at CADC. It distinguishes a service timeout from a successful query with no overlapping products. Export a JSON receipt with the original SPHEREx exposure, Gaia settings, linked WISE field, and NEOSSat metadata if queried. Gaia's catalog reference epoch is J2016.0. Each survey has its own observing times, bands, and angular resolution. See the linked SPHEREx and CSA notebooks for reproducing independent checks.
+
+For the public web service, see [Deploying on Render](docs/RENDER_DEPLOYMENT.md).

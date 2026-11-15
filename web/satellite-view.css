@@ -15,39 +15,25 @@
 .satellite-heading h2 { margin: 4px 0; }
 .satellite-controls button[aria-pressed="true"] { border-color: #ffc67c; }
 .satellite-stage { position: relative; margin-top: 10px; background: #050910; }
-#satellite-sky, #satellite-camera-canvas { display: block; width: 100%; height: auto; }
+#satellite-sky, #satellite-detector { display: block; width: 100%; height: auto; }
 #satellite-sky { position: absolute; inset: 0; pointer-events: none; }
 #satellite-sky[hidden] { display: none; }
-#satellite-camera-canvas { position: relative; cursor: grab; touch-action: none; }
-#satellite-camera-canvas:focus-visible { outline: 2px solid #ffc680; outline-offset: -2px; }
+#satellite-detector { position: relative; cursor: crosshair; }
+#satellite-detector:focus-visible { outline: 2px solid #ffc680; outline-offset: -2px; }
 #satellite-source[hidden] { display: none; }
-#satellite-camera-canvas:active { cursor: grabbing; }
+#satellite-detector.looking { cursor: grab; touch-action: none; }
+#satellite-detector.looking:active { cursor: grabbing; }
 #satellite-exposure, #satellite-status { font-size: 13px; }
 
-.free-destinations { position: relative; align-self: center; font-size: 11px; }
-.free-destinations summary { cursor: pointer; white-space: nowrap; padding: 5px 6px; }
-.free-destinations > div {
-  position: absolute; top: calc(100% + 4px); right: 0; z-index: 3;
-  min-width: 132px; display: grid; gap: 4px; padding: 6px;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 5px;
-}
-.free-destinations button { width: 100%; white-space: nowrap; }
-.free-destinations button[aria-pressed="true"] { background: var(--surface-2); }
-@media (max-width: 650px) {
-  body.observing header nav, body.searching header nav { display: flex; }
-}
+.satellite-controls label{display:flex;align-items:center;gap:7px;margin:0;font-size:12px}
+.satellite-controls select{width:auto;margin:0;min-height:32px}
 
-body.observing #observations-home.spherex-hub { display: inline-flex; }
-.drawer-header #satellite-view-tab { margin-right: 6px; white-space: nowrap; }
-@media (pointer: coarse) {
-  #satellite-camera { padding: 12px; }
-  .satellite-controls button, .satellite-heading button { min-height: 44px; }
-  .drawer-header #satellite-view-tab { margin-right: 0; }
-}
+/* A workspace pane, so all three navigation tabs remain reachable. */
+#satellite-camera {position:fixed;inset:78px 0 0;margin:0;width:100%;height:calc(100dvh - 78px);max-height:none;border:0;border-radius:0;z-index:18;padding:18px max(18px,calc((100vw - 1280px)/2));}
+#satellite-camera:not([open]){display:none}
+.satellite-stage{max-width:1280px;margin-inline:auto}
+#satellite-detector{max-height:calc(100dvh - 320px);object-fit:contain}
+#satellite-sky{height:100%;object-fit:contain}
+@media(max-width:700px){#satellite-camera{inset:112px 0 0;height:calc(100dvh - 112px);padding:10px}.satellite-controls button{font-size:11px;padding:5px 8px}#satellite-detector{max-height:none}}
 
-@media (max-width: 480px) {
-  .drawer-header { flex-wrap: wrap; gap: 8px; }
-  .drawer-header #satellite-view-tab { min-height: 40px; }
-  body.observing header nav { max-width: none; }
-  #satellite-camera { max-height: 92dvh; }
-}
+.satellite-stage{width:min(100%,calc((100dvh - 400px)*1.7778));min-width:240px}#satellite-detector{max-height:none}.satellite-catalog{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.satellite-catalog label{margin:5px 0;min-width:150px}#satellite-star-query{max-width:290px}#satellite-star-results{display:flex;gap:5px;flex-wrap:wrap;width:100%}#satellite-star-results button{font-size:11px;padding:3px 10px;min-height:28px}@media(max-width:700px){.satellite-stage{width:100%}.satellite-catalog label{flex:1}}

@@ -1,9 +1,14 @@
 import io
 import json
 import threading
+from collections import deque
 import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
+
+def progress(job, stage):
+    job.update(stage=stage, last_progress_at=datetime.now(timezone.utc).isoformat())
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait
 from pathlib import Path
 import numpy as np
 from PIL import Image
@@ -33,6 +38,20 @@ PRESETS = [
 @app.get("/api/health")
 def health():
     return {"status": "ok", "data_source": "IRSA SPHEREx", "synthetic_images": False}
+
+
+from .partner_data import install_partner_routes
+install_partner_routes(app)
+
+
+@app.get("/api/archive/prefetch-status")
+def archive_prefetch_status():
+    from .saved_archive import prefetch_status
+    import sqlite3
+    try:
+        return prefetch_status()
+    except sqlite3.Error:
+        raise HTTPException(503, "The archive inventory is temporarily busy.") from None
 
 
 @app.get("/api/presets")
@@ -73,6 +92,19 @@ class Search(BaseModel):
     ra: str = Field(max_length=80)
     dec: str = Field(max_length=80)
     fov: float = Field(default=8, ge=2, le=20, description="Square field width in arcminutes")
+    exposure_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{24}$")
+    frame: int | None = Field(default=None, ge=0)
+
+
+def prioritize_exposure(job, exposure_id, frame):
+    if exposure_id is None and frame is None:
+        return
+    selectors = job.setdefault("priority_exposures", [])
+    selector = (exposure_id, frame)
+    if selector in selectors:
+        selectors.remove(selector)
+    selectors.append(selector)
+    del selectors[:-8]
 
 
 def run_job(job, resume=False):
@@ -80,11 +112,17 @@ def run_job(job, resume=False):
         if job.get('worker_active'):return
         job['worker_active']=True
     try:
-        rows = job["frames"] if resume else sorted(discover(job["ra"], job["dec"]), key=lambda f: (float(f["mjd"]), f["id"]))
+        progress(job, "discovering" if not resume else "loading")
+        discovered = job["frames"] if resume else discover(job["ra"], job["dec"])
+        rows = discovered if resume else sorted(discovered, key=lambda f: (float(f["mjd"]), f["id"]))
         with GUARD:
             if not resume:
+                job["discovery_source"] = getattr(discovered, "source", "IRSA TAP")
+                job["discovery_complete"] = getattr(discovered, "complete", True)
+                job["discovery_note"] = getattr(discovered, "detail", None)
                 job["frames"] = [dict(r, status="pending", index=i) for i, r in enumerate(rows)]
-            job["status"] = "fetching" if rows else "empty"
+            job["status"] = ("paused" if job.get("prefetch_paused") else "fetching") if rows else "empty"
+            progress(job, "loading" if rows else "empty")
         if not rows:
             job["message"] = "No released spectral images cover this position. Try a nearby field or another preset."
             return
@@ -108,7 +146,14 @@ def run_job(job, resume=False):
                 a=np.load(CACHE/(cached['cache_id']+'.npy'),allow_pickle=False);lo,hi=np.nanpercentile(a,[1,99.7])
                 with GUARD:job['contrast']=dict(black=float(lo),white=float(max(hi,lo+1e-8)),reference_frame=cached['index'],unit=cached['unit'])
         def load(frame):
-            if job.get("prefetch_paused") or frame.get("status")=="ready":return
+            with GUARD:
+                if job.get("prefetch_paused"):
+                    if frame.get("status") == "queued":
+                        frame["status"] = "pending"
+                    return
+                if frame.get("status") == "ready":
+                    return
+                frame.update(status="downloading", stage="downloading")
             try:
                 identity, metadata = fetch_frame(frame, job["ra"], job["dec"], job["fov"])
                 with GUARD:
@@ -124,11 +169,26 @@ def run_job(job, resume=False):
                         if hi <= lo:
                             hi = lo + 1
                         job["contrast"] = {"black": float(lo), "white": float(hi), "reference_frame": frame["index"], "unit": metadata["unit"]}
-                    frame.update(metadata, cache_id=identity, status="ready", ra=job["ra"], dec=job["dec"], fov=job["fov"])
+                    frame.update(metadata, cache_id=identity, status="ready", stage="prepared", ra=job["ra"], dec=job["dec"], fov=job["fov"])
+                    progress(job, "paused" if job.get("prefetch_paused") else "loading")
             except Exception as exc:
                 with GUARD:
-                    frame.update(status="error", error="Cutout unavailable or rejected by quality mask.", detail=type(exc).__name__)
-        # First result is downloaded before parallel background prefetch for deterministic contrast.
+                    frame.update(status="error", stage="failed", error=str(exc), detail=type(exc).__name__)
+                    progress(job, "loading")
+        by_id = {frame["id"]: frame for frame in job["frames"]}
+
+        def take_prioritized():
+            with GUARD:
+                selectors = job.pop("priority_exposures", [])
+            selected = []
+            for exposure_id, index in reversed(selectors):
+                frame = (by_id.get(exposure_id) if exposure_id is not None else
+                         job["frames"][index] if index < len(job["frames"]) else None)
+                if frame is not None and frame["status"] == "pending":
+                    selected.append(frame)
+            return selected
+
+        # Keep the first-frame contrast deterministic and load a shared frame next.
         load(job["frames"][0])
         with ThreadPoolExecutor(max_workers=CONFIG["concurrent_downloads"]) as executor:
             # Seed a sparse span of real epochs in each detector before filling the rest.
@@ -146,14 +206,34 @@ def run_job(job, resume=False):
                     f=group[round((len(group)-1)*fraction)]
                     if f['id'] not in seen:priority.append(f);seen.add(f['id'])
             priority.extend(f for f in job['frames'][1:] if f['id'] not in seen)
-            list(executor.map(load,priority))
+            queue = deque(priority)
+            active = set()
+            submitted = {job["frames"][0]["id"]}
+            while queue or active:
+                if not job.get("prefetch_paused"):
+                    queue.extendleft(reversed(take_prioritized()))
+                    while queue and len(active) < CONFIG["concurrent_downloads"]:
+                        frame = queue.popleft()
+                        with GUARD:
+                            if frame["id"] in submitted or frame["status"] not in ("pending", "error"):
+                                continue
+                            submitted.add(frame["id"])
+                            frame["status"] = "queued"
+                        active.add(executor.submit(load, frame))
+                if not active:
+                    break
+                done, active = wait(active, return_when=FIRST_COMPLETED)
+                for future in done:
+                    future.result()
         with GUARD:
             ready = sum(f["status"] == "ready" for f in job["frames"])
             job["status"] = "paused" if job.get("prefetch_paused") else ("complete" if ready else "error")
+            progress(job, "failed" if job["status"]=="error" else job["status"])
             job["message"] = f"{ready} of {len(rows)} cutouts available. " + ("Background loading paused; resume to continue." if job.get("prefetch_paused") else "Missing or flagged pixels remain blank.")
     except Exception as exc:
         with GUARD:
-            job.update(status="error", message="IRSA could not be reached or returned an invalid response. Retry shortly. No substitute images are displayed.", detail=type(exc).__name__)
+            job.update(status="error", message="IRSA could not be reached or returned an invalid response. Retry shortly. No substitute images are displayed.", detail=type(exc).__name__+": "+str(exc))
+            progress(job, "failed")
 
     finally:
         with GUARD:
@@ -175,11 +255,12 @@ def search(body: Search, request: Request):
         ra, dec = float(coord.ra.deg), float(coord.dec.deg)
         for job in JOBS.values():
             if abs(job["ra"]-ra)<1e-9 and abs(job["dec"]-dec)<1e-9 and job["fov"]==body.fov and now - job["created"] < CONFIG["query_ttl_seconds"] and job["status"] != "error":
+                prioritize_exposure(job, body.exposure_id, body.frame)
                 if job["status"]=="paused":
                     if sum(j["status"] in ("querying","fetching") for j in JOBS.values())>=CONFIG["max_active_jobs"]:
                         raise HTTPException(429,"The observatory is busy. Please retry shortly.")
                     job["prefetch_paused"]=False;job["status"]="fetching"
-                    threading.Thread(target=run_job,args=(job,True),daemon=True).start()
+                    threading.Thread(target=run_job,args=(job,bool(job["frames"])),daemon=True).start()
                 return {"id": job["id"]}
         hits=[t for t in CLIENTS.get(client,[]) if now-t<60]
         if len(hits)>=10:raise HTTPException(429,'Please wait a minute before requesting another new field.')
@@ -196,6 +277,7 @@ def search(body: Search, request: Request):
                 prune_cache()
         job = dict(id=uuid.uuid4().hex, ra=ra, dec=dec, fov=body.fov, created=now,
                    status="querying", frames=[], contrast=None, message="Searching released SPHEREx spectral images…")
+        prioritize_exposure(job, body.exposure_id, body.frame)
         JOBS[job["id"]] = job
     threading.Thread(target=run_job, args=(job,), daemon=True).start()
     return {"id": job["id"]}
@@ -214,6 +296,7 @@ def pause_job(identity:str):
         if job.get('source')!='cloud' and job['status'] in ('querying','fetching'):
             job['prefetch_paused']=True
             job['status']='paused'
+            progress(job,'paused')
         return {'id':identity,'paused':bool(job.get('prefetch_paused'))}
 
 
@@ -225,8 +308,14 @@ def resume_job(identity:str):
             if sum(j['status'] in ('querying','fetching') for j in JOBS.values())>=CONFIG['max_active_jobs']:
                 raise HTTPException(429,'The observatory is busy. Please retry shortly.')
             job['prefetch_paused']=False;job['status']='fetching'
-            threading.Thread(target=run_job,args=(job,True),daemon=True).start()
+            threading.Thread(target=run_job,args=(job,bool(job['frames'])),daemon=True).start()
         return {'id':identity}
+
+
+@app.get("/api/jobs")
+def active_jobs():
+    with GUARD:
+        return [dict(id=j["id"], ra=j["ra"], dec=j["dec"], status=j["status"], stage=j.get("stage"), last_progress_at=j.get("last_progress_at"), discovered=len(j["frames"]), loaded=sum(f.get("status")=="ready" for f in j["frames"])) for j in JOBS.values()]
 
 
 @app.get("/api/jobs/{identity}")
@@ -235,7 +324,8 @@ def job_status(identity: str):
         job = get_job(identity)
         publish=job['contrast'] is not None
         visible=[dict(f, status='pending') if f['status']=='ready' and not publish else dict(f) for f in job['frames']]
-        return dict(job, frames=visible, ready=sum(f['status']=='ready' for f in visible),
+        public_job = {key: value for key, value in job.items() if key != "priority_exposures"}
+        return dict(public_job, frames=visible, discovered=len(visible), loaded=sum(f['status']=='ready' for f in visible), prepared=sum(f['status']=='ready' for f in visible), pending=sum(f['status'] not in ('ready','error') for f in visible), reviewed_by_laya=None, scientifically_comparable=None, ready=sum(f['status']=='ready' for f in visible),
                     failed=sum(f["status"] == "error" for f in job["frames"]),
                     notes=["Observed SPHEREx IMAGE data; false-color display, not visible-light photography.",
                            "Frames vary in wavelength and date. Brightness differences and artifacts can mimic motion.",
@@ -344,8 +434,22 @@ install_time_routes(app,JOBS,GUARD)
 from .companions import install_companion_routes
 install_companion_routes(app)
 
+@app.get('/api/jobs/{identity}/observing-view/{index}')
+def observing_view(identity: str, index: int):
+    from .observing_view import exposure_geometry
+    with GUARD:
+        job = get_job(identity)
+        if not 0 <= index < len(job['frames']) or job['frames'][index]['status'] != 'ready':
+            raise HTTPException(422, 'Choose a loaded exposure.')
+        frame = dict(job['frames'][index])
+    return exposure_geometry(job, frame)
+
+
 from .routes_satellite_view import install_satellite_view_routes
 install_satellite_view_routes(app, JOBS, GUARD)
+
+from .guide import install_guide_routes
+install_guide_routes(app, JOBS)
 
 DIST = ROOT / "web"
 if DIST.exists():

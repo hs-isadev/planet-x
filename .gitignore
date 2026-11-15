@@ -14,3 +14,9 @@ docs/screenshots/
 web/assets/*-source.jpg
 web/assets/earth-hgt.gz
 *.tmp
+
+saved-spherex/
+
+.env
+.env.*
+!.env.example

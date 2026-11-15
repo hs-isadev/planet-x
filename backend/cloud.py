@@ -2,23 +2,37 @@
 import re
 import time
 import xml.etree.ElementTree as ET
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 import aiohttp
 import numpy as np
 import requests
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
-from .archive import CONFIG,CACHE,key_for,atomic_json,align_cutout,throttle
+from .archive import CONFIG,CACHE,key_for,atomic_json,align_cutout,output_grid,throttle
 from .analysis import aligned_products
+from .saved_archive import saved_original, preserve_cutout
 
 NS={'s':'http://s3.amazonaws.com/doc/2006-03-01/'}
 
 
 def validate_prefix(prefix):
-    if len(prefix)>350 or '..' in prefix or not re.fullmatch(r'(qr[23]/level2/)[A-Za-z0-9_./-]*',prefix):
+    if len(prefix)>350 or '..' in prefix or not re.fullmatch(r'((dr1|qr[23])/level2/)[A-Za-z0-9_./-]*',prefix):
         raise ValueError('Choose a released spectral-image archive folder.')
     return prefix
+
+
+def mirror_key(url):
+    parsed = urlsplit(url)
+    prefix = "/ibe/data/spherex/"
+    if parsed.scheme != "https" or parsed.netloc != "irsa.ipac.caltech.edu" or not parsed.path.startswith(prefix):
+        return None
+    key = parsed.path.removeprefix(prefix)
+    try:
+        validate_prefix(key)
+    except ValueError:
+        return None
+    return key if key.endswith(".fits") else None
 
 
 def list_archive(prefix='qr3/level2/',cursor=None):
@@ -51,6 +65,62 @@ def first_exposure():
     raise ValueError('Select an exposure in the archive browser.')
 
 
+def cutout_from_mirror(key, fov, center=None):
+    # HTTP range reads follow IRSA's cloud-access tutorial. Only a native cutout
+    # and small WCS table are transferred, not the full ~70 MB MEF.
+    validate_prefix(key)
+    url = CONFIG["cloud_origin"] + quote(key, safe="/")
+    local = saved_original(key)
+    if local is None:
+        throttle()
+    http = {"block_size": 1048576, "client_kwargs": {"timeout": aiohttp.ClientTimeout(total=20), "trust_env": True}}
+    source_file = fits.open(local, memmap=False) if local else fits.open(url, use_fsspec=True, fsspec_kwargs=http, memmap=False)
+    with source_file as remote:
+        header=remote['IMAGE'].header
+        ra,dec=center if center else (float(header['CRVAL1']),float(header['CRVAL2']));source=WCS(header).celestial
+        grid, n, _ = output_grid(ra, dec, fov)
+        edge = np.array([0, 0, n - 1, n - 1, (n - 1) / 2])
+        x, y = source.world_to_pixel(grid.pixel_to_world(edge, edge[[0, 2, 0, 2, 4]]))
+        if not np.isfinite([x, y]).all():
+            raise ValueError("The exposure cannot project the selected sky field.")
+        height, width = remote['IMAGE'].shape
+        x0, x1 = max(0, int(np.floor(x.min())) - 2), min(width, int(np.ceil(x.max())) + 3)
+        y0, y1 = max(0, int(np.floor(y.min())) - 2), min(height, int(np.ceil(y.max())) + 3)
+
+        if x1<=x0 or y1<=y0:raise ValueError('This exposure does not cover the selected field.')
+        sliced=source.slice((slice(y0,y1),slice(x0,x1)))
+        cut_header=sliced.to_header(relax=True)
+        # Preserve native detector location and spacecraft metadata in cloud cutouts.
+        for name in ("XYZ_SC_SYSTEM", "X_SC", "Y_SC", "Z_SC", "X_SC_START", "Y_SC_START",
+                     "Z_SC_START", "DATE-AVG", "DATE-BEG"):
+            if name in header:
+                cut_header[("HIERARCH " if len(name) > 8 else "") + name] = header[name]
+        if ((header.get("WCSNAMEA") or "").strip() == "0-based active pixel coordinates"
+                and "CRPIX1A" in header and "CRPIX2A" in header):
+            cut_header["WCSNAMEA"] = header["WCSNAMEA"]
+            cut_header["CRPIX1A"] = header["CRPIX1A"] - x0
+            cut_header["CRPIX2A"] = header["CRPIX2A"] - y0
+        for name in ['DETECTOR','DETCOORD','BUNIT','MJD-OBS','DATE-OBS','MJD-AVG','TIMESYS']:
+            if name in header:cut_header[name]=header[name]
+        primary = fits.PrimaryHDU(header=remote[0].header.copy())
+        primary.header["PXORIGIN"] = "IRSA saved original" if local else "IRSA public cloud mirror"
+        hdus = [primary]
+        for name in ("IMAGE", "FLAGS", "VARIANCE", "ZODI"):
+            native = remote[name]
+            layer_header = cut_header.copy()
+            if "BUNIT" in native.header:
+                layer_header["BUNIT"] = native.header["BUNIT"]
+            else:
+                layer_header.remove("BUNIT", ignore_missing=True)
+            hdus.append(fits.ImageHDU(native.section[y0:y1,x0:x1].copy(), header=layer_header, name=name))
+        yy,xx=np.mgrid[y0:y1,x0:x1]
+        swcs=WCS(header,fobj=remote,key='W');swcs.sip=None
+        wave,_=swcs.pixel_to_world(xx,yy)
+        hdus.append(fits.ImageHDU(wave.to_value('um').astype('f4'),name='WAVELENGTH'))
+        flags_summary=[dict(name=k.replace('L2 N_',''),count=int(header[k]),scope='full exposure') for k in header.keys() if k.startswith('L2 N_') and isinstance(header[k],(int,float)) and header[k]>0]
+    return fits.HDUList(hdus), (ra, dec), flags_summary
+
+
 def cloud_cutout(key,fov=8,center=None):
     validate_prefix(key)
     if not key.endswith('.fits'):raise ValueError('Choose a FITS spectral exposure.')
@@ -67,40 +137,9 @@ def cloud_cutout(key,fov=8,center=None):
             metadata['wavelength_um']=float(center) if np.isfinite(center) else None
             metadata['analysis_version']=3;atomic_json(meta_file,metadata)
         return identity,metadata
-    # HTTP range reads follow IRSA's cloud-access tutorial. Only a native cutout
-    # and small WCS table are transferred, not the full ~70 MB MEF.
-    throttle()
-    with fits.open(url,use_fsspec=True,fsspec_kwargs={'block_size':1048576,'client_kwargs':{'timeout':aiohttp.ClientTimeout(total=90),'trust_env':True}},memmap=False) as remote:
-        header=remote['IMAGE'].header
-        ra,dec=center if center else (float(header['CRVAL1']),float(header['CRVAL2']));source=WCS(header).celestial
-        x,y=source.world_to_pixel_values(ra,dec);r=int(np.ceil(fov*60/CONFIG['pixel_scale_arcsec']*.85))
-        x0=max(0,int(np.floor(x))-r);x1=min(remote['IMAGE'].shape[1],int(np.ceil(x))+r+1)
-        y0=max(0,int(np.floor(y))-r);y1=min(remote['IMAGE'].shape[0],int(np.ceil(y))+r+1)
-        if x1<=x0 or y1<=y0:raise ValueError('This exposure does not cover the selected field.')
-        sliced=source.slice((slice(y0,y1),slice(x0,x1)))
-        cut_header=sliced.to_header(relax=True)
-        # Preserve native detector location and spacecraft metadata in cloud cutouts.
-        for name in ("XYZ_SC_SYSTEM", "X_SC", "Y_SC", "Z_SC", "X_SC_START", "Y_SC_START",
-                     "Z_SC_START", "DATE-AVG", "DATE-BEG"):
-            if name in header:
-                cut_header[("HIERARCH " if len(name) > 8 else "") + name] = header[name]
-        if ((header.get("WCSNAMEA") or "").strip() == "0-based active pixel coordinates"
-                and "CRPIX1A" in header and "CRPIX2A" in header):
-            cut_header["WCSNAMEA"] = header["WCSNAMEA"]
-            cut_header["CRPIX1A"] = header["CRPIX1A"] - x0
-            cut_header["CRPIX2A"] = header["CRPIX2A"] - y0
-        for name in ['BUNIT','MJD-OBS','DATE-OBS','MJD-AVG','TIMESYS']:
-            if name in header:cut_header[name]=header[name]
-        hdus=[fits.PrimaryHDU(header=remote[0].header.copy())]
-        for name in ['IMAGE','FLAGS','VARIANCE']:
-            hdus.append(fits.ImageHDU(remote[name].section[y0:y1,x0:x1].copy(),header=cut_header.copy(),name=name))
-        yy,xx=np.mgrid[y0:y1,x0:x1]
-        swcs=WCS(header,fobj=remote,key='W');swcs.sip=None
-        wave,_=swcs.pixel_to_world(xx,yy)
-        hdus.append(fits.ImageHDU(wave.to_value('um').astype('f4'),name='WAVELENGTH'))
-        mjd=float(header['MJD-OBS'])
-        flags_summary=[dict(name=k.replace('L2 N_',''),count=int(header[k]),scope='full exposure') for k in header.keys() if k.startswith('L2 N_') and isinstance(header[k],(int,float)) and header[k]>0]
-    local=fits.HDUList(hdus);local.writeto(fits_file,overwrite=True)
+    local, (ra,dec), flags_summary = cutout_from_mirror(key, fov, center)
+    mjd=float(local['IMAGE'].header['MJD-OBS'])
+    local.writeto(fits_file,overwrite=True)
     values,metadata=align_cutout(local,ra,dec,fov)
     products=aligned_products(local,ra,dec,fov)
     if not np.isfinite(values).any():raise ValueError('No usable pixels in the selected exposure center.')
@@ -110,6 +149,8 @@ def cloud_cutout(key,fov=8,center=None):
     metadata['wavelength_um']=float(center) if np.isfinite(center) else None
     metadata['analysis_version']=3
     match=re.search(r'D([1-6])_spx',key);det=int(match.group(1)) if match else None
-    metadata.update(id=key_for(url),url=url,cutout_url=url,cache_id=identity,ra=ra,dec=dec,fov=fov,mjd=mjd,date=Time(mjd,format='mjd').isot+'Z',detector=det,band=f'SPHEREx-D{det}',release=key.split('/')[0],observation=key.rsplit('/',1)[-1],source_key=key,quality_summary=flags_summary,wavelength_source='Per-pixel WCS-WAVE; approximate visualization wavelengths',origin='IRSA public cloud mirror',status='ready',index=0)
+    metadata.update(id=key_for(url),url=url,cutout_url=url,cache_id=identity,ra=ra,dec=dec,fov=fov,mjd=mjd,date=Time(mjd,format='mjd').isot+'Z',detector=det,band=f'SPHEREx-D{det}',release=key.split('/')[0],observation=key.rsplit('/',1)[-1],source_key=key,quality_summary=flags_summary,wavelength_source='Per-pixel WCS-WAVE; approximate visualization wavelengths',origin=local[0].header["PXORIGIN"],status='ready',index=0)
     atomic_json(meta_file,metadata)
+    for extension in (".fits", ".npy", ".npz", ".json"):
+        preserve_cutout(CACHE / (identity + extension))
     return identity,metadata

@@ -142,7 +142,7 @@ def pixel_solid_angles(wcs,shape):
     return triangle(a,b,c)+triangle(a,c,d)
 
 
-def aperture_measure(hdus,position,radius_arcsec):
+def aperture_measure(hdus,position,radius_arcsec,calibration=None):
     data=hdus['IMAGE'].data.astype(float);variance=hdus['VARIANCE'].data.astype(float);flags=hdus['FLAGS'].data.astype(np.uint32)
     wcs=WCS(hdus['IMAGE'].header).celestial;yy,xx=np.mgrid[:data.shape[0],:data.shape[1]]
     sky=wcs.pixel_to_world(xx,yy);sep=sky.separation(position).arcsec
@@ -156,12 +156,16 @@ def aperture_measure(hdus,position,radius_arcsec):
     unit=u.Unit(hdus['IMAGE'].header.get('BUNIT','MJy/sr'));factor=(1*unit).to_value(u.MJy/u.sr)
     data*=factor;variance*=factor*factor
     area=pixel_solid_angles(wcs,data.shape)*1e12  # MJy/sr × sr → microJy
-    background=float(np.median(data[annulus&background_good]))
-    background_sigma=1.4826*np.median(np.abs(data[annulus&background_good]-background))
-    bkgvar=np.pi/2*background_sigma**2/(annulus&background_good).sum()
+    background_values=data[annulus&background_good]
+    background=float(np.median(background_values))
+    background_sigma=1.4826*np.median(np.abs(background_values-background))
+    bkgvar=np.pi/2*background_sigma**2/background_values.size
     flux=float(np.sum((data[aperture]-background)*area[aperture]))
     error=float(np.sqrt(np.sum(variance[aperture]*area[aperture]**2)+bkgvar*np.sum(area[aperture])**2))
-    wave=wavelength_map(hdus);known=aperture&np.isfinite(wave)
+    wave,band=calibration if calibration is not None else (wavelength_map(hdus),None)
+    known=aperture&np.isfinite(wave)&(wave>0)
+    if band is not None:known &= np.isfinite(band)&(band>0)
     if known.sum()!=aperture.sum():return dict(status='missing',reason='Per-pixel wavelength is unavailable.',valid_fraction=coverage)
     wavelength=float(np.average(wave[known],weights=area[known]))
-    return dict(status='ok',flux_ujy=flux,error_ujy=error,wavelength_um=wavelength,wavelength_min_um=float(wave[known].min()),wavelength_max_um=float(wave[known].max()),valid_fraction=coverage,aperture_pixels=int(aperture.sum()),aperture_flags=[int(v) for v in np.unique(flags[aperture])],background_mjy_sr=background)
+    passband={} if band is None else dict(passband_low_um=float(np.min((wave-band/2)[known])),passband_high_um=float(np.max((wave+band/2)[known])))
+    return dict(**passband,status='ok',flux_ujy=flux,error_ujy=error,wavelength_um=wavelength,wavelength_min_um=float(wave[known].min()),wavelength_max_um=float(wave[known].max()),valid_fraction=coverage,aperture_pixels=int(aperture.sum()),background_mjy_sr=background)

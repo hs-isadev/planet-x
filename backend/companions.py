@@ -38,4 +38,8 @@ def install_companion_routes(app):
             objects[r['hostname']]=dict(id='host:'+r['hostname'],name=r['hostname'],ra=r['ra'],dec=r['dec'],
                 distance_pc=distance,xyz_pc=[distance*np.cos(dec)*np.cos(ra),distance*np.cos(dec)*np.sin(ra),distance*np.sin(dec)],
                 teff_gspphot=r.get('st_teff'),catalog='NASA Exoplanet Archive',provenance='catalog',phot_g_mean_mag=None)
-        return dict(objects=list(objects.values()),note='Incomplete catalog of exoplanet host stars. Display point sizes adapted for visibility; not measured sky brightness. Photos are flat; 3D depth comes from catalog distances.')
+        expansion = json.loads((ROOT/'web/assets/expanded-stars.json').read_text(encoding='utf-8'))
+        return dict(objects=list(objects.values())+expansion['objects'], added_stars=expansion['count'],
+            sources=['NASA Exoplanet Archive', 'Hipparcos / HYG 4.1', 'Yale Bright Star / HYG 4.1', 'Gliese / HYG 4.1'],
+            attribution=expansion['attribution'], license=expansion['license'],
+            note='Incomplete mixed catalog: exoplanet hosts plus 240 HYG records. HYG epoch J2000.0; catalog memberships overlap. Display point sizes adapted for visibility; V magnitude is not Gaia G. Catalog distances have no new uncertainty estimate. Photos are flat; depth comes from catalog distances.')
