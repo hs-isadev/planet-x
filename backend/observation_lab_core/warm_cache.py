@@ -12,19 +12,15 @@ from filelock import FileLock, Timeout
 
 from . import server
 from .archive import query, write_json
-from .featured_views import CACHE, PRESET_FOV, combined_rows, fields, historical_rows, save_entry, view_entry
+from .featured_views import (CACHE, PRESET_FOV, bundle_view, combined_rows, fields, historical_rows,
+                             sample_frames, save_entry, view_entry)
 
 LOG = logging.getLogger(__name__)
 
 
-def sample(rows, count):
-    if len(rows) <= count:
-        return rows
-    return [rows[round(i * (len(rows) - 1) / (count - 1))] for i in range(count)]
-
-
-def refresh(fields_to_warm=None, force=False):
+def refresh(fields_to_warm=None, force=False, bundle=False):
     targets = [f for f in fields() if f['key'] != 'vesta'
+               and (not bundle or f['frames'])
                and (not fields_to_warm or f['key'] in fields_to_warm)]
     if not targets or fields_to_warm and set(fields_to_warm) != {f['key'] for f in targets}:
         raise ValueError('Select preset or catalog field keys from /observation-lab/api/library.')
@@ -45,7 +41,9 @@ def refresh(fields_to_warm=None, force=False):
             key = field['key']
             full = bool(field['frames'])
             base, entry = view_entry(key)
-            if not force and base == CACHE and entry:
+            if bundle and base == CACHE and entry:
+                bundle_view(field, entry)
+            if not force and entry:
                 age = time.time() - datetime.fromisoformat(entry['updated'].replace('Z', '+00:00')).timestamp()
                 if age < 86400 and (entry['complete'] or not full and not entry['failures']):
                     publish(key, 'Cached ' + field['name'], entry, True)
@@ -64,13 +62,14 @@ def refresh(fields_to_warm=None, force=False):
                             raise
                         rows = []
                     partial = not rows or any(row.get('discovery_warning') for row in rows)
-                    if partial and known:
+                    if known:
                         rows = combined_rows(known, rows)
+                    if partial and known:
                         for row in rows:
                             row['discovery_warning'] = 'IRSA live search incomplete; known released exposures are being cached.'
                     elif rows:
                         write_json(inventory, rows)
-                requested = rows if full else sample(rows, 4)
+                requested = rows if full else sample_frames(rows, 4)
                 if not requested:
                     raise ValueError('The archive returned no observations covering this position.')
                 limits = [len(requested)]
@@ -85,7 +84,7 @@ def refresh(fields_to_warm=None, force=False):
                     limits.append(len(requested))
                 for limit in limits:
                     job = uuid.uuid4().hex
-                    selected = sample(requested, limit)
+                    selected = sample_frames(requested, limit)
                     options = dict(ra=field['ra'], dec=field['dec'], fov=PRESET_FOV,
                                    detector=0, source='archive', mosaic=False, field=key)
                     with server.LOCK:
@@ -103,7 +102,9 @@ def refresh(fields_to_warm=None, force=False):
                     complete = len(selected) == len(rows) and not manifest['failures']
                     write_json(CACHE / job / 'manifest.json', manifest)
                     save_entry(CACHE, field, manifest, complete)
-                    _, entry = view_entry(key)
+                    base, entry = view_entry(key)
+                    if bundle and base == CACHE:
+                        bundle_view(field, entry)
                     report = dict(entry or {}, requested=len(selected), discovered=len(rows),
                                   failures=len(manifest['failures']), last_error=next(iter(manifest['failures']), None))
                     publish(key, 'Prepared ' + field['name'], report, limit == limits[-1] and not manifest['failures'])
@@ -121,7 +122,8 @@ def refresh(fields_to_warm=None, force=False):
             core = [f for f in targets if f['frames']]
             stars = [f for f in targets if not f['frames']]
             with ThreadPoolExecutor(max_workers=3) as pool:
-                list(pool.map(field_views, (core[::2], core[1::2], stars)))
+                groups = [[field] for field in core] + ([stars] if stars else [])
+                list(pool.map(field_views, groups))
             status = 'SPHEREx cache ready' if state['completed'] == state['total'] else 'Will retry incomplete SPHEREx fields'
             publish(None, status)
     except Timeout:
@@ -144,10 +146,11 @@ def run_forever():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--field', action='append', help='Only warm this catalog or preset key. Repeat to select several.')
+    parser.add_argument('--bundle', action='store_true', help='Save ready default preset FITS and previews into the deploy image.')
     parser.add_argument('--force', action='store_true', help='Rediscover the archive even when the cache is current.')
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    result = refresh(args.field, force=args.force)
+    result = refresh(args.field, force=args.force, bundle=args.bundle)
     print(f"{result['status']} ({result['completed']}/{result['total']} fields)")
     return 0 if result['completed'] == result['total'] else 1
 

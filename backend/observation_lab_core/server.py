@@ -34,7 +34,8 @@ from .science import (PIPELINE, FLAG_SOURCE, fits_metadata, grid_for, inspect_pi
 from .archive import query as archive_query, download as archive_download, reduction_priority, write_json
 from backend.archive import CACHE as PLANET_CACHE, ROOT as PLANET_ROOT
 from backend.example_field import prepare_starter, prepared_starter
-from .featured_views import CACHE, INDEX, PRESET_FOV, cache_path, catalog_field, fields, historical_rows, locate, view_entry
+from .featured_views import (ALTERNATE_FRAME_LIMIT, CACHE, INDEX, PRESET_FOV, cache_path, catalog_field,
+                             default_preset, fields, historical_rows, locate, sample_frames, view_entry)
 from .science import FrameBuffer
 
 DATA = ROOT
@@ -165,6 +166,9 @@ def fetch_archive(options, progress, archive_rows=None, preview=None):
     if not rows:
         return [], 0, []
     failures = list(dict.fromkeys(row['discovery_warning'] for row in rows if row.get('discovery_warning')))
+    total = len(rows)
+    if archive_rows is None and not default_preset(catalog_field(None, options), options):
+        rows = sample_frames(rows)
     if len(rows) > 4:
         first = [rows[round(i * (len(rows) - 1) / 3)] for i in range(4)]
         selected = {(row['id'], row['detector']) for row in first}
@@ -181,11 +185,11 @@ def fetch_archive(options, progress, archive_rows=None, preview=None):
             except Exception as error:
                 failures.append(f"{pending[future]['id']}: {error}")
             if preview and not preview_shown and len(rows) > 6 and 2 <= len(records) <= 6:
-                preview_shown = preview(records, len(rows))
+                preview_shown = preview(records, total)
             progress(f'Downloading observation {done} of {len(rows)}')
     if archive_rows is None:
         imported_records(records)
-    return records, len(rows), failures
+    return records, total, failures
 
 
 def available(record):
@@ -393,10 +397,12 @@ def cached_featured_session(field, options, job_id):
               (options['end_mjd'] is None or f['mjd'] < options['end_mjd'])]
     if not frames:
         return None
+    limited = len(frames) > ALTERNATE_FRAME_LIMIT
+    frames = sample_frames(frames)
     path = CACHE / job_id
     path.mkdir(exist_ok=True)
     manifest.update(id=job_id, options=options, frames=[dict(frame, index=i) for i, frame in enumerate(frames)],
-                    archive_matches=None, matched_frames=len(frames), excluded_frames=[])
+                    archive_matches=None, matched_frames=len(frames), excluded_frames=[], limited=limited)
     atomic_json(path / 'manifest.json', manifest)
     return manifest
 
@@ -463,6 +469,11 @@ def create_session(job_id, payload, *, archive_rows=None):
         for record in sorted(records, key=reduction_priority, reverse=True):
             dedup.setdefault((record['id'], record['detector']), record)
         matched = len(dedup)
+        limited = False
+        if archive_rows is None and not default_preset(catalog_field(None, options), options):
+            limited = max(matched, archive_total or 0) > ALTERNATE_FRAME_LIMIT
+            ordered = sorted(dedup.values(), key=lambda r: (r['mjd'], r['detector'], r['id']))
+            dedup = {(r['id'], r['detector']): r for r in sample_frames(ordered)}
         key = session_key(options, list(dedup.values()))
         if not archive_requested or archive_error:
             path = VIEW_INDEX / f'{key}.json'
@@ -545,7 +556,7 @@ def create_session(job_id, payload, *, archive_rows=None):
         manifest = {
             'id': job_id, 'pipeline': PIPELINE, 'created_utc': Time.now().isot+'Z',
             'options': options, 'size': size, 'frames': frames, 'stretch': stretch,
-            'archive_matches': archive_total, 'limited': False, 'matched_frames': matched, 'failures': failures,
+            'archive_matches': archive_total, 'limited': limited and not mosaic_used, 'matched_frames': matched, 'failures': failures,
             'wider_views': wider_views, 'excluded_frames': excluded, 'archive_error': archive_error,
             'coverage_policy': {'minimum_footprint_percent': 99 if options['detector'] else 0,
                                 'minimum_valid_pixels_percent': 80 if options['detector'] else 0},

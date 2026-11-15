@@ -1,6 +1,9 @@
 """Prepared Lab views bundled with the app or saved on the runtime disk."""
 from functools import lru_cache
+import hashlib
 import json
+import shutil
+import uuid
 
 from backend.archive import CACHE as PLANET_CACHE, ROOT
 from .archive import reduction_priority, write_json
@@ -9,6 +12,7 @@ CACHE = PLANET_CACHE / 'observation-lab'
 BUNDLE = ROOT / 'backend/data/spherex-seed'
 INDEX = 'featured-views'
 PRESET_FOV = 10
+ALTERNATE_FRAME_LIMIT = 60
 NAMED_STARS = 50
 COLLECTION = ROOT / 'backend/observation_lab_core/data/collection.json'
 HISTORY = ROOT / 'backend/data/preset-archive-index.json'
@@ -32,23 +36,26 @@ def fields():
     return core + list(distinct.values())
 
 
-def view_entry(key):
-    for base in (CACHE, BUNDLE):
+def view_entry(key, bases=None):
+    candidates = []
+    for base in (CACHE, BUNDLE) if bases is None else bases:
         try:
             entry = json.loads((base / INDEX / f'{key}.json').read_text(encoding='utf-8'))
             if (base / entry['session'] / 'manifest.json').is_file():
-                return base, entry
+                candidates.append((base, entry))
         except (OSError, ValueError, KeyError):
             continue
-    return None, None
+    return max(candidates, key=lambda item: (item[1]['loaded'], item[1]['complete'], item[1]['updated']),
+               default=(None, None))
 
 
 def save_entry(base, field, manifest, complete):
     (base / INDEX).mkdir(parents=True, exist_ok=True)
     frames = manifest['frames']
-    old_base, old = view_entry(field['key'])
+    _, old = view_entry(field['key'], (base,))
     # Keep serving a larger usable view during failed or incomplete refreshes.
-    if not frames or old and not complete and old['loaded'] >= len(frames):
+    if not frames or old and (old['loaded'] > len(frames) or
+                              old['loaded'] == len(frames) and not complete):
         return
     counts = {str(d): 0 for d in range(1, 7)}
     for frame in frames:
@@ -59,6 +66,56 @@ def save_entry(base, field, manifest, complete):
                 complete=complete, updated=manifest['created_utc'],
                 thumbnail=frames[0]['preview'])
     write_json(base / INDEX / f"{field['key']}.json", info)
+
+
+def bundle_view(field, entry):
+    """Publish a verified view to the deploy image after copying its dependencies."""
+    _, previous = view_entry(field['key'], (BUNDLE,))
+    if previous and (previous['loaded'] > entry['loaded'] or
+                     previous['loaded'] == entry['loaded'] and not entry['complete']):
+        return
+    session = entry['session']
+    source = CACHE / session
+    manifest = json.loads((source / 'manifest.json').read_text(encoding='utf-8'))
+    BUNDLE.mkdir(parents=True, exist_ok=True)
+    for frame in [*manifest['frames'], *manifest.get('excluded_frames', [])]:
+        name = frame['fits_url'].removeprefix('/cache/')
+        destination = BUNDLE / name
+        if destination.is_file():
+            continue
+        origin = CACHE / name
+        sidecar = origin.with_suffix('.record.json')
+        metadata = json.loads(sidecar.read_text(encoding='utf-8'))
+        with origin.open('rb') as stream:
+            if hashlib.file_digest(stream, 'sha256').hexdigest() != metadata['sha256']:
+                raise ValueError(f'FITS checksum mismatch: {name}')
+        temporary = destination.with_suffix(f'.{uuid.uuid4().hex}.tmp')
+        try:
+            shutil.copyfile(origin, temporary)
+            write_json(destination.with_suffix('.record.json'), metadata)
+            temporary.replace(destination)
+        finally:
+            temporary.unlink(missing_ok=True)
+    staging = BUNDLE / f'{session}.{uuid.uuid4().hex}.tmp'
+    try:
+        if not (BUNDLE / session).exists():
+            shutil.copytree(source, staging)
+            staging.rename(BUNDLE / session)
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging)
+    save_entry(BUNDLE, field, manifest, entry['complete'])
+
+
+def default_preset(field, options):
+    return (bool(field and field['frames']) and options['fov'] == PRESET_FOV
+            and not (options['detector'] or options['start'] or options['end']))
+
+
+def sample_frames(rows, count=ALTERNATE_FRAME_LIMIT):
+    if len(rows) <= count:
+        return rows
+    return [rows[round(i * (len(rows) - 1) / (count - 1))] for i in range(count)]
 
 
 def catalog_field(field_key, options):

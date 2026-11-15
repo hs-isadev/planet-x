@@ -1133,12 +1133,13 @@ new ResizeObserver(draw).observe($("viewers"));
       const target = data.fields.find(field => field.key === params.get("field") ||
         (!params.has("field") && Math.abs(field.ra - Number(params.get("ra"))) < 0.00001 &&
          Math.abs(field.dec - Number(params.get("dec"))) < 0.00001));
-      if (!params.has("detector") && !params.has("start") && !params.has("end") && target) {
+      if (!params.has("detector") && !params.has("start") && !params.has("end") && target &&
+          (!params.has("fov") || Number(params.get("fov")) === target.fov)) {
         chooseField(target);
       } else {
         state.field = target?.key || "custom";
         state.title = target?.name || "Selected sky patch";
-        if (!target && !params.has("detector") && params.get("source") === "archive") setBand(0);
+        if (!params.has("detector") && (target || params.get("source") === "archive")) setBand(target?.detector ?? 0);
         await search(params.get("source") === "archive" && !target ? "archive" : "saved");
       }
     } else { $("fov").value="10"; chooseField(data.fields[0]); }
