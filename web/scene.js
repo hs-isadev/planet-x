@@ -2,7 +2,7 @@ import {icrsDirection,installSunSky} from './sun-sky.js';
 import {orbitPose,cruisePose,orbitDuration} from './camera-path.js';
 import {installEarthFlight} from './earth-flight.js';
 import {installContext} from './context-scene.js';
-import {installNavigation} from './navigation.js';
+import {installNavigation} from './navigation.js?v=solar-exit';
 import {flares,dust} from './activity.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -19,7 +19,7 @@ export class ObservatoryScene {
   this.renderer.domElement.addEventListener('pointerdown',e=>this.down=[e.clientX,e.clientY]);this.renderer.domElement.addEventListener('pointerup',e=>{if(this.sunSky||this.surface||this.journey||this.local||!this.down||Math.hypot(e.clientX-this.down[0],e.clientY-this.down[1])>5)return;let r=this.renderer.domElement.getBoundingClientRect();this.pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);let hits=this.ray.intersectObjects(this.items.filter(x=>x.model?.visible||x.mesh.visible).map(x=>x.hit),true);if(hits.length){let o=hits[0].object;while(o&&!o.userData.id)o=o.parent;if(o){this.onSelect(o.userData.id,true);return;}}const picked=this.catalogAtPointer(this.pointer);if(picked)window.dispatchEvent(new CustomEvent('catalog-context-select',{detail:picked}));});
   this.navKeys=new Set();this.activityEnabled=!this.reduced;this.activityTime=0;
   document.addEventListener('keydown',e=>{if(!e.ctrlKey&&!e.metaKey&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&['KeyW','KeyA','KeyS','KeyD'].includes(e.code)&&!document.body.classList.contains('observing')){this.navKeys.add(e.code);if(!this.surface)e.preventDefault();}});document.addEventListener('keyup',e=>this.navKeys.delete(e.code));window.addEventListener('blur',()=>this.navKeys.clear());
-  this.renderer.domElement.addEventListener('wheel',e=>{if(this.surface||this.journey)return;e.preventDefault();e.stopImmediatePropagation();if(this.sunSky)return;this.zoomBy(Math.exp(THREE.MathUtils.clamp(e.deltaY,-220,220)*.003));},{passive:false,capture:true});
+  this.renderer.domElement.addEventListener('wheel',e=>{if(this.surface||this.journey)return;e.preventDefault();e.stopImmediatePropagation();if(this.sunSky)return;const pixels=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?this.h:1);this.zoomBy(Math.exp(THREE.MathUtils.clamp(pixels,-220,220)*.003));},{passive:false,capture:true});
   this.controls.addEventListener('start',()=>{this.stopFlight();});new ResizeObserver(()=>this.resize()).observe($('stage'));this.resize();this.animate();
  }
  resize(){let r=$('stage').getBoundingClientRect();if(!r.width||!r.height)return;this.w=r.width;this.h=r.height;this.renderer.setSize(r.width,r.height);this.camera.aspect=r.width/r.height;this.camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(19))/Math.min(1,this.camera.aspect)));if(this.camera.aspect<1&&!this.sunSky)this.camera.setViewOffset(r.width,r.height,0,r.height*.17,r.width,r.height);else this.camera.clearViewOffset();this.camera.fov/=(this.viewFill||1);this.camera.updateProjectionMatrix();}
