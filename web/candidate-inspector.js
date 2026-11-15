@@ -38,7 +38,7 @@ export function strongestSpectralDip(points) {
 
 export function installCandidateInspector(view){
  const box=document.createElement('section');box.id='candidate-inspector';box.hidden=true;
- box.innerHTML='<h3>Candidate evidence</h3><p id="candidate-position" class="micro"></p><label>Observation date A<select id="spectrum-date-a"></select></label><label>Compare date B<select id="spectrum-date-b"></select></label><label class="check"><input id="spectrum-features" type="checkbox">Show reference-feature windows</label><label>Reference redshift <input id="spectrum-redshift" type="number" min="0" max="10" step="any" value="0"></label><label>Release <select id="spectrum-release"></select></label><label class="check"><input id="spectrum-review" type="checkbox">Show review-flagged measurements</label><p id="spectrum-coverage" class="micro" role="status"></p><p id="spectrum-dip" class="micro"></p><p class="micro">Reference windows are ±λ/(2R), calculated from nominal instrumental resolution, not measured absorption widths. H I reference uses air wavelength. Reference windows scale by (1 + z); the observed wavelengths stay fixed. These overlays cannot identify a chemical.</p><div id="feature-sources" class="micro"></div><label>Your review<select id="candidate-class"><option value="uncertain">Uncertain</option><option value="possible_motion">Possible motion</option><option value="brightness_change">Brightness change</option><option value="artifact">Artifact</option></select></label><p id="classification-help" class="micro"></p><button id="candidate-lightcurve" class="quiet">Measure same-band brightness history</button><button id="spectrum-export" class="quiet">Download spectrum CSV</button><button id="evidence-export" class="quiet">Export reproducible evidence card</button><details><summary>Measurements and source observations</summary><div style="max-height:260px;overflow:auto"><table id="spectrum-measurements"><thead><tr><th>Date / detector</th><th>λ / µm</th><th>Flux ± error / µJy</th><th>Quality</th></tr></thead><tbody></tbody></table></div></details>';
+ box.innerHTML='<h3>Candidate evidence</h3><p id="candidate-position" class="micro"></p><label>Observation date A<select id="spectrum-date-a"></select></label><label>Compare date B<select id="spectrum-date-b"></select></label><label class="check"><input id="spectrum-features" type="checkbox">Show reference-feature windows</label><label>Reference redshift <input id="spectrum-redshift" type="number" min="0" max="10" step="any" value="0"></label><label>Release <select id="spectrum-release"></select></label><label class="check"><input id="spectrum-review" type="checkbox">Show review-flagged measurements</label><p id="spectrum-coverage" class="micro" role="status"></p><h4>102 standard channels</h4><div id="spectral-channel-grid" class="spectral-channel-grid"></div><p id="spectral-channel-note" class="micro"></p><p class="micro"><a id="spectrum-mosaic" target="_blank" rel="noreferrer" hidden>Download the IRSA DR1 mosaic FITS for this position (~321 MB) ↗</a></p><p id="spectrum-dip" class="micro"></p><p class="micro">Reference windows are ±λ/(2R), calculated from nominal instrumental resolution, not measured absorption widths. H I reference uses air wavelength. Reference windows scale by (1 + z); the observed wavelengths stay fixed. These overlays cannot identify a chemical.</p><div id="feature-sources" class="micro"></div><label>Your review<select id="candidate-class"><option value="uncertain">Uncertain</option><option value="possible_motion">Possible motion</option><option value="brightness_change">Brightness change</option><option value="artifact">Artifact</option></select></label><p id="classification-help" class="micro"></p><button id="candidate-lightcurve" class="quiet">Brightness vs time for this source</button><button id="spectrum-export" class="quiet">Download spectrum CSV</button><button id="evidence-export" class="quiet">Export reproducible evidence card</button><details><summary>Measurements and source observations</summary><div style="max-height:260px;overflow:auto"><table id="spectrum-measurements"><thead><tr><th>Date / detector</th><th>λ / µm</th><th>Flux ± error / µJy</th><th>Quality</th></tr></thead><tbody></tbody></table></div></details>';
  $('spectrum').after(box);
  $('measure-center-spectrum').onclick=async()=>{
   if(!view.current()){view.toast('Load an observed frame to measure the spectrum.');return;}
@@ -126,7 +126,7 @@ export function installCandidateInspector(view){
  $('candidate-lightcurve').onclick=async()=>{
   const point=view.candidate?.normalized_position;
   if(!point)return;
-  $('lightcurve').closest('details').open=true;
+  $('brightness-history').open=true;
   await view.sourceLightcurve(...point);
  };
  const oldReset=view.reset.bind(view);view.reset=function(...args){this.atlasRedshift=0;full=null;comparison=null;anchor=null;box.hidden=true;this.candidate=null;return oldReset(...args);};
@@ -144,6 +144,36 @@ export function installCandidateInspector(view){
   $('spectrum-features').checked=true;
   render();this.draw();
  };
+ function renderChannels(grid,points){
+  const node=$('spectral-channel-grid'), note=$('spectral-channel-note');
+  node.replaceChildren();
+  const mosaic=$('spectrum-mosaic');mosaic.hidden=!grid?.mosaic_url;if(grid?.mosaic_url)mosaic.href=grid.mosaic_url;
+  if(!grid?.channels?.length){
+   note.textContent='The IRSA channel map is unavailable. Measured wavelengths can still be plotted.';
+   return;
+  }
+  const samples=new Map();
+  for(const p of points){
+   if(p.subchannel==null)continue;
+   const key=p.detector+':'+p.subchannel;
+   samples.set(key,[...(samples.get(key)||[]),p]);
+  }
+  for(let detector=1;detector<=6;detector++){
+   const row=document.createElement('div');row.className='spectral-channel-row';
+   const name=document.createElement('span');name.textContent='D'+detector;row.append(name);
+   for(const c of grid.channels.filter(x=>x.detector===detector)){
+    const matches=samples.get(detector+':'+c.subchannel)||[];
+    const cell=document.createElement(matches.length?'button':'span');
+    cell.className='spectral-channel'+(matches.length?' measured':'');
+    cell.title='D'+detector+' channel '+c.subchannel+' · '+c.wavelength_um.toFixed(3)+' µm · '+(matches.length?matches.length+' usable samples':'no usable sample');
+    cell.setAttribute('aria-label',cell.title);
+    if(matches.length){cell.type='button';cell.onclick=()=>view.selectExposure(matches[0].exposure_id);}
+    row.append(cell);
+   }
+   node.append(row);
+  }
+  note.textContent=samples.size+' / 102 standard channels have usable samples in this selection. Empty cells are unmeasured. Click a filled cell to open an exposure. The graph uses measured wavelengths. The DR1 mosaic coadds observations and is for wavelength context.';
+ }
  function render(){
   if(!full)return;const a=$('spectrum-date-a').value,b=$('spectrum-date-b').value;
   const release=$('spectrum-release').value;
@@ -154,6 +184,7 @@ export function installCandidateInspector(view){
   const usable=selected.filter(p=>Number.isFinite(p.wavelength_um)&&Number.isFinite(p.flux_ujy)&&Number.isFinite(p.error_ujy));
   const good=usable.filter(p=>p.status==='ok');
   const plot=$('spectrum-review').checked?usable:good;
+  renderChannels(full.spectral_grid,good);
   const c=$('spectrum');c.onclick=null;const ctx=c.getContext('2d');c.hidden=false;ctx.fillStyle='#10151c';ctx.fillRect(0,0,c.width,c.height);ctx.font='11px monospace';ctx.fillStyle='#dce4ee';
   const rows=$('spectrum-measurements').querySelector('tbody');rows.replaceChildren();
   for(const p of selected){const tr=document.createElement('tr');for(const text of [(p.date||'MJD '+p.mjd)+' / D'+p.detector,p.wavelength_um==null?'unavailable':p.wavelength_um.toFixed(4)+(p.passband_low_um==null?' (approx.)':' ['+p.passband_low_um.toFixed(3)+'–'+p.passband_high_um.toFixed(3)+']'),Number.isFinite(p.flux_ujy)?p.flux_ujy.toPrecision(4)+' ± '+p.error_ujy.toPrecision(3):'unavailable',(p.quality_flags||[]).join(', ')+' '+(p.reason||p.wavelength_calibration||'Conservative aperture mask')]){const td=document.createElement('td');td.textContent=text;tr.append(td);}if(p.source_url){const link=document.createElement('a');link.href=p.source_url;link.textContent='Original '+p.exposure_id;link.target='_blank';link.rel='noreferrer';tr.firstChild.append(document.createElement('br'),link);const jump=document.createElement('button');jump.className='quiet';jump.textContent='Show frame';jump.onclick=async()=>{view.stop();view.clearComputed();$('group').value='all';view.refreshFrames();const index=view.frames.findIndex(f=>f.index===p.frame);if(index>=0){view.position=index;await view.show();}};tr.firstChild.append(jump);}rows.append(tr);}

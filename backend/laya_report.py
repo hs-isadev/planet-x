@@ -74,6 +74,8 @@ def build_report(task, *, sample_limit=0):
         "schema_version": 1,
         "review_id": task["id"],
         "status": task.get("status"),
+        "stage": task.get("stage"),
+        "message": task.get("message"),
         "last_progress_at": task.get("last_progress_at"),
         "field": {k: task.get(k) for k in ("ra", "dec", "fov")},
         "coverage": {

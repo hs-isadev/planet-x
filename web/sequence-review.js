@@ -7,7 +7,9 @@ export function installSequenceReview(view){
  const availability=$('laya-availability');
  availability.closest('details').addEventListener('toggle',async event=>{
   if(!event.currentTarget.open)return;
-  try{const state=await view.api('/api/laya/status');availability.textContent=state.inference_verified?'Laya has completed inference on this server.':state.note;}
+  try{const state=await view.api('/api/laya/status');availability.textContent=state.inference_verified?'Laya has completed inference on this server.':state.note;
+   if(!state.installed){$('laya-sequence').disabled=true;$('laya-review').disabled=true;}
+  }
   catch(error){availability.textContent=error.message;}
  });
  const labels = {
@@ -19,18 +21,20 @@ export function installSequenceReview(view){
   uncertain: 'Uncertain',
  };
  async function showReport(r) {
-  if(!r?.batches_done)return;
+  if(!r?.id)return;
   const version=r.id+':'+r.batches_done+':'+r.status+':'+r.loaded;
   if(reportVersion===version)return;
   reportVersion=version;
   $('laya-guide').disabled=true;
   $('laya-findings').replaceChildren();
   $('laya-example-list').replaceChildren();
-  $('laya-report-status').textContent='Reading saved crop comparisons…';
+  $('laya-report-status').textContent='Reading the review receipt…';
   try{
    const result=await view.api('/api/laya/sequence/'+r.id+'/report?compact=true');
    if(reportVersion!==version)return;
-   $('laya-report-status').textContent=result.completed_comparisons+' overlapping crop comparisons. Visual suggestions require calibrated measurements to establish motion or variability.';
+   $('laya-report-status').textContent=result.completed_comparisons
+    ? result.completed_comparisons+' overlapping crop comparisons. Check measured centroids before treating a shift as motion.'
+    : '0 crops compared. '+(result.message||'There is no visual assessment for these exposures.');
    for(const [key,label] of Object.entries(labels)){
     const term=document.createElement('dt'),count=document.createElement('dd');
     term.textContent=label;count.textContent=result.classification_counts[key];$('laya-findings').append(term,count);
@@ -45,6 +49,13 @@ export function installSequenceReview(view){
      ' · '+(example.detector_group||'detector unavailable')+
      (example.baseline_days!=null?' · '+example.baseline_days.toFixed(1)+' days':'');
     row.append(title,detail);
+    const [lo,hi]=example.field_center_wavelength_um||[];
+    if(lo!=null&&hi!=null)detail.textContent+=' · '+lo.toFixed(3)+' / '+hi.toFixed(3)+' µm';
+    if(example.significant_residual_pixels!=null)detail.textContent+=' · '+example.significant_residual_pixels+' residual pixels';
+    if(example.exposure_ids.every(id=>view.job?.frames.some(f=>f.id===id&&f.status==='ready'))){
+     const blink=document.createElement('button');blink.type='button';blink.className='quiet';blink.textContent='Blink reported pair';
+     blink.onclick=()=>view.blinkExposures(example.exposure_ids);row.append(blink);
+    }
     for(const [index,id] of example.exposure_ids.entries()){
      if(!view.job?.frames.some(f=>f.id===id&&f.status==='ready'))continue;
      const button=document.createElement('button');
@@ -64,9 +75,10 @@ export function installSequenceReview(view){
  }
  report.addEventListener('toggle',()=>{if(report.open)showReport(view.sequence);});
  $('laya-guide').onclick=()=>window.dispatchEvent(new CustomEvent('explain-laya-report',{detail:{reviewId:activeId}}));
- function render(r){view.sequence={...r,jobId};$('laya-sequence-note').textContent=(r.ra!=null?'Review field '+r.ra.toFixed(5)+'°, '+r.dec.toFixed(5)+'° · ':'')+reviewProgress(r);$('laya-cancel').hidden=r.status!=='running';$('laya-coverage').href='/api/laya/sequence/'+r.id;$('laya-coverage').hidden=false;report.hidden=!r.batches_done;
+ function render(r){view.sequence={...r,jobId};$('laya-sequence-note').textContent=(r.ra!=null?'Review field '+r.ra.toFixed(5)+'°, '+r.dec.toFixed(5)+'° · ':'')+reviewProgress(r);$('laya-cancel').hidden=r.status!=='running';$('laya-coverage').href='/api/laya/sequence/'+r.id;$('laya-coverage').hidden=false;report.hidden=false;
+  if(r.status!=='running'||r.batches_done)report.open=true;
   $('laya-report-download').href='/api/laya/sequence/'+r.id+'/report';
-  if(report.open&&!report.hidden)showReport(r);
+  if(report.open)showReport(r);
  }
  function save(){try{localStorage.setItem('parallax-laya-review',JSON.stringify({id:activeId,jobId}));}catch{}}
  async function poll(token){if(token!==epoch||!activeId)return;try{const r=await view.api('/api/laya/sequence/'+activeId+'?summary=true');if(token!==epoch)return;render(r);if(r.status==='running')timer=setTimeout(()=>poll(token),2000);}catch(e){if(token!==epoch)return;$('laya-sequence-note').textContent='Review connection interrupted: '+e.message+' Completed crops remain saved. Retrying status…';timer=setTimeout(()=>poll(token),6000);}}
@@ -74,7 +86,7 @@ export function installSequenceReview(view){
   if(starting)return;if(!view.jobId){$('laya-sequence-note').textContent='Find observations first. Review starts when the archive has discovered exposures.';return;}
   starting=true;$('laya-sequence').disabled=true;
   try{const requestedJob=view.jobId,r=await view.api('/api/jobs/'+requestedJob+'/laya-sequence?summary=true',{method:'POST'});clearTimeout(timer);const token=++epoch;activeId=r.id;jobId=requestedJob;save();render(r);if(r.status==='running')timer=setTimeout(()=>poll(token),1000);}
-  catch(e){$('laya-sequence-note').textContent=e.message+' No AI result was substituted.';}
+  catch(e){$('laya-sequence-note').textContent=e.message;report.hidden=false;report.open=true;$('laya-report-status').textContent='No inference ran. '+e.message;$('laya-guide').disabled=true;}
   finally{starting=false;$('laya-sequence').disabled=false;}
  };
  $('laya-cancel').onclick=async()=>{if(!activeId)return;$('laya-cancel').disabled=true;try{await view.api('/api/laya/sequence/'+activeId+'/cancel',{method:'POST'});$('laya-sequence-note').textContent='Cancellation requested. Completed crops are saved.';clearTimeout(timer);timer=setTimeout(()=>poll(epoch),300);}catch(e){$('laya-sequence-note').textContent='Cancellation failed: '+e.message;}finally{$('laya-cancel').disabled=false;}};

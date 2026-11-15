@@ -228,9 +228,19 @@ def curve_group(job,g,row=None,x=None,y=None):
 
 def lightcurve_analysis(job,x=None,y=None,group=None):
     row=target_for(job) if x is None else None
-    groups=[g for g in group_frames(job['frames']) if len(g['frames'])>=2 and g['stackable'] and (not group or g['id']==group)]
-    if not groups:raise ValueError('Load repeated exposures in one 0.025 micrometer detector/wavelength group. No cross-band curve is substituted.')
-    frames={f['index']:f for f in job['frames']};results=[]
+    frames={f['index']:f for f in job['frames']};groups=[]
+    for g in group_frames(job['frames']):
+        if not g['stackable'] or (group and g['id']!=group):continue
+        by_release={}
+        for index in g['frames']:
+            release=frames[index].get('release')
+            if release:
+                key='dr1/qr3' if release in ('dr1','qr3') else release
+                by_release.setdefault(key,[]).append(index)
+        groups.extend(dict(g,frames=indices,release=release) for release,indices in by_release.items()
+                      if len({frames[i]['mjd'] for i in indices})>=2)
+    if not groups:raise ValueError('No repeated exposures in a comparable detector, calibration release and 0.025 µm wavelength group. Search the full archive for more dates.')
+    results=[]
     for g in groups:
         points,method=curve_group(job,g,row,x,y);good=[p for p in points if p['status']=='ok']
         span=np.ptp([p['mjd'] for p in good]) if len(good)>1 else 0
@@ -241,7 +251,7 @@ def lightcurve_analysis(job,x=None,y=None,group=None):
         chi=float(np.sum(((flux-mean)/err)**2)/(len(flux)-1))
     return dict(provenance='computed',source_pixels='observed',group=g,points=points,reduced_chi2_constant=chi,
         measurement_method=method,groups_checked=len(results),loaded=sum(f.get('status')=='ready' for f in job['frames']),discovered=job.get('discovered',len(job['frames'])),
-        note='Same detector and 0.025 micrometer wavelength group; statistical errors only. '+('A fixed common footprint of unflagged registered pixels excludes masked cores in every epoch; values are a brightness index, not total source flux. ' if method.startswith('common') else 'Cached native 18.45 arcsec aperture with local background. Missing native data are reported. ')+'No masked values are filled or interpolated. PSF, calibration, crowding and residual wavelength effects can mimic variability; this curve alone does not establish intrinsic stellar variability.')
+        note='Same detector, compatible calibration release and 0.025 micrometer wavelength group; statistical errors only. '+('A fixed common footprint of unflagged registered pixels excludes masked cores in every epoch; values are a brightness index, not total source flux. ' if method.startswith('common') else 'Cached native 18.45 arcsec aperture with local background. Missing native data are reported. ')+'No masked values are filled or interpolated. PSF, calibration, crowding and residual wavelength effects can mimic variability; this curve alone does not establish intrinsic stellar variability.')
 
 def install_time_routes(app,jobs,guard):
     @app.get('/api/jobs/{identity}/predicted-target')

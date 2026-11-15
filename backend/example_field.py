@@ -12,7 +12,7 @@ from astropy.io import fits
 from astropy.time import Time
 
 from .analysis import aligned_products
-from .archive import CACHE, ROOT, align_cutout, atomic_json, download_cutout, key_for
+from .archive import CACHE, ROOT, align_cutout, atomic_json, blink_levels, download_cutout, key_for
 
 DATA = ROOT/'backend/data'
 LOG = logging.getLogger(__name__)
@@ -24,16 +24,17 @@ def featured():
 
 
 def starter_path(key):
-    return CACHE/f'featured-{key}-v2.json'
+    return CACHE/f'featured-{key}-v3.json'
 
 
-def prepared_starter(key):
-    snapshot = starter_path(key)
+def prepared_starter(key, cache=None):
+    cache = CACHE if cache is None else cache
+    snapshot = cache / starter_path(key).name
     if not snapshot.is_file():
         return None
     try:
         cached = json.loads(snapshot.read_text(encoding='utf8'))
-        if all((CACHE/(f['cache_id']+'.'+ext)).is_file()
+        if all((cache/(f['cache_id']+'.'+ext)).is_file()
                for f in cached['frames'] if f['status']=='ready'
                for ext in ('npy','fits','npz')):
             return cached
@@ -68,7 +69,7 @@ def prepare_starter(key):
         return cached
     item = featured()[key]
     field = {name:item[name] for name in ('ra','dec','fov')}
-    frames, contrasts = [], {}
+    frames, contrasts, by_detector = [], {}, {}
     for row in sorted(item['frames'], key=lambda entry:entry['date']):
         archive_id = key_for('featured-v2:'+row['source_sha256'])
         target = CACHE/(archive_id+'.fits')
@@ -87,13 +88,14 @@ def prepare_starter(key):
             np.save(CACHE/(archive_id+'.npy'),values,allow_pickle=False)
             frame.update(metadata,status='ready',stage='prepared',transport=transport)
             band = 'D'+str(row['detector'])
-            if band not in contrasts:
-                low, high = np.nanpercentile(values,[1,99.7])
-                contrasts[band] = dict(black=float(low),white=float(max(high,low+1e-8)),
-                                       reference_frame=frame['index'],unit=metadata['unit'])
+            by_detector.setdefault(band,[]).append((values,frame))
         except (OSError, ValueError, KeyError) as exc:
             LOG.warning('Featured exposure unavailable: %s (%s)', row['date'], type(exc).__name__)
             frame.update(status='error',error='Archived starter exposure unavailable')
+    for band,pairs in by_detector.items():
+        low,high = blink_levels(*(values for values,_ in pairs))
+        first = pairs[0][1]
+        contrasts[band] = dict(black=low,white=high,reference_frame=first['index'],unit=first['unit'])
     if not contrasts:
         raise ValueError('The selected archive observations could not be loaded.')
     if key=='vesta':

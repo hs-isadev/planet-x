@@ -18,7 +18,7 @@ from fastapi.responses import Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from astroquery.simbad import Simbad
-from .archive import CONFIG, CACHE, ROOT, discover, fetch_frame, atomic_json, prune_cache, ensure_frame_files, key_for
+from .archive import CONFIG, CACHE, ROOT, discover, fetch_frame, atomic_json, prune_cache, ensure_frame_files, key_for, blink_levels
 from .coordinates import parse_coordinates
 
 app = FastAPI(title="Planet X / SPHEREx Observatory", version="1.0.0")
@@ -44,14 +44,71 @@ from .partner_data import install_partner_routes
 install_partner_routes(app)
 
 
+FEATURED_SESSIONS = {
+    'vesta': ('Vesta · asteroid motion', 'e73b15d70f48408b9b7932aee4bb2c59'),
+    'barnard': ('Barnard’s Star', 'd1fa8853f3c340c8822a3a48e80ba444'),
+    'epsilon-indi': ('Epsilon Indi B', '4d9dd1c752e84d27946cad613ad1c1f4'),
+    'wise-0855': ('WISE 0855', '7a66c2411dd440758a1336a839d8bde7'),
+    'rw-aur': ('RW Aurigae', 'daccb2b332db4c15867d0027796672a3'),
+    'r-dra': ('R Draconis', '4ac83d693bac4c97968f8326d99f485c'),
+}
+
+
 @app.get('/api/examples/{key}')
 @app.post('/api/examples/{key}')
 def open_example(key: str):
+    identity = 'example-'+key
+    if key in FEATURED_SESSIONS:
+        title, sid = FEATURED_SESSIONS[key]
+        manifest_file = CACHE / 'observation-lab' / sid / 'manifest.json'
+        if manifest_file.is_file():
+            session_data = json.loads(manifest_file.read_text())
+            frames = []
+            for idx, f in enumerate(session_data.get('frames', [])):
+                wave = f.get('wavelength') or f.get('wavelength_um')
+                frame_entry = dict(
+                    f,
+                    id=f.get('id', f'frame-{idx}'),
+                    index=idx,
+                    status='ready',
+                    date=f.get('timestamp') or f.get('date') or '',
+                    mjd=float(f.get('mjd') or 0.0),
+                    detector=int(f.get('detector') or session_data['options'].get('detector', 3)),
+                    band=f.get('band') or f"SPHEREx-D{f.get('detector', 3)}",
+                    release=f.get('release', 'QR2'),
+                    wavelength_um=wave,
+                    cache_id=f.get('id', f'frame-{idx}'),
+                    preview=f.get('preview') or f"/cache/{sid}/{idx}.png",
+                    session_dir=sid
+                )
+                frames.append(frame_entry)
+            det = session_data['options'].get('detector', 3)
+            contrast = session_data.get('stretch', {}).get('contrast') or {'black': 0.0, 'white': 1.0}
+            with GUARD:
+                JOBS[identity] = {
+                    'id': identity,
+                    'example': key,
+                    'source': 'example',
+                    'title': title,
+                    'status': 'complete',
+                    'stage': 'complete',
+                    'created': time.monotonic(),
+                    'ra': session_data['options']['ra'],
+                    'dec': session_data['options']['dec'],
+                    'fov': session_data['options']['fov'],
+                    'frames': frames,
+                    'session_dir': sid,
+                    'contrast': contrast,
+                    'contrasts': {f'D{det}': contrast},
+                    'discovery_complete': True,
+                    'discovery_note': f"Complete multi-frame observation sequence: {len(frames)} frames loaded."
+                }
+            return dict(id=identity, job=job_status(identity))
+
     from .example_field import featured, prepare_starter, prepared_starter
     item = featured().get(key)
     if item is None:
         raise HTTPException(404,'Unknown featured target.')
-    identity = 'example-'+key
     with GUARD:
         current = JOBS.get(identity)
         if not current or current['status']=='error':
@@ -171,12 +228,12 @@ def run_job(job, resume=False):
         for f in job['frames']:
             band='D'+str(f.get('detector'))
             if f['status']=='ready' and band not in job['contrasts']:
-                a=np.load(CACHE/(f['cache_id']+'.npy'),allow_pickle=False);lo,hi=np.nanpercentile(a,[1,99.7])
+                a=np.load(CACHE/(f['cache_id']+'.npy'),allow_pickle=False);lo,hi=blink_levels(a)
                 job['contrasts'][band]=dict(black=float(lo),white=float(max(hi,lo+1e-8)),reference_frame=f['index'],unit=f['unit'])
         if job['contrast'] is None:
             cached=next((f for f in job['frames'] if f['status']=='ready'),None)
             if cached:
-                a=np.load(CACHE/(cached['cache_id']+'.npy'),allow_pickle=False);lo,hi=np.nanpercentile(a,[1,99.7])
+                a=np.load(CACHE/(cached['cache_id']+'.npy'),allow_pickle=False);lo,hi=blink_levels(a)
                 with GUARD:job['contrast']=dict(black=float(lo),white=float(max(hi,lo+1e-8)),reference_frame=cached['index'],unit=cached['unit'])
         def load(frame):
             with GUARD:
@@ -192,13 +249,13 @@ def run_job(job, resume=False):
                 with GUARD:
                     band='D'+str(frame.get('detector'))
                     if band not in job['contrasts']:
-                        a=np.load(CACHE/(identity+'.npy'),allow_pickle=False);low,high=np.nanpercentile(a,[1,99.7])
+                        a=np.load(CACHE/(identity+'.npy'),allow_pickle=False);low,high=blink_levels(a)
                         job['contrasts'][band]=dict(black=float(low),white=float(max(high,low+1e-8)),reference_frame=frame['index'],unit=metadata['unit'])
                     # A physical surface-brightness range is locked for each detector.
                     # It never auto-rescales between frames while prefetching.
                     if job["contrast"] is None:
                         arr = np.load(CACHE / (identity + ".npy"), allow_pickle=False)
-                        lo, hi = np.nanpercentile(arr, [1, 99.7])
+                        lo, hi = blink_levels(arr)
                         if hi <= lo:
                             hi = lo + 1
                         job["contrast"] = {"black": float(lo), "white": float(hi), "reference_frame": frame["index"], "unit": metadata["unit"]}
@@ -376,6 +433,20 @@ def frame_png(identity: str, index: int, cmap: str = "infrared", stretch: str = 
         frame = job["frames"][index]
         if frame["status"] != "ready":
             raise HTTPException(425, "Frame is not ready yet.")
+        session_dir = frame.get('session_dir') or job.get('session_dir')
+        if session_dir:
+            preview_file = CACHE / 'observation-lab' / session_dir / f'{index}.png'
+            if preview_file.is_file():
+                return FileResponse(str(preview_file), media_type='image/png')
+        if frame.get('preview'):
+            clean_path = frame['preview'].lstrip('/')
+            if clean_path.startswith('cache/'):
+                clean_path = clean_path[6:]
+            preview_file = CACHE / clean_path
+            if not preview_file.is_file():
+                preview_file = CACHE / 'observation-lab' / clean_path
+            if preview_file.is_file():
+                return FileResponse(str(preview_file), media_type='image/png')
     try:
         if not (CACHE / (frame["cache_id"] + ".npy")).exists():
             ensure_frame_files(frame,job)
@@ -387,7 +458,7 @@ def frame_png(identity: str, index: int, cmap: str = "infrared", stretch: str = 
         try:
             values=np.load(file,allow_pickle=False)
             if not np.isfinite(values).any():raise HTTPException(422,'No usable observed pixels.')
-            low,high=np.nanpercentile(values,[1,99.7])
+            low,high=blink_levels(values)
         except FileNotFoundError:raise HTTPException(410,'Cached frame expired; reload this field.')
         with GUARD:
             band='D'+str(frame.get('detector'))
@@ -418,7 +489,7 @@ def frame_png(identity: str, index: int, cmap: str = "infrared", stretch: str = 
     norm = np.clip((np.nan_to_num(arr, nan=lo) - lo) / (hi - lo), 0, 1)
     if stretch == "sqrt": norm = np.sqrt(norm)
     elif stretch == "log": norm = np.log1p(100 * norm) / np.log(101)
-    elif stretch == "asinh": norm = np.arcsinh(10 * norm) / np.arcsinh(10)
+    elif stretch == "asinh": norm = np.arcsinh(5 * norm) / np.arcsinh(5)
     if cmap == "infrared":
         from matplotlib.colors import LinearSegmentedColormap
         color = LinearSegmentedColormap.from_list("infrared", ["#050914", "#3e124f", "#a32b72", "#e77352", "#ffd18a", "#fff4d8"])
@@ -491,5 +562,21 @@ if DIST.exists():
             response = await super().get_response(path, scope)
             if Path(path).suffix in (".js", ".css", ".html") or path in ("", "."):
                 response.headers["Cache-Control"] = "no-cache"
+            elif path.startswith("assets/") and Path(path).suffix in (".png", ".jpg", ".glb"):
+                response.headers["Cache-Control"] = "public, max-age=86400"
             return response
+    from .observation_lab import install_lab_routes
+    install_lab_routes(app)
+
+    @app.get('/cache/{path:path}', include_in_schema=False)
+    def serve_cache_fallback(path: str):
+        from fastapi.responses import FileResponse
+        p = CACHE / 'observation-lab' / path
+        if p.is_file():
+            return FileResponse(p)
+        p2 = CACHE / path
+        if p2.is_file():
+            return FileResponse(p2)
+        raise HTTPException(404)
+
     app.mount("/", FreshStaticFiles(directory=DIST, html=True), name="frontend")

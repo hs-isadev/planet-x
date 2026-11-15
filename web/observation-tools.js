@@ -129,7 +129,7 @@ export function installObservationTools(view) {
   $('detector-mask-note').textContent = '';
   return reset(...args);
  };
- $('ephemeris-clear').onclick = () => { clearTrack(); view.draw(); };
+ $('ephemeris-clear').onclick = () => { clearTrack(); view.marks=[]; $('measurement-note').textContent='Track and marks cleared.'; view.draw(); };
  $('ephemeris-start').onclick = async () => {
   if (!view.jobId || !view.current()) { status.textContent = 'Load a SPHEREx sequence first.'; return; }
   const designation = $('ephemeris-object').value.trim();

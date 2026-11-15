@@ -1,8 +1,43 @@
-# Parallax — Planet X / SPHEREx Observatory
+# Parallax — Planet X / SPHEREx Celestial Workbench & Observatory
 
-A science-first viewer for real SPHEREx infrared observations. Enter RA/Dec or select Barnard's Star, Epsilon Indi B, WISE 0855, RW Aurigae or R Draconis. The first screen is the science viewer; optional catalog/ephemeris 3D context is loaded separately. This is an independent project, not an official NASA service.
+[![Live App](https://img.shields.io/badge/Render-Live%20Demo-brightgreen?logo=render)](https://parallax-ompf.onrender.com)
+[![Video Demo](https://img.shields.io/badge/YouTube-Video%20Demo-red?logo=youtube)](https://youtu.be/fKCxVyTCq3k)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-See [the 14-item follow-up](docs/ISSUE_STATUS.md) and [the November 11 pipeline validation](docs/PIPELINE_VALIDATION.md) for current live browser, archive and model evidence. [Earlier acceptance evidence](docs/CURRENT_STATUS.md) covers the previous release.
+- **Live Application:** [https://parallax-ompf.onrender.com](https://parallax-ompf.onrender.com)
+- **Video Walkthrough & Demo:** [https://youtu.be/fKCxVyTCq3k](https://youtu.be/fKCxVyTCq3k)
+
+---
+
+## Project Overview
+
+**Parallax** is a science-first observatory and interactive workbench designed for exploring real infrared observations from **NASA's SPHEREx mission** (*Spectro-Photometer for the History of the Universe, Epoch of Reionization, and Ices Explorer*).
+
+The application bridges high-cadence native astronomical datasets with modern 3D celestial visualization:
+- **Real Calibrated Data:** Direct integration with Caltech/IPAC IRSA for released Level 2 spectral-image data (QR2, QR3, and DR1).
+- **Time-Series Playback & Asteroid Kinematics:** Chronological multi-frame sequence inspection (40 to 114 frames per target) with JPL Horizons ephemeris centroid tracking.
+- **Instant Point-Source Spectroscopy:** ePSF forced photometry across all 6 SPHEREx detectors ($0.75\,\mu\text{m}$ to $5.00\,\mu\text{m}$) with automated chemical screening for ice and molecular absorption/emission features ($\text{H}_2\text{O}$, $\text{PAH}\ 3.3\,\mu\text{m}$, $\text{CH}_4$, $\text{CH}_3\text{OH}$, $\text{CO}_2$, $\text{CO}$).
+- **3D Celestial Context:** Interactive 3D viewpoint from Earth/Sun to the outer Solar System, integrating Gaia DR3 3D astrometry, AllWISE infrared cross-checks, and NEOSSat optical footprints.
+
+> [!NOTE]
+> This is an independent open-source science workbench and is not an official NASA service.
+
+---
+
+## Featured Observation Targets
+
+The workbench comes with pre-compiled, verified multi-frame sequences and calibrated spectra for six primary targets:
+
+| Target | Category | SPHEREx Detector | Frames | Wavelength Span | Science Highlights |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **Vesta** | Main-Belt Asteroid | D3 | **58** | $1.63\text{--}2.41\,\mu\text{m}$ | Rapid orbital motion tracked against JPL Horizons ephemerides; 349 cataloged spectral points. |
+| **Barnard’s Star** | High Proper-Motion Star | D3 | **55** | $1.63\text{--}2.41\,\mu\text{m}$ | Fast stellar proper motion ($\approx 10.4''/\text{yr}$); 361 spectral points. |
+| **Epsilon Indi B** | Cold Brown Dwarf | D3 | **72** | $1.63\text{--}2.41\,\mu\text{m}$ | Bright infrared brown dwarf binary; 447 spectral points. |
+| **WISE 0855** | Sub-Zero Brown Dwarf | D6 | **42** | $4.42\text{--}5.00\,\mu\text{m}$ | Demanding cold brown dwarf target; 256 spectral points. |
+| **RW Aurigae** | Young Variable Star | D3 | **51** | $1.63\text{--}2.41\,\mu\text{m}$ | Circumstellar dusty disk with $3.3\,\mu\text{m}$ PAH emission candidate; 333 spectral points. |
+| **R Draconis** | Mira Variable Star | D3 | **114** | $1.63\text{--}2.41\,\mu\text{m}$ | Pulsating variable star observed across hundreds of orbits near the ecliptic pole; 2,483 spectral points. |
+
+---
 
 ## SPHEREx view
 
@@ -57,7 +92,7 @@ A persistent Solar System button, a stellar-strip home entry and a target-menu e
 
 Ten selected major moons are present: Moon, Phobos, Deimos, Io, Europa, Ganymede, Callisto, Titan, Titania and Triton. JPL mean orbital scales/periods and radii are attributed in web/assets/moons.json. Display radii and separations are enlarged independently. Circular layouts/phases are illustrative, not satellite ephemerides or a complete moon census.
 
-The catalog backdrop includes exoplanet host stars and 240 additional HYG 4.1 records with Hipparcos, Yale Bright Star Catalog or Gliese identifiers. Search names or filter sources in Satellite View. The HYG subset is attributed and licensed CC BY-SA 4.0 in the assets directory. It is an incomplete sample; point sizes are adapted for visibility, not measured brightness. Plasma, faster sunspots, a faint white coronal illustration, magnetic loops, dust and travel streaks are computed illustrations, not observed events or measured surface maps. Planet rotation is independently accelerated for visibility rather than tied to orbital playback. The Solar System loading cover waits for requested appearance maps and models to settle. The surrounding catalog backdrop is rendered in one batch and its displayed stars can be selected. Closeups with unknown temperature carry a persistent warning that appearance may be inaccurate. Unknown temperature does not supply an invented temperature or reliable distance.
+The catalog backdrop includes exoplanet host stars and 240 additional HYG 4.1 records with Hipparcos, Yale Bright Star Catalog or Gliese identifiers. Search names or filter sources in Satellite View. The HYG subset is attributed and licensed CC BY-SA 4.0 in the assets directory. It is an incomplete sample; point sizes are adapted for visibility, not measured brightness. Plasma, faster sunspots, a faint white coronal illustration, magnetic loops, dust and travel streaks are computed illustrations, not observed events or measured surface maps. Planet rotation is independently accelerated for visibility rather than tied to orbital playback. The Solar System opens when its focused body is ready. Other appearance maps and models continue loading in the background. The surrounding catalog backdrop is rendered in one batch and its displayed stars can be selected. Closeups with unknown temperature carry a persistent warning that appearance may be inaccurate. Unknown temperature does not supply an invented temperature or reliable distance.
 
 ## Laya analysis report and Groq guide
 
@@ -173,3 +208,16 @@ Open **Track a moving source** in SPHEREx and choose **Load archived Vesta examp
 **Forced ePSF** uses released wavelength, solid-angle and ePSF calibration products for fixed-position spectra. It evaluates up to 64 evenly spaced loaded exposures, retains negative measurements, and marks poor fits for review. The spectrum panel can separate releases and shift reference windows by a user-specified redshift. Click a spectrum or light-curve point to see its underlying exposure.
 
 In **3D Context → Scale / orbit → Physical atlas**, browse catalog distances from Gaia DR3 or DESI DR1. Use the Gaia year slider to project cataloged 3D velocities, and click a point to inspect its parameters, radial uncertainty, or SPHEREx sky field. The atlas uses incomplete catalog samples. [Data sources and credits](web/assets/atlas-credits.txt).
+
+
+### Comparison and review notes
+
+- **Blink images.** Same-exposure checks on the two Vesta FITS files returned a median absolute difference below 0.00000001 MJy/sr wherever both viewers displayed the same registered pixel. The main differences were the display stretch and mask. The viewer uses the teammate's grayscale asinh transfer function. Featured frames share one percentile stretch per detector, and archive searches lock a detector's stretch when its first cutout is ready. Only trustworthy display pixels are brightened, and native FITS measurements use their own quality checks.
+- **Brightness over time.** Use **Spectrum & absorption**, select the source, then **Brightness vs time for this source**. This plot needs repeated observations from the same detector, compatible calibration release and a narrow 0.025 µm wavelength group. For displacement use **Track source** or **Compare dates**.
+- **Spectral channels.** The coverage grid uses IRSA's DR1 native detector geometry and standard 102-channel table. The fitted spectrum keeps each exposure's measured wavelength and uncertainty. A blank cell is missing usable data, and the DR1 mosaic download is a coadd for reference, not a source of temporal evidence. See the [IRSA data product guide](https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-products/) and [DR1 mosaic notebook](https://caltech-ipac.github.io/irsa-tutorials/spherex-hipscube/).
+- **Laya review.** The report opens for completed and failed runs. Zero crops means there was no model assessment. Completed comparisons provide crop categories, exposure dates, detector, and residual counts. Use **Blink reported pair** and native tracking to check a suggested shift. Standard Render requires a separate Laya runtime to run model inference.
+
+
+### SPHEREx workspace integration
+
+The main **SPHEREx View** now runs the teammate's Observation Lab, with its own image rendering, track fits, spectrum and data-quality controls. A 10′ field opens on the archived Vesta demo, which keeps both saved frames inside the lab's coverage threshold. **Planet X analysis tools** opens the existing investigator workspace for 102-channel coverage, paired-epoch comparisons, cross-mission evidence and optional Laya. Satellite View and 3D Context share a catalog augmented with all 5,000 teammate Gaia DR3 rows. The five challenge presets open bundled IRSA FITS cutouts and generated PNG previews immediately. The Render cache worker updates them with all available DR1 and QR3 observations and prepares starter observations for nearby and bright stars. See [Deploying on Render](docs/RENDER_DEPLOYMENT.md).

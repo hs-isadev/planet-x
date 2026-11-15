@@ -1,6 +1,8 @@
 const SOURCES = [
  ['NASA/IPAC SPHEREx archive','https://irsa.ipac.caltech.edu/Missions/spherex.html'],
  ['SPHEREx Python tutorials','https://caltech-ipac.github.io/irsa-tutorials/spherex/'],
+ ['IRSA spectral calibration and 102-channel products','https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-products/'],
+ ['IRSA tutorial: extract a spectrum from the DR1 mosaic','https://caltech-ipac.github.io/irsa-tutorials/spherex-hipscube/'],
  ['Gaia DR3 at MAST','https://archive.stsci.edu/missions-and-data/gaia'],
  ['Canadian Astronomy Data Centre','https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/'],
  ['CSA NEOSSat mission','https://www.asc-csa.gc.ca/eng/satellites/neossat/'],

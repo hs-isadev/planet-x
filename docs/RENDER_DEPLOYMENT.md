@@ -13,7 +13,7 @@ Planet X is a FastAPI web service with a Dockerfile. Render provides the listeni
 | Render field | Value |
 | --- | --- |
 | Name | `planet-x-observatory` (or any available name) |
-| Branch | `render-preview` |
+| Branch | `final-parallex-preview` |
 | Language | **Docker** |
 | Region | Choose a region close to your audience |
 | Root Directory | Leave blank |
@@ -29,7 +29,7 @@ Choose **Deploy Web Service**. Watch **Logs** and **Events** until the deploy is
 ## 3. Verify the public site
 
 1. Open the dashboard's assigned `onrender.com` URL. Add `/api/health` and verify the response reports `"status": "ok"` and `"data_source": "IRSA SPHEREx"`.
-2. Open the main page and load a SPHEREx field. The hosted service starts with an empty cache. Confirm the frame count, dates, and observed cutouts appear.
+2. Open the main page and load a SPHEREx field. Open a preset. Its bundled previews and FITS are already available once the deploy is up. Check the frame count and dates, then open a FITS download.
 3. To test pinning, select a body in **3D Context**, then select a star in **Satellite View** and return to **3D Context**. Only the Satellite selection creates a reticle.
 4. Share the `onrender.com` address once these checks pass.
 
@@ -39,14 +39,16 @@ If the build cannot find the Dockerfile, confirm the branch and leave Root Direc
 
 In the Render service, open **Environment → Add Environment Variable**. Set the key name to `GROQ_API_KEY` and enter your value there. Choose **Save and deploy** to apply it to the running service. To choose a model, set optional `GROQ_MODEL`. The app defaults to `openai/gpt-oss-20b` and falls back to `openai/gpt-oss-120b` when the preferred model is unavailable or rate-limited. An optional comma-separated `GROQ_FALLBACK_MODELS` adds alternatives. Locally, copy `.env.example` to `.env` and add the value after `GROQ_API_KEY=`. Git and Docker exclude the local secret file.
 
-You can also use **New → Blueprint** and point Render at the repository and `render-preview` branch. Render reads `render.yaml` and prompts you for the Groq key. Use the manual Web Service setup if you want to deploy without supplying a key.
+You can also use **New → Blueprint** and point Render at the repository and `final-parallex-preview` branch. Render reads `render.yaml` and prompts you for the Groq key. Use the manual Web Service setup if you want to deploy without supplying a key.
 
-## Storage and local features
+## Warm and retain the SPHEREx cache
 
-- The Free instance can spin down when idle and its filesystem is temporary. Your laptop's saved SPHEREx archive stays local. The hosted app fetches cutouts on demand.
-- For a lasting cloud cache, a paid service can mount a disk at `/var/data`. Set `SPHEREX_STORAGE_ROOT=/var/data`. This saves future cloud downloads on the disk.
-- The Free Render image does not include the Laya runtime or checkpoint. Use Laya on the local app with `python scripts/setup_laya.py` and restart, or use a host that can run the model. The installer and app both accept `LAYA_RUNTIME_DIR` for separately provisioned model files. The hosted app can still use real IRSA imagery, measured tracks, and deterministic red change overlays.
+1. Commit the source changes and `backend/data/spherex-seed/` to your Render deploy branch. The directory includes verified native-pixel FITS cutouts, chronological manifests and PNG previews. Docker copies these files into every build.
+2. For the full preset archive and nearby-star cache across restarts, attach a persistent disk to the running **paid** Render web service at `/var/data`. Set `SPHEREX_STORAGE_ROOT=/var/data` and `SPHEREX_PREWARM=1` in **Environment** and deploy. Existing web services need these environment variables added in the dashboard. Both the Dockerfile and the Blueprint enable warmup by default.
+3. Open `/observation-lab/api/library` on the deployed site. Each field reports its ready frame count and whether the archive snapshot is complete. The `sync` object reports discovery and failures as the worker progresses. The worker retries incomplete IRSA searches, reuses verified FITS on disk, and eventually replaces the bundled subset. It prepares four starter exposures per nearby/bright field and every discovered exposure across all six detectors for the five challenge presets. Footprint or download failures are reported separately.
+4. To force rediscovery from a paid Render service shell, run `python -m scripts.prefetch_lab --force`. Add `--field barnard` to refresh one field. An active automatic warmup already serves this purpose and keeps the disk locked while it writes. Render build and pre-deploy commands cannot write to the attached disk.
+5. In SPHEREx View, **Search IRSA** queries the archive even when the field has a snapshot. It can show a preview while the rest downloads. For a previously indexed field the app can fetch verified native pixels from the AWS-hosted SPHEREx public mirror if IPAC is unavailable. A completely new field still needs an archive search or an already indexed detector footprint.
 
-[Render deploy walkthrough](https://render.com/docs/your-first-deploy) · [Docker settings](https://render.com/docs/docker) · [Secrets](https://render.com/docs/configure-environment-variables) · [Free instance limits](https://render.com/docs/free)
+Free Render serves the bundled archive from the Docker image, loses additional downloaded data on restart and can spin down. The warm service can serve preset previews immediately even before its first IRSA query finishes. Keep the five target snapshots and their FITS files together when transferring the project.
 
-During a Docker build, the server tries for up to 90 seconds to warm up to 22 specific IRSA cutouts across six featured fields. The cache is baked into that deploy’s image. If IRSA is unavailable, a featured field retries when opened. Custom RA/Dec searches still query the archive.
+[Render persistent disks](https://render.com/docs/disks) · [Render free-instance limits](https://render.com/docs/free) · [IRSA archive access](https://irsa.ipac.caltech.edu/spherex-archive-documentation/spherex-data-access/)

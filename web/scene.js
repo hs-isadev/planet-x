@@ -1,7 +1,7 @@
 import {icrsDirection,installSunSky} from './sun-sky.js';
 import {orbitPose,cruisePose,orbitDuration} from './camera-path.js';
 import {installEarthFlight} from './earth-flight.js';
-import {installContext} from './context-scene.js';
+import {installContext} from './context-scene.js?v=gaia-host';
 import {installNavigation} from './navigation.js?v=solar-exit';
 import {flares,dust} from './activity.js';
 import * as THREE from 'three';
@@ -26,13 +26,15 @@ export class ObservatoryScene {
  stopFlight(){if(this.pan){this.pan.done(false);this.pan=null;}if(this.flight?.baseFov){this.camera.fov=this.flight.baseFov;this.camera.updateProjectionMatrix();}this.renderer.domElement.style.transform='';this.renderer.domElement.style.filter='';if(this.flight?.done)this.flight.done(false);this.flight=null;}
  clear(){this.leaveSunSky();this.beaconLabel?.remove();this.beaconLabel=null;this.earthBeacon=null;this.stopFlight();this.exitLocal();this.version=(this.version||0)+1;this.items.forEach(x=>x.label.remove());this.content.traverse(o=>{o.geometry?.dispose();if(o.material)for(let m of Array.isArray(o.material)?o.material:[o.material]){m.map?.dispose();m.dispose();}});this.content.clear();this.content.visible=true;this.orbits=new THREE.Group();this.content.add(this.orbits);this.items=[];}
  label(data,pos,radius,mesh){let label=document.createElement('span');label.className='object-label';label.textContent=data.name;label.setAttribute('aria-hidden','true');$('labels').append(label);this.items.push({data,pos,radius,mesh,hit:mesh,label});}
- async solar(data){
+ async solar(data,{focusAsset}={}){
   this.clear();this.solarData=data;
   if(!data.size_layout){this.physicalSolar=data;this.orbitDays=0;this.orbitEpoch=data.date;}
   this.mode='solar';this.ambient.intensity=.16;this.light.visible=true;
   this.controls.maxDistance=200;this.controls.minDistance=.000001;
-  const version=this.version,tex=new THREE.TextureLoader(),gltf=new GLTFLoader(),assets=[];
-  for(const d of data.objects){
+  const version=this.version,tex=new THREE.TextureLoader(),gltf=new GLTFLoader(),assets=[],focused=[];
+  const ordered=focusAsset?[...data.objects].sort((a,b)=>Number(b.id===focusAsset)-Number(a.id===focusAsset)):data.objects;
+  for(const d of ordered){
+   const begin=assets.length;
    const p=this.vector(d.xyz_au),factor=d.display_radius_factor??(d.id==='sun'?16:250),r=d.radius_km/149597870.7*factor;
    d.display_factor=factor;
    const material=d.id==='sun'?photosphere(d):new THREE.MeshStandardMaterial({color:0xdad9d4,roughness:1,metalness:0});
@@ -52,10 +54,12 @@ export class ObservatoryScene {
     group.position.copy(p);group.userData.id=d.id;group.rotation.y=mesh.rotation.y;this.content.add(group);mesh.visible=false;
     const item=this.items.find(i=>i.data===d);if(item){item.hit=group;item.model=group;}
    }).catch(()=>{d.asset_error='NASA model unavailable. Neutral geometry shown.';}));
+   if(d.id===focusAsset)focused.push(...assets.slice(begin));
    if(d.orbit_au){const geometry=new THREE.BufferGeometry().setFromPoints(d.orbit_au.map(a=>this.vector(a))),orbit=new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x6b7988,transparent:true,opacity:.4}));orbit.userData.body=d.id;this.orbits.add(orbit);}
   }
   this.orbits.visible=this.showPaths;
-  this.assetsReady=Promise.allSettled(assets);await this.assetsReady;
+  this.assetsReady=Promise.allSettled(assets);
+  await (focusAsset?Promise.allSettled(focused):this.assetsReady);
  }
  stars(data,fit=true){this.clear();this.starsData=data;this.mode='stars';this.ambient.intensity=0;this.light.visible=false;this.controls.maxDistance=10000;this.controls.minDistance=.0000001;let sun={id:'origin',name:'Sun',kind:'G-type star',distance_pc:0,teff_gspphot:5772};for(const star of [sun,...data.objects])this.addStar(star);if(data.scope==='field')this.filterRadius=Math.max(...data.objects.map(d=>d.distance_pc),5);else this.filterRadius=5;this.applyFilter();if(fit)this.overview();}
  addStar(star){

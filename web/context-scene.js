@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {corona} from './plasma.js';
-import {addMoons,addPlanets} from './companions.js';
+import {addMoons,addPlanets} from './companions.js?v=gaia-host';
 import {travelDust} from './travel-dust.js';
 const $=id=>document.getElementById(id);
 function starProfile() {

@@ -232,6 +232,16 @@ def output_grid(ra, dec, fov):
     return wcs, n, scale
 
 
+def blink_levels(*arrays):
+    # Sample bounded, finite pixels so a fixed contrast can be set without retaining large stacks.
+    samples = [a[np.isfinite(a)][::max(1,a.size//16000)] for a in arrays]
+    finite = np.concatenate(samples)
+    if not finite.size:
+        raise ValueError('No usable observed pixels.')
+    lo, hi = np.percentile(finite,[42,99.5])
+    return float(lo), float(max(hi,lo+1e-8))
+
+
 def align_cutout(hdus, ra, dec, fov):
     image = hdus["IMAGE"]
     data = image.data.astype(np.float64)
@@ -268,7 +278,7 @@ def align_cutout(hdus, ra, dec, fov):
         provenance="observed", transform="computed WCS registration; no source motion added")
 
 
-def download_cutout(source_url, cutout_url, destination, ra, dec, fov):
+def download_cutout(source_url, cutout_url, destination, ra, dec, fov, *, prefer_mirror=False):
     global _ibe_busy_until
     from .cloud import cutout_from_mirror, mirror_key
 
@@ -279,7 +289,7 @@ def download_cutout(source_url, cutout_url, destination, ra, dec, fov):
     try:
         with _lock:
             primary_available = time.monotonic() >= _ibe_busy_until
-        if key is None or (primary_available and local is None):
+        if key is None or (not prefer_mirror and primary_available and local is None):
             throttle()
             try:
                 deadline = time.monotonic() + 35

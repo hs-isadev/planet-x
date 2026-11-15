@@ -100,7 +100,7 @@ def cutout_from_mirror(key, fov, center=None):
             cut_header["WCSNAMEA"] = header["WCSNAMEA"]
             cut_header["CRPIX1A"] = header["CRPIX1A"] - x0
             cut_header["CRPIX2A"] = header["CRPIX2A"] - y0
-        for name in ['DETECTOR','DETCOORD','BUNIT','MJD-OBS','DATE-OBS','MJD-AVG','TIMESYS']:
+        for name in ['OBSID','DETECTOR','DETCOORD','BUNIT','MJD-OBS','DATE-OBS','MJD-AVG','TIMESYS','XPOSURE','DATE']:
             if name in header:cut_header[name]=header[name]
         primary = fits.PrimaryHDU(header=remote[0].header.copy())
         primary.header["PXORIGIN"] = "IRSA saved original" if local else "IRSA public cloud mirror"

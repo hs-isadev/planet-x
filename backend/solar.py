@@ -42,7 +42,6 @@ def solar_snapshot(date):
             if key=='sun':row['effective_temperature_k']=5772
             if (ROOT/'web/assets'/f'surface-{key}.json').exists():row['surface']=f'/assets/surface-{key}.json'
             if key!='earth':
-                apparent=get_body(key,t,ephemeris='builtin').icrs
                 # get_body returns geocentric GCRS. Read RA/Dec there, not a barycentric ICRS transform.
                 apparent=get_body(key,t,ephemeris='builtin')
                 row.update(ra=float(apparent.ra.deg),dec=float(apparent.dec.deg),sky_coordinate_frame='Geocentric apparent GCRS; not a fixed distant-source ICRS position')

@@ -234,19 +234,25 @@ def install_analysis_routes(app,jobs,guard,clients):
     @app.get('/api/jobs/{identity}/spectrum')
     def spectrum(identity:str,request:Request,x:float=Query(ge=0,le=1),y:float=Query(ge=0,le=1),radius:float=Query(default=18.45,ge=6.15,le=45),method:Literal['aperture','epsf']='aperture'):
         from .calibrated_comparison import cached_aperture_calibration
+        from .spectral_channels import channel_data, mosaic_url, sample_channel
         throttle_client(request,'spectrum',20)
         job=job_for(identity);position=sky_at_click(job,x,y);points=[]
         frames=[f for f in job['frames'] if f['status']=='ready']
         available=len(frames)
         calibration_cache={}
+        channel_map,channels,channel_source=channel_data()
+        spectral_grid=dict(channels=channels, source_url=channel_source, mosaic_url=mosaic_url(position), total=102,
+                           assignment='Native target pixel on the released DR1 standard channel map. No interpolation.')
         if method=='epsf' and available>64:
             frames=[frames[int(i)] for i in np.linspace(0,available-1,64)]
         for frame in frames:
             calibration_url=None
+            channel=None
             try:
                 if not (CACHE/(frame["cache_id"]+".fits")).exists():
                     raise FileNotFoundError('Native FITS not cached. Reload this exposure before measuring; no display pixels substituted.')
                 with fits.open(CACHE/(frame['cache_id']+'.fits'),memmap=False) as hdus:
+                    channel=sample_channel(hdus['IMAGE'].header,position,channel_map)
                     if method=='epsf':
                         key=(frame.get('release'),frame.get('detector'))
                         measurement=epsf_measure(hdus,frame,position,calibration_cache.setdefault(key,{}))
@@ -256,9 +262,9 @@ def install_analysis_routes(app,jobs,guard,clients):
                         measurement=aperture_measure(hdus,position,radius,calibration)
             except (ValueError,KeyError,OSError,RequestException) as exc:measurement=dict(status='missing',reason=str(exc))
             measurement.pop('wavelength_calibration',None)
-            points.append(dict(measurement,release=frame.get('release'),frame=frame['index'],exposure_id=frame.get('id'),date=frame.get('date') or Time(frame['mjd'],format='mjd').isot+'Z',mjd=frame['mjd'],detector=frame.get('detector'),source_url=frame.get('url') or frame.get('cutout_url'),quality_flags=frame.get('source_flag_values',[]),wavelength_calibration='released CWAVE/CBAND' if calibration_url else 'approximate WCS-WAVE',calibration_url=calibration_url))
+            points.append(dict(measurement,subchannel=channel,release=frame.get('release'),frame=frame['index'],exposure_id=frame.get('id'),date=frame.get('date') or Time(frame['mjd'],format='mjd').isot+'Z',mjd=frame['mjd'],detector=frame.get('detector'),source_url=frame.get('url') or frame.get('cutout_url'),quality_flags=frame.get('source_flag_values',[]),wavelength_calibration='released CWAVE/CBAND' if calibration_url else 'approximate WCS-WAVE',calibration_url=calibration_url))
         if method=='epsf':
-            return dict(provenance='computed',source_pixels='observed',method=method,available=available,
+            return dict(provenance='computed',source_pixels='observed',method=method,available=available,spectral_grid=spectral_grid,
                         ra=float(position.ra.deg),dec=float(position.dec.deg),radius_arcsec=None,
                         normalized_position=[x,y],points=points,notes=['Forced measurements use released ePSF, solid-angle and spectral calibration files.','Review-flagged points are excluded from dip screening.','Errors omit calibration and confusion systematics.'])
-        return dict(provenance='computed',source_pixels='observed',method=method,available=available,ra=float(position.ra.deg),dec=float(position.dec.deg),radius_arcsec=radius,normalized_position=[x,y],points=points,notes=['Quicklook aperture flux, not a calibrated or aperture-corrected source spectrum.','Native pixels and conservative flags are used; background is estimated in a local annulus. No resampled display pixels are measured.','Measurements identify which wavelength map was used. Released CWAVE/CBAND is used where cached. Other measurements use approximate WCS-WAVE.','Error bars include native variance and annulus background uncertainty; calibration and confusion systematics are omitted.','Observations are taken at different times. Variability can shape this wavelength plot.'])
+        return dict(provenance='computed',source_pixels='observed',method=method,available=available,spectral_grid=spectral_grid,ra=float(position.ra.deg),dec=float(position.dec.deg),radius_arcsec=radius,normalized_position=[x,y],points=points,notes=['Quicklook aperture flux, not a calibrated or aperture-corrected source spectrum.','Native pixels and conservative flags are used; background is estimated in a local annulus. No resampled display pixels are measured.','Measurements identify which wavelength map was used. Released CWAVE/CBAND is used where cached. Other measurements use approximate WCS-WAVE.','Error bars include native variance and annulus background uncertainty; calibration and confusion systematics are omitted.','Observations are taken at different times. Variability can shape this wavelength plot.'])

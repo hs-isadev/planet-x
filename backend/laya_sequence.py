@@ -256,7 +256,11 @@ def run_sequence(job, task):
             status = 'paused' if pending else ('complete' if task['reviewed'] == task['total'] else 'partial')
             checkpoint(task, status=status, stage='waiting_images' if pending else 'finished',
                 message=f"{task['reviewed']} / {task['total']} exposures have all eligible crops reviewed. " +
-                    ('Input is paused or stalled; resume image loading and review.' if pending else 'Unmatched exposures remain unassessed; see coverage.'),
+                    ('Input is paused or stalled; resume image loading and review.' if pending else
+                     'No compatible crops were reviewed. Pick a field with the same detector, calibration release and similar wavelengths at least one day apart.'
+                     if not task['batches'] and not task['failed'] else
+                     'Image preparation failed before comparison; check the per-exposure receipt.'
+                     if not task['batches'] else 'Unmatched exposures remain unassessed; see coverage.'),
                 last_progress_at=task.get('last_progress_at'), pending_crop_batches=0)
             return
     except ReviewCancelled as exc:
@@ -271,7 +275,7 @@ def run_sequence(job, task):
 def public_status(task, summary):
     if summary:
         excluded = ('batches', 'coverage', 'exposures', 'assignments', 'reviewed_ids', 'failed')
-        return {k: v for k, v in task.items() if k not in excluded} | {'review_errors': len(task['failed'])}
+        return {k: v for k, v in task.items() if k not in excluded} | {'review_errors': len(task.get('failed', []))}
     return json.loads(json.dumps(task))
 
 
