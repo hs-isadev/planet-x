@@ -1,0 +1,37 @@
+{
+  "base": "http://127.0.0.1:8001",
+  "errors": [],
+  "initial": "1.0× · 8.0′ visible of 8′ loaded",
+  "panned": true,
+  "zoomedMark": {
+    "expected": {
+      "x": 0.48,
+      "y": 0.53
+    },
+    "measured": {
+      "frame": 0,
+      "frame_id": "77e0d74e21207bad7581ff03",
+      "x": 0.47926366341538557,
+      "y": 0.5292384826728502
+    }
+  },
+  "fit": "1.0× · 8.0′ visible of 8′ loaded",
+  "wider": {
+    "fov": 12,
+    "ra": 133.79512916666667,
+    "dec": -7.245147222222222,
+    "ready": 1,
+    "discovered": 256,
+    "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W19_1B/l2b-v20-2025-241/3/level2_2025W19_1B_0116_1D3_spx_l2b-v20-2025-241.fits",
+    "readout": "1.0× · 12.0′ visible of 12′ loaded"
+  },
+  "stars": {
+    "catalogStars": 512,
+    "batchedObjects": 1,
+    "drawCalls": 9,
+    "p95Ms": 6.200000000000728,
+    "cornerAlpha": 0,
+    "centerAlpha": 255,
+    "haloAlpha": 10
+  }
+}

@@ -1,4 +1,5 @@
 """Catalog orbit summaries for illustrative companion layouts, not ephemerides."""
+import gzip
 import json
 from functools import lru_cache
 import numpy as np
@@ -6,21 +7,62 @@ from .archive import ROOT
 
 @lru_cache(maxsize=1)
 def planet_rows():
-    return json.loads((ROOT/'web/assets/exoplanet-orbits.json').read_text(encoding='utf-8'))['rows']
+    rows = json.loads((ROOT/'web/assets/exoplanet-orbits.json').read_text(encoding='utf-8'))['rows']
+    path = ROOT/'backend/data/gaia-companion-hosts.json'
+    additions = json.loads(path.read_text(encoding='utf-8'))['rows'] if path.is_file() else []
+    return rows + additions
 
 def planets_for(ra,dec,name=''):
     # High proper-motion hosts need a name match, not a broad angular match.
     normal=name.lower().strip().replace('’', "'")
     host={"barnard":"barnard's star", "barnard star":"barnard's star", "proxima centauri":"proxima cen", "alpha centauri c":"proxima cen", "v* proxima cen":"proxima cen"}.get(normal,normal)
+    if normal.startswith('gaia dr3 '):
+        rows=[r for r in planet_rows() if str(r.get('gaia_dr3_id','')).lower()==normal]
+        # An unmatched Gaia ID must not inherit a nearby, unrelated host's planets.
+        return [p for r in rows if (p:=orbit_parameters(r))]
     rows=[r for r in planet_rows() if r['hostname'].lower()==host]
     if not rows:
         cos=np.cos(np.deg2rad(dec))
         rows=[r for r in planet_rows() if abs(r['dec']-dec)<3/3600 and abs((r['ra']-ra+180)%360-180)*cos<3/3600]
-    return [dict(name=r['pl_name'],semimajor_au=r['pl_orbsmax'],period_days=r['pl_orbper'],
-                 radius_earth=r.get('pl_rade'),star_radius_solar=r.get('st_rad'),temperature_k=r.get('st_teff'),
-                 provenance='catalog / computed',source='https://exoplanetarchive.ipac.caltech.edu/',
-                 note='Catalog period and orbital scale. Circular face-on layout, phase, inclination, display size and appearance are illustrative; not a measured planet position.')
-            for r in rows if r.get('pl_orbsmax') and r.get('pl_orbper')]
+    return [p for r in rows if (p:=orbit_parameters(r))]
+
+
+def orbit_parameters(row):
+    period = row.get('pl_orbper')
+    a = row.get('pl_orbsmax')
+    estimated = not a and bool(period and row.get('st_mass'))
+    if estimated:
+        a = (row['st_mass']*(period/365.25)**2)**(1/3)
+    if not (a and period and a>0 and period>0):
+        return None
+    return dict(name=row['pl_name'],semimajor_au=a,period_days=period,
+                radius_earth=row.get('pl_rade'),star_radius_solar=row.get('st_rad'),
+                temperature_k=row.get('st_teff'),semimajor_estimated=estimated,
+                provenance='catalog / computed',source='https://exoplanetarchive.ipac.caltech.edu/',
+                note='Orbital scale estimated from catalog period and stellar mass using Kepler’s third law.'
+                     if estimated else 'Orbital scale and period from the NASA Exoplanet Archive.')
+
+
+@lru_cache(maxsize=1)
+def teammate_gaia_stars():
+    path = ROOT/'backend/data/gaia-teammate-stars.json.gz'
+    if not path.exists():
+        return []
+    with gzip.open(path,'rt',encoding='utf8') as stream:
+        rows = json.load(stream)['rows']
+    result = []
+    hosts = {r['gaia_dr3_id'].split()[-1]:r for r in planet_rows() if r.get('gaia_dr3_id')}
+    for sid, ra, dec, distance, mag, color in rows:
+        lon, lat = np.deg2rad([ra,dec])
+        host = hosts.get(sid, {})
+        aliases = {'Gaia DR3':sid}
+        if host: aliases['NASA Exoplanet Archive'] = host['hostname']
+        result.append(dict(id='gaia:'+sid,name='Gaia DR3 '+sid,ra=ra,dec=dec,distance_pc=distance,
+            xyz_pc=[distance*np.cos(lat)*np.cos(lon),distance*np.cos(lat)*np.sin(lon),distance*np.sin(lat)],
+            catalog='Gaia DR3',catalog_ids=aliases,teff_gspphot=host.get('st_teff'),provenance='catalog',
+            ref_epoch=2016,phot_g_mean_mag=mag,bp_rp=color,expanded_catalog=True))
+    return result
+
 
 def install_companion_routes(app):
     from fastapi import Query
@@ -38,4 +80,9 @@ def install_companion_routes(app):
             objects[r['hostname']]=dict(id='host:'+r['hostname'],name=r['hostname'],ra=r['ra'],dec=r['dec'],
                 distance_pc=distance,xyz_pc=[distance*np.cos(dec)*np.cos(ra),distance*np.cos(dec)*np.sin(ra),distance*np.sin(dec)],
                 teff_gspphot=r.get('st_teff'),catalog='NASA Exoplanet Archive',provenance='catalog',phot_g_mean_mag=None)
-        return dict(objects=list(objects.values()),note='Incomplete catalog of exoplanet host stars. Display point sizes adapted for visibility; not measured sky brightness. Photos are flat; 3D depth comes from catalog distances.')
+        expansion = json.loads((ROOT/'web/assets/expanded-stars.json').read_text(encoding='utf-8'))
+        gaia = teammate_gaia_stars()
+        return dict(objects=list(objects.values())+expansion['objects']+gaia, added_stars=expansion['count']+len(gaia), teammate_gaia_count=len(gaia),
+            sources=['Gaia DR3 via NOIRLab Astro Data Lab','NASA Exoplanet Archive', 'Hipparcos / HYG 4.1', 'Yale Bright Star / HYG 4.1', 'Gliese / HYG 4.1'],
+            attribution=expansion['attribution'], license=expansion['license'],
+            note='Incomplete mixed catalog: exoplanet hosts, HYG stars, and the teammate Gaia DR3 sample. HYG epoch J2000.0; catalog memberships overlap. Display point sizes adapted for visibility; V magnitude is not Gaia G. Catalog distances have no new uncertainty estimate. Photos are flat; depth comes from catalog distances.')

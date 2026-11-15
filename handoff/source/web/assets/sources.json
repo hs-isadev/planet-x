@@ -1,0 +1,60 @@
+[
+  {
+    "file": "earth.png",
+    "url": "https://svs.gsfc.nasa.gov/vis/a000000/a002900/a002915/bluemarble-2048.png",
+    "credit": "NASA/Goddard SVS; Reto Stockli; Blue Marble composite; not current clouds"
+  },
+  {
+    "file": "mars.jpg",
+    "url": "https://space.jpl.nasa.gov/tmaps/pix/mar0kuu2.jpg",
+    "credit": "NASA/JPL/USGS Viking mosaic"
+  },
+  {
+    "file": "saturn.glb",
+    "url": "https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/09/s/Saturn_1_120536.glb?emrc=6af1a1a2d9d77",
+    "credit": "NASA Visualization Technology Applications and Development (VTAD)",
+    "type": "computed appearance model; not observed SPHEREx data"
+  },
+  {
+    "file": "neptune.glb",
+    "url": "https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/09/n/Neptune_1_49528.glb?emrc=6af1a1a3b77b2",
+    "credit": "NASA Visualization Technology Applications and Development (VTAD)",
+    "type": "computed appearance model; not observed SPHEREx data"
+  },
+  {
+    "file": "uranus.glb",
+    "url": "https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/09/u/Uranus_1_51118.glb?emrc=6af1a1a4ce1ef",
+    "credit": "NASA Visualization Technology Applications and Development (VTAD)",
+    "type": "computed appearance model; not observed SPHEREx data"
+  },
+  {
+    "file": "venus.glb",
+    "url": "https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/09/v/Venus_1_12103.glb?emrc=6af1a1a5bcf98",
+    "credit": "NASA Visualization Technology Applications and Development (VTAD)",
+    "type": "computed appearance model; not observed SPHEREx data"
+  },
+  {
+    "file": "jupiter.jpg",
+    "url": "https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia07/pia07782/PIA07782.jpg",
+    "credit": "NASA/JPL/Space Science Institute, Cassini ISS, PIA07782, 2000-12-11/12",
+    "type": "observed historical cylindrical composite"
+  },
+  {
+    "file": "surface-earth.json",
+    "url": "https://elevation-tiles-prod.s3.amazonaws.com/skadi/N19/N19W156.hgt.gz",
+    "credit": "Mapzen Terrain Tiles; SRTM and contributing national datasets; https://github.com/tilezen/joerd/blob/master/docs/attribution.md",
+    "type": "observed elevation / computed resampling"
+  },
+  {
+    "file": "mercury.jpg",
+    "url": "https://planetarydata.jpl.nasa.gov/img/data/test/messenger/MDIS_MAPS/EXTRAS/BROWSE/Mercury_MESSENGER_MDIS_Basemap_MD3Color_Mosaic_Global_665m.jpg",
+    "credit": "NASA/JHUAPL/Carnegie/USGS MESSENGER MDIS global color mosaic; three-band visualization, not current weather",
+    "type": "historical observed mosaic / three-band visualization"
+  },
+  {
+    "file": "stellar-properties.json",
+    "url": "https://gaia.aip.de/metadata/gaiadr3/gaia_source/",
+    "credit": "ESA/Gaia/DPAC Gaia DR3 GSP-Phot. Bundled query 2026-11-09: parallax >=40 mas, parallax_over_error >=5, TOP1001 sorted by parallax. teff_gspphot intervals, logg_gspphot, bp_rp; missing remains null.",
+    "type": "catalog model estimates"
+  }
+]

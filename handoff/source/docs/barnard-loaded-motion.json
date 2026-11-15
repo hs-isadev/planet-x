@@ -1,0 +1,48 @@
+{
+  "provenance": "computed",
+  "catalog": "SIMBAD via astroquery",
+  "catalog_bibcode": "2020yCat.1350....0G",
+  "catalog_epoch": "J2000.0",
+  "catalog_motion_arcsec_per_year": 10.393348518010786,
+  "baseline_days": 400.31776700000046,
+  "frames": [
+    4,
+    360
+  ],
+  "dates": [
+    "2025-08-15T20:49:29.194Z",
+    "2026-09-20T04:27:04.262Z"
+  ],
+  "detector": 3,
+  "wavelengths_um": [
+    2.39345723797594,
+    2.409919534066757
+  ],
+  "predictions": [
+    {
+      "x": 0.5291386435665536,
+      "y": 0.1310247463586448,
+      "frame": 4,
+      "mjd": 60902.867699
+    },
+    {
+      "x": 0.5305052780913786,
+      "y": 0.11545047384465701,
+      "frame": 360,
+      "mjd": 61303.185466
+    }
+  ],
+  "display": {
+    "black": -0.8385500311851501,
+    "white": 0.8385500311851501,
+    "unit": "MJy/sr",
+    "colormap": "coolwarm",
+    "stretch": "linear"
+  },
+  "available": 70,
+  "discovered": 364,
+  "measured_motion_arcsec_per_year": null,
+  "measurement_status": "unverified",
+  "note": "Widest baseline among available same-detector exposures within 0.025 \u00b5m. Loaded subset only; this is not the widest-baseline archive proof. Difference B \u2212 A is unscaled, without PSF matching. Prediction includes proper motion and geometric annual parallax; radial velocity and perspective acceleration are omitted. Gaussian centroids require S/N \u22658 and fit-quality checks. Error includes a 0.2-pixel component floor; no field-star astrometric registration or calibration-systematic correction.",
+  "measurement_reason": "Predicted source neighborhood is masked or clipped."
+}

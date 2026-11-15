@@ -25,7 +25,11 @@ export function installNavigation(C){
  C.prototype.navigationTick=function(dt){
   if(this.loading||this.journey||this.surface||this.flight)return;let body=this.items.find(i=>i.data.id===this.selected);let k=this.navKeys||new Set(),active=!document.body.classList.contains('observing')&&!document.body.classList.contains('searching');
   let impulse=this.zoomImpulse||0;if(active){impulse+=((k.has('KeyS')?1:0)-(k.has('KeyW')?1:0))*dt*2.2;let orbit=((k.has('KeyD')?1:0)-(k.has('KeyA')?1:0))*dt*.8;if(orbit){let v=this.camera.position.clone().sub(this.controls.target);v.applyAxisAngle(this.camera.up,orbit);this.camera.position.copy(this.controls.target).add(v);}}
-  const maxSpeed=this.local ? .55 : .9;let factor=Math.exp(THREE.MathUtils.clamp(impulse*Math.min(1,dt*6),-dt*maxSpeed,dt*maxSpeed));this.zoomImpulse=impulse*Math.exp(-dt*6);let offset=this.camera.position.clone().sub(this.controls.target),d=offset.length();if(Math.abs(impulse)>.00001){d=THREE.MathUtils.clamp(d*factor,this.controls.minDistance,this.controls.maxDistance);offset.setLength(d);this.camera.position.copy(this.controls.target).add(offset);}
+  const escapingSolar=this.mode==='solar'&&!this.local&&impulse>0;
+  const maxSpeed=escapingSolar?2.6:(this.local ? .55 : .9);
+  const zoomStep=impulse*Math.min(1,dt*6)*(escapingSolar?2.6:1);
+  const factor=Math.exp(THREE.MathUtils.clamp(zoomStep,-dt*maxSpeed,dt*maxSpeed));
+  this.zoomImpulse=impulse*Math.exp(-dt*6);let offset=this.camera.position.clone().sub(this.controls.target),d=offset.length();if(Math.abs(impulse)>.00001){d=THREE.MathUtils.clamp(d*factor,this.controls.minDistance,this.controls.maxDistance);offset.setLength(d);this.camera.position.copy(this.controls.target).add(offset);}
   let i=this.items.find(i=>i.data.id===this.selected);
   if(this.mode==='stars'&&!this.local&&this.selected==='origin'&&d<.0004&&impulse<-.001){window.dispatchEvent(new Event('cosmic-enter'));return;}if(this.mode==='solar'&&!this.local&&d>70&&impulse>.001){window.dispatchEvent(new Event('cosmic-exit'));return;}if(this.mode==='stars'&&!this.local&&impulse<-.001&&i&&d<.18&&this.controls.target.distanceTo(i.pos)<.01&&i.data.id!=='origin'){let direction=offset.clone().normalize();this.stellarCloseup(i,300);this.camera.position.copy(direction).multiplyScalar(300);this.controls.target.set(0,0,0);const local=this.local;this.companionsReady?.then(()=>{if(this.local===local&&local.planets?.length)this.systemOverview();});}
   else if(this.local&&!this.surface){this.camera.near=Math.max(.0002,Math.min(.02,(d-1)*.015));this.camera.updateProjectionMatrix();if(d>Math.max(900,(this.local.systemExtent||0)*6)&&!this.journey){let direction=offset.clone().normalize(),saved=this.local;originalExit.call(this);this.controls.target.copy(saved.item.pos);this.camera.position.copy(saved.item.pos).addScaledVector(direction,.2);}}
@@ -46,8 +50,8 @@ export function installNavigation(C){
   return outward?v.set(x,Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y-Math.sin(e)*z)):v.set(x,-Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y+Math.sin(e)*z));
  }
  function hostRadius(item){return (item.data.planets?.[0]?.star_radius_solar||1)*.00465047/AU_PER_PC;}
- C.prototype.flyForward=function(pos,heading,clearance,minimum=6500){
-  this.stopFlight();const from=this.camera.position.clone(),duration=Math.max(minimum,cruiseDuration(from.distanceTo(pos),clearance));
+ C.prototype.flyForward=function(pos,heading,clearance,minimum=2200){
+  this.stopFlight();const from=this.camera.position.clone(),duration=Math.max(minimum,Math.min(5600,cruiseDuration(from.distanceTo(pos),clearance)*.30));
   return new Promise(done=>{this.flight={start:performance.now(),duration:this.reduced?900:duration,baseFov:this.camera.fov,from,pos:pos.clone(),heading:heading.clone().normalize(),clearance,done};});
  };
  C.prototype.trace=async function(context,solar,progress){
@@ -55,16 +59,16 @@ export function installNavigation(C){
   const token=this.travelToken=(this.travelToken||0)+1,valid=()=>this.travelToken===token;
   this.traceReturn={mode:this.mode,data:this.mode==='solar'?this.solarData:this.starsData,selected:this.selected,camera:this.camera.position.clone(),target:this.controls.target.clone(),up:this.camera.up.clone(),wasLocal:!!this.local,context};
   this.journey=true;this.controls.enabled=false;this.zoomImpulse=0;this.stopFlight();
-  progress('Departing '+item.data.name,'Accelerated illustrative travel; rotation and orbits paused during the journey.');
-  if(this.mode==='solar'&&this.camera.position.distanceTo(item.pos)>item.radius*12){const offset=this.camera.position.clone().sub(item.pos).normalize().multiplyScalar(item.radius*5);if(!await this.fly(item.pos,item.pos.clone().add(offset),5000)||!valid())return false;}
+  progress('Departing '+item.data.name,'Accelerated illustrative travel; orbits paused. Passing stars and dust are illustrative effects.');
+  if(this.mode==='solar'&&this.camera.position.distanceTo(item.pos)>item.radius*12){const offset=this.camera.position.clone().sub(item.pos).normalize().multiplyScalar(item.radius*5);if(!await this.fly(item.pos,item.pos.clone().add(offset),1600)||!valid())return false;}
   if(this.mode==='stars'){
    const earthData=solar.objects.find(d=>d.id==='earth'),earthPc=frame(this.vector(earthData.xyz_au),true).multiplyScalar(1/AU_PER_PC);
    if(!this.local){
     const offset=this.camera.position.clone().sub(item.pos).normalize().multiplyScalar(hostRadius(item)*300);
-    if(!await this.fly(item.pos,item.pos.clone().add(offset),6500)||!valid())return false;
+    if(!await this.fly(item.pos,item.pos.clone().add(offset),1800)||!valid())return false;
    }
    let direction=earthPc.clone().sub(this.local?item.pos:this.camera.position).normalize();
-   if(!await this.turnLeftTo(direction,1800,'EARTH - computed direction')||!valid())return false;
+   if(!await this.turnLeftTo(direction,1050,'EARTH - computed direction')||!valid())return false;
    if(this.local){
     const position=this.camera.position.clone().multiplyScalar(hostRadius(item)).add(item.pos),up=this.camera.up.clone();
     await this.scaleTransition(()=>{this.exitLocal();this.camera.position.copy(position);this.camera.up.copy(up);this.controls.target.copy(position).addScaledVector(direction,.001);this.controls.enabled=false;});
@@ -72,7 +76,7 @@ export function installNavigation(C){
    }
    const boundary=earthPc.clone().addScaledVector(direction,-60/AU_PER_PC);
    progress('Travelling toward the Solar System','Catalog parsec distances; gradual departure and deceleration.');
-   if(!await this.flyForward(boundary,direction,hostRadius(item)*5,12000)||!valid())return false;
+   if(!await this.flyForward(boundary,direction,hostRadius(item)*5,4600)||!valid())return false;
    const position=frame(this.camera.position.clone(),false).multiplyScalar(AU_PER_PC),up=frame(this.camera.up.clone(),false);
    direction=frame(direction,false);
    progress('Entering the Solar System','Catalog parsec scale to computed AU scale.');
@@ -82,8 +86,8 @@ export function installNavigation(C){
   const earth=this.items.find(i=>i.data.id==='earth');if(!earth)return false;
   const direction=earth.pos.clone().sub(this.camera.position).normalize();
   progress('Approaching Earth','Slowing continuously into Earth orbit.');
-  if(!await this.turnLeftTo(direction,1500,'EARTH - computed direction')||!valid())return false;
-  if(!await this.flyForward(earth.pos.clone().addScaledVector(direction,-earth.radius*2.8),direction,earth.radius*2,9000)||!valid())return false;
+  if(!await this.turnLeftTo(direction,850,'EARTH - computed direction')||!valid())return false;
+  if(!await this.flyForward(earth.pos.clone().addScaledVector(direction,-earth.radius*2.8),direction,earth.radius*2,2800)||!valid())return false;
   this.selected='earth';this.controls.target.copy(earth.pos);this.camera.lookAt(earth.pos);
   progress('Arrived at Earth','Stay and explore Earth, or retrace the journey to your object.');
   return valid();
@@ -96,17 +100,17 @@ export function installNavigation(C){
   progress('Returning to '+(r.data.objects.find(i=>i.id===r.selected)?.name||'object'),'Turning toward the destination before departure.');
   if(r.mode==='stars'){
    let heading=this.vector(r.context.direction_ecliptic).normalize();
-   if(!await this.turnLeftTo(heading,1800,'RETURN - source direction')||!valid())return false;
+   if(!await this.turnLeftTo(heading,1050,'RETURN - source direction')||!valid())return false;
    if(this.mode==='solar'){
     const earth=this.items.find(i=>i.data.id==='earth'),boundary=earth.pos.clone().addScaledVector(heading,60);
-    if(!await this.flyForward(boundary,heading,earth.radius*2,10000)||!valid())return false;
+    if(!await this.flyForward(boundary,heading,earth.radius*2,3500)||!valid())return false;
     const position=frame(this.camera.position.clone(),true).multiplyScalar(1/AU_PER_PC),up=frame(this.camera.up.clone(),true);
     heading=frame(heading,true);
     await this.scaleTransition(()=>{this.stars(r.data,false);this.camera.position.copy(position);this.camera.up.copy(up);this.controls.target.copy(position).addScaledVector(heading,.001);this.controls.enabled=false;});
     if(!valid())return false;
    }else if(this.local){
     // A return requested while still near the departure star needs no Earth leg.
-    if(this.local.item?.data.id===r.selected&&r.wasLocal){await this.fly(r.target,r.camera,4500);this.finishTrace(r);return valid();}
+    if(this.local.item?.data.id===r.selected&&r.wasLocal){await this.fly(r.target,r.camera,1700);this.finishTrace(r);return valid();}
     this.exitLocal();
    }
    const item=this.items.find(i=>i.data.id===r.selected);if(!item)return false;
@@ -114,20 +118,20 @@ export function installNavigation(C){
    if(!await this.turnLeftTo(heading,1200,'RETURN - source direction')||!valid())return false;
    const end=item.pos.clone().addScaledVector(heading,-(r.wasLocal?hostRadius(item)*300:Math.max(hostRadius(item)*300,r.camera.distanceTo(item.pos))));
    progress('Approaching '+item.data.name,'Decelerating toward the destination; the camera keeps facing forward.');
-   if(!await this.flyForward(end,heading,hostRadius(item)*4,12000)||!valid())return false;
+   if(!await this.flyForward(end,heading,hostRadius(item)*4,4600)||!valid())return false;
    if(r.wasLocal){
     const offset=this.camera.position.clone().sub(item.pos).multiplyScalar(1/hostRadius(item)),up=this.camera.up.clone();
     await this.scaleTransition(()=>{this.stellarCloseup(item,offset.length());this.camera.position.copy(offset);this.camera.up.copy(up);this.controls.target.set(0,0,0);this.controls.enabled=false;});
     if(!valid())return false;
     await this.companionsReady;
-    if(!await this.fly(r.target,r.camera,6500)||!valid())return false;
-   }else{this.controls.target.copy(item.pos);if(!await this.fly(r.target,r.camera,4500)||!valid())return false;}
+    if(!await this.fly(r.target,r.camera,1800)||!valid())return false;
+   }else{this.controls.target.copy(item.pos);if(!await this.fly(r.target,r.camera,1700)||!valid())return false;}
   }else{
    if(this.mode!=='solar')await this.scaleTransition(()=>this.solar(r.data));if(!valid())return false;
    const item=this.items.find(i=>i.data.id===r.selected);if(!item)return false;
    const heading=item.pos.clone().sub(this.camera.position).normalize();
    if(!await this.turnLeftTo(heading,1600,'RETURN - '+item.data.name)||!valid())return false;
-   const end=item.pos.clone().addScaledVector(heading,-Math.max(item.radius*6,r.camera.distanceTo(item.pos)));if(!await this.flyForward(end,heading,item.radius*2,10000)||!valid())return false;this.controls.target.copy(item.pos);
+   const end=item.pos.clone().addScaledVector(heading,-Math.max(item.radius*6,r.camera.distanceTo(item.pos)));if(!await this.flyForward(end,heading,item.radius*2,3500)||!valid())return false;this.controls.target.copy(item.pos);
    if(!await this.fly(r.target,r.camera,2200)||!valid())return false;
   }
   this.finishTrace(r);return valid();

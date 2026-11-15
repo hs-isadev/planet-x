@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+services:
+  - type: web
+    name: planet-x-observatory
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: GROQ_API_KEY
+        sync: false

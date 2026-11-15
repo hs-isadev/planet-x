@@ -1,0 +1,309 @@
+{
+  "date": "2026-11-10T06:00:48.184Z",
+  "errors": [],
+  "checks": {
+    "viewerFirst": {
+      "observationsVisible": true,
+      "sceneUninitialized": true,
+      "presetCount": 5,
+      "overflow": false
+    },
+    "subtract": {
+      "image": true,
+      "note": "Computed A − B. No photometric matching, background fitting or PSF matching is applied. Residuals are not detections."
+    },
+    "add": {
+      "image": true,
+      "note": "Computed A + B. No photometric matching, background fitting or PSF matching is applied. Residuals are not detections."
+    },
+    "stack": {
+      "image": true,
+      "note": "Inverse-variance mean of registered observations. Moving sources can blur. Resampling covariance and calibration systematics are not included."
+    },
+    "spectrum": {
+      "status": 404
+    },
+    "prediction": {
+      "provenance": "catalog / computed",
+      "name": "NAME Barnard's star",
+      "motion_arcsec_per_year": 10.393348518010786,
+      "points": [
+        {
+          "x": 0.5291386118352865,
+          "y": 0.13102484929359715,
+          "frame": 0
+        },
+        {
+          "x": 0.5291386118352865,
+          "y": 0.13102484929359715,
+          "frame": 1
+        },
+        {
+          "x": 0.5291386277013463,
+          "y": 0.13102479782602683,
+          "frame": 2
+        },
+        {
+          "x": 0.5291386277013463,
+          "y": 0.13102479782602683,
+          "frame": 3
+        },
+        {
+          "x": 0.5292002914500636,
+          "y": 0.13081495717876723,
+          "frame": 24
+        },
+        {
+          "x": 0.5292002914500636,
+          "y": 0.13081495717876723,
+          "frame": 25
+        },
+        {
+          "x": 0.5292474248984741,
+          "y": 0.1306371036999282,
+          "frame": 50
+        },
+        {
+          "x": 0.5292474248984741,
+          "y": 0.1306371036999282,
+          "frame": 51
+        },
+        {
+          "x": 0.5294141421301116,
+          "y": 0.1294861308267079,
+          "frame": 113
+        },
+        {
+          "x": 0.5294144848491902,
+          "y": 0.1294747739440153,
+          "frame": 116
+        },
+        {
+          "x": 0.5284135612151958,
+          "y": 0.12295894592515655,
+          "frame": 159
+        },
+        {
+          "x": 0.5284135612151958,
+          "y": 0.12295894592515655,
+          "frame": 160
+        },
+        {
+          "x": 0.5284225076959839,
+          "y": 0.12276393683703812,
+          "frame": 187
+        },
+        {
+          "x": 0.52842251154429,
+          "y": 0.12276386879480505,
+          "frame": 189
+        },
+        {
+          "x": 0.52842251154429,
+          "y": 0.12276386879480505,
+          "frame": 190
+        },
+        {
+          "x": 0.528435863923238,
+          "y": 0.12256578998143741,
+          "frame": 223
+        },
+        {
+          "x": 0.5302635353503743,
+          "y": 0.1166008214012838,
+          "frame": 249
+        },
+        {
+          "x": 0.5304084006352888,
+          "y": 0.1160492943766207,
+          "frame": 358
+        },
+        {
+          "x": 0.5304084006352888,
+          "y": 0.1160492943766207,
+          "frame": 359
+        },
+        {
+          "x": 0.5305052780913786,
+          "y": 0.11545047384465701,
+          "frame": 360
+        },
+        {
+          "x": 0.5305052780913786,
+          "y": 0.11545047384465701,
+          "frame": 361
+        },
+        {
+          "x": 0.5305130002326259,
+          "y": 0.11536924926017733,
+          "frame": 362
+        },
+        {
+          "x": 0.5305130002326259,
+          "y": 0.11536924926017733,
+          "frame": 363
+        }
+      ],
+      "note": "SIMBAD J2000 position, proper motion and geometric annual parallax; not a source detection."
+    },
+    "share": {
+      "url": "http://127.0.0.1:8000/?ra=133.79512916666667&dec=-7.245147222222222&fov=8&frame=118",
+      "reproduced": {
+        "ra": 133.79512916666667,
+        "dec": -7.245147222222222,
+        "fov": 8,
+        "index": 0
+      }
+    },
+    "mobile": {
+      "overflow": false
+    }
+  },
+  "presets": [
+    {
+      "title": "Barnard’s Star",
+      "ready": 21,
+      "total": 364,
+      "displayed": 7,
+      "group": "D3",
+      "dates": [
+        60902.864715,
+        60902.866207,
+        61118.310724,
+        61118.312216,
+        61122.655618,
+        61269.037895,
+        61303.185466
+      ],
+      "chronological": true,
+      "firstId": "de4c9be66e2720cb744df7cb",
+      "firstDate": "2025-08-15T20:45:11.376Z",
+      "source": "TAP",
+      "firstSequenceMs": 195,
+      "playerAdvanced": true
+    },
+    {
+      "title": "Epsilon Indi B",
+      "ready": 12,
+      "total": 449,
+      "displayed": 5,
+      "group": "D2",
+      "dates": [
+        60789.855522,
+        60832.854714,
+        60957.829023,
+        61312.829856,
+        61315.478076
+      ],
+      "chronological": true,
+      "firstId": "dc406ff4fa88f9211e587bcf",
+      "firstDate": "2025-04-24T20:31:57.101Z",
+      "source": "TAP",
+      "firstSequenceMs": 1673,
+      "playerAdvanced": true
+    },
+    {
+      "title": "WISE 0855",
+      "ready": 256,
+      "total": 256,
+      "displayed": 45,
+      "group": "D3",
+      "dates": [
+        60800.700028,
+        60800.701521,
+        60800.834438,
+        60989.296807,
+        60989.298548,
+        60989.300041,
+        60989.301533,
+        60989.364776,
+        60989.366268,
+        60989.367761,
+        60989.976991,
+        60989.978484,
+        60993.505109,
+        60993.506601,
+        60993.508093,
+        60993.509586,
+        60993.57425,
+        60993.575742,
+        60993.577234,
+        60993.578727,
+        60993.912885,
+        61021.282827,
+        61021.351418,
+        61022.029133,
+        61151.197933,
+        61151.199425,
+        61151.200918,
+        61152.757304,
+        61152.758796,
+        61152.760288,
+        61153.436457,
+        61153.437949,
+        61153.439442,
+        61153.440934,
+        61156.085511,
+        61156.152716,
+        61156.154226,
+        61156.493181,
+        61156.494673,
+        61160.770817,
+        61168.984738,
+        61169.194223,
+        61169.527653,
+        61169.933208,
+        61171.09635
+      ],
+      "chronological": true,
+      "firstId": "77e0d74e21207bad7581ff03",
+      "firstDate": "2025-05-05T16:48:02.419Z",
+      "source": "TAP",
+      "firstSequenceMs": 1806,
+      "playerAdvanced": true
+    },
+    {
+      "title": "RW Aurigae",
+      "ready": 5,
+      "total": 333,
+      "displayed": 4,
+      "group": "D1",
+      "dates": [
+        60919.419647,
+        61107.880113,
+        61285.237228,
+        61292.904327
+      ],
+      "chronological": true,
+      "firstId": "d734b30509ef0805921d6289",
+      "firstDate": "2025-09-01T10:04:17.501Z",
+      "source": "TAP",
+      "firstSequenceMs": 1663,
+      "playerAdvanced": true
+    },
+    {
+      "title": "R Draconis",
+      "ready": 4,
+      "total": 2483,
+      "displayed": 4,
+      "group": "D3",
+      "dates": [
+        60789.879611,
+        61118.728182,
+        61135.905452,
+        61203.860905
+      ],
+      "chronological": true,
+      "firstId": "7526821990dce6975c993bd7",
+      "firstDate": "2025-04-24T21:06:38.390Z",
+      "source": "TAP",
+      "firstSequenceMs": 1799,
+      "playerAdvanced": true
+    }
+  ],
+  "barnardJob": "da04830aa8e94553b2eaf40ca62f9334",
+  "motionTask": {
+    "status": "not started during first-frame timing"
+  },
+  "analysisJob": null
+}

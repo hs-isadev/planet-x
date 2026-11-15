@@ -1,0 +1,63 @@
+{
+  "started": "2026-11-11T10:03:27.785Z",
+  "baseline": {
+    "job": "850a84f212164137a003353dd3da5fe9",
+    "sequence": "laya-seq-a13ddc3e513fa1de3d42d027",
+    "discovered": 256,
+    "observation_loaded": 54,
+    "sequence_loaded": 4,
+    "reviewed": 0,
+    "stage": "Loading real frame 5 of 256"
+  },
+  "live": [
+    {
+      "id": "laya-seq-98049acc3bf619410107f50a",
+      "status": "running",
+      "stage": "running_inference",
+      "total": 256,
+      "loaded": 92,
+      "prepared": 92,
+      "reviewed": 15,
+      "batches_done": 35,
+      "pending_downloads": 161,
+      "failed_count": 3,
+      "last_progress_at": "2026-11-11T10:03:27.727142+00:00",
+      "message": "Local Laya: running inference"
+    },
+    {
+      "id": "laya-seq-98049acc3bf619410107f50a",
+      "status": "cancelled",
+      "stage": "cancelled",
+      "total": 256,
+      "loaded": 92,
+      "prepared": 92,
+      "reviewed": 17,
+      "batches_done": 36,
+      "pending_downloads": 161,
+      "failed_count": 3,
+      "last_progress_at": "2026-11-11T10:03:27.727142+00:00",
+      "message": "Review cancelled before inference."
+    }
+  ],
+  "cancel": {
+    "latency_ms": 63,
+    "status": "running",
+    "reviewed": 17,
+    "batches": 36,
+    "final": {
+      "status": "cancelled",
+      "reviewed": 17,
+      "batches": 36,
+      "message": "Review cancelled before inference."
+    }
+  },
+  "resume": {
+    "id": "laya-seq-98049acc3bf619410107f50a",
+    "retained_batches": 36,
+    "current": {
+      "reviewed": 35,
+      "batches": 76,
+      "status": "error"
+    }
+  }
+}

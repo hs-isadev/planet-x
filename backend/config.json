@@ -5,18 +5,18 @@
   "artifact_table": "spherex.artifact",
   "plane_table": "spherex.plane",
   "releases": [
-    "qr3",
-    "qr2"
+    "dr1",
+    "qr3"
   ],
   "collections": [
     "spherex_qr3",
     "spherex_qr3_deep",
-    "spherex_qr2",
-    "spherex_qr2_deep"
+    "spherex_dr1",
+    "spherex_dr1_deep"
   ],
   "timeout_seconds": 60,
   "tap_max_records": 10000,
-  "concurrent_downloads": 2,
+  "concurrent_downloads": 4,
   "min_request_interval_seconds": 0.4,
   "query_ttl_seconds": 86400,
   "cache_max_bytes": 2147483648,

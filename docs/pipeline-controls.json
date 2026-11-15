@@ -1,0 +1,330 @@
+{
+  "seed": 20261111,
+  "real_products": 12,
+  "unchanged_real_controls": [
+    {
+      "cache_id": "00539ae13f34c093036e79bd",
+      "valid_pixels": 5996,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "00a0b63976b0ebf4ba74e6c7",
+      "valid_pixels": 5866,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "00bb575aa38a8cdd8797a5af",
+      "valid_pixels": 5749,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "015ec6a653a43c9349860ebf",
+      "valid_pixels": 13378,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "0172bd5b639b97c39b967a88",
+      "valid_pixels": 11764,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "01bb974942b362d4ecaf795c",
+      "valid_pixels": 5918,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "01e1abf0d38d238ffc964a85",
+      "valid_pixels": 5458,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "01e3cb6528dc45cbce3bd525",
+      "valid_pixels": 5964,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "02565141cf91d09c6be6a188",
+      "valid_pixels": 5654,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "0286f029dabd50cd9ade7330",
+      "valid_pixels": 13490,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "02a89c2b603639a3f4a69ece",
+      "valid_pixels": 5910,
+      "flagged_pixels": 0
+    },
+    {
+      "cache_id": "02ad7473d1e06259e2fc3565",
+      "valid_pixels": 5662,
+      "flagged_pixels": 0
+    }
+  ],
+  "synthetic_injections": [
+    {
+      "kind": "stationary_control",
+      "peak_snr": 3,
+      "trials": 111,
+      "flagged_trials": 0,
+      "recovery_rate": null,
+      "false_positive_trial_rate": 0.0,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "stationary_control",
+      "peak_snr": 5,
+      "trials": 113,
+      "flagged_trials": 0,
+      "recovery_rate": null,
+      "false_positive_trial_rate": 0.0,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "stationary_control",
+      "peak_snr": 8,
+      "trials": 110,
+      "flagged_trials": 0,
+      "recovery_rate": null,
+      "false_positive_trial_rate": 0.0,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "stationary_control",
+      "peak_snr": 12,
+      "trials": 109,
+      "flagged_trials": 0,
+      "recovery_rate": null,
+      "false_positive_trial_rate": 0.0,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "variable",
+      "peak_snr": 3,
+      "trials": 109,
+      "flagged_trials": 0,
+      "recovery_rate": 0.0,
+      "false_positive_trial_rate": null,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "variable",
+      "peak_snr": 5,
+      "trials": 111,
+      "flagged_trials": 3,
+      "recovery_rate": 0.02702702702702703,
+      "false_positive_trial_rate": null,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "variable",
+      "peak_snr": 8,
+      "trials": 110,
+      "flagged_trials": 29,
+      "recovery_rate": 0.2636363636363636,
+      "false_positive_trial_rate": null,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "variable",
+      "peak_snr": 12,
+      "trials": 108,
+      "flagged_trials": 54,
+      "recovery_rate": 0.5,
+      "false_positive_trial_rate": null,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "moving",
+      "peak_snr": 3,
+      "trials": 111,
+      "flagged_trials": 0,
+      "recovery_rate": 0.0,
+      "false_positive_trial_rate": null,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "moving",
+      "peak_snr": 5,
+      "trials": 103,
+      "flagged_trials": 6,
+      "recovery_rate": 0.05825242718446602,
+      "false_positive_trial_rate": null,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "moving",
+      "peak_snr": 8,
+      "trials": 109,
+      "flagged_trials": 31,
+      "recovery_rate": 0.28440366972477066,
+      "false_positive_trial_rate": null,
+      "outside_injection_flagged_pixel_rate": 0.0
+    },
+    {
+      "kind": "moving",
+      "peak_snr": 12,
+      "trials": 110,
+      "flagged_trials": 53,
+      "recovery_rate": 0.4818181818181818,
+      "false_positive_trial_rate": null,
+      "outside_injection_flagged_pixel_rate": 0.0
+    }
+  ],
+  "limitations": [
+    "These test arrays never enter cache or public observation manifests.",
+    "Injection recovery measures residual highlighting, NOT reliable motion classification or Laya accuracy.",
+    "Unchanged real-exposure copies test identity; they are not independent observations.",
+    "Injected Gaussian PSF sigma=1 registered pixel; 2-pixel motion is easier than subpixel proper motion.",
+    "Real background plus independent extra noise is a controlled experiment, not a full instrument simulator.",
+    "No catalog-certified stable multi-epoch field or astronomical Laya ground-truth set; empirical astronomical false-positive rate remains unvalidated."
+  ],
+  "registration_psf_stress": [
+    {
+      "cache_id": "00539ae13f34c093036e79bd",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 5836,
+      "red_pixels": 302
+    },
+    {
+      "cache_id": "00539ae13f34c093036e79bd",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 4570,
+      "red_pixels": 216
+    },
+    {
+      "cache_id": "00a0b63976b0ebf4ba74e6c7",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 5599,
+      "red_pixels": 21
+    },
+    {
+      "cache_id": "00a0b63976b0ebf4ba74e6c7",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 3415,
+      "red_pixels": 0
+    },
+    {
+      "cache_id": "00bb575aa38a8cdd8797a5af",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 5490,
+      "red_pixels": 51
+    },
+    {
+      "cache_id": "00bb575aa38a8cdd8797a5af",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 3418,
+      "red_pixels": 27
+    },
+    {
+      "cache_id": "015ec6a653a43c9349860ebf",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 13044,
+      "red_pixels": 672
+    },
+    {
+      "cache_id": "015ec6a653a43c9349860ebf",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 10152,
+      "red_pixels": 426
+    },
+    {
+      "cache_id": "0172bd5b639b97c39b967a88",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 11180,
+      "red_pixels": 76
+    },
+    {
+      "cache_id": "0172bd5b639b97c39b967a88",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 7091,
+      "red_pixels": 158
+    },
+    {
+      "cache_id": "01b8db682fbe24b22e73cbab",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 5160,
+      "red_pixels": 251
+    },
+    {
+      "cache_id": "01b8db682fbe24b22e73cbab",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 2371,
+      "red_pixels": 167
+    },
+    {
+      "cache_id": "01bb974942b362d4ecaf795c",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 5727,
+      "red_pixels": 176
+    },
+    {
+      "cache_id": "01bb974942b362d4ecaf795c",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 4197,
+      "red_pixels": 2
+    },
+    {
+      "cache_id": "01e1abf0d38d238ffc964a85",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 5290,
+      "red_pixels": 250
+    },
+    {
+      "cache_id": "01e1abf0d38d238ffc964a85",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 3978,
+      "red_pixels": 0
+    },
+    {
+      "cache_id": "01e3cb6528dc45cbce3bd525",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 5756,
+      "red_pixels": 332
+    },
+    {
+      "cache_id": "01e3cb6528dc45cbce3bd525",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 4018,
+      "red_pixels": 184
+    },
+    {
+      "cache_id": "02565141cf91d09c6be6a188",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 5292,
+      "red_pixels": 249
+    },
+    {
+      "cache_id": "02565141cf91d09c6be6a188",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 2583,
+      "red_pixels": 197
+    },
+    {
+      "cache_id": "0286f029dabd50cd9ade7330",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 13209,
+      "red_pixels": 792
+    },
+    {
+      "cache_id": "0286f029dabd50cd9ade7330",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 10712,
+      "red_pixels": 523
+    },
+    {
+      "cache_id": "02a89c2b603639a3f4a69ece",
+      "kind": "registration_shift_0.65px",
+      "eligible_pixels": 5718,
+      "red_pixels": 189
+    },
+    {
+      "cache_id": "02a89c2b603639a3f4a69ece",
+      "kind": "psf_blur_sigma_0.8px",
+      "eligible_pixels": 4126,
+      "red_pixels": 18
+    }
+  ]
+}

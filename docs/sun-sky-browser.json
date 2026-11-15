@@ -1,0 +1,51 @@
+{
+  "base": "http://127.0.0.1:8001",
+  "errors": [],
+  "before": {
+    "center": {
+      "ra": 133.7951291666664,
+      "dec": -7.245147222221911
+    },
+    "distanceAU": 0.9999999999999999,
+    "planetaryContentVisible": false,
+    "freeCamera": false
+  },
+  "after": {
+    "center": {
+      "ra": 134.64944225911415,
+      "dec": -8.402054062914297
+    },
+    "distanceAU": 0.9999999999999999,
+    "planetaryContentVisible": false,
+    "freeCamera": false
+  },
+  "clickedDirection": {
+    "ra": 133.92861525672504,
+    "dec": -8.935994586310253
+  },
+  "search": {
+    "ra": "133.92861526",
+    "dec": "-8.93599459",
+    "fov": 8
+  },
+  "archive": {
+    "ra": 133.92861526,
+    "dec": -8.93599459,
+    "status": "fetching",
+    "discovered": 258,
+    "loaded": 1,
+    "source": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W19_1B/l2b-v20-2025-241/3/level2_2025W19_1B_0116_1D3_spx_l2b-v20-2025-241.fits",
+    "image": true,
+    "message": "Searching released SPHEREx spectral images…"
+  },
+  "returned": {
+    "center": {
+      "ra": 134.64944225911415,
+      "dec": -8.402054062914297
+    },
+    "distanceAU": 0.9999999999999999,
+    "planetaryContentVisible": false,
+    "freeCamera": false
+  },
+  "exited": true
+}

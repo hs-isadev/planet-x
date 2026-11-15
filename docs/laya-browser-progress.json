@@ -1,0 +1,184 @@
+{
+  "at": "2026-11-11T14:50:32.463Z",
+  "stages": [
+    {
+      "stage": "preparing_images",
+      "status": "running",
+      "loaded": 165,
+      "prepared": 10,
+      "reviewed": 53,
+      "batches": 114,
+      "lastProgress": "2026-11-11T14:50:37.842439+00:00",
+      "message": "Preparing loaded exposure 9901ca3ea3a2b94d93bdcf36"
+    },
+    {
+      "stage": "starting_model",
+      "status": "running",
+      "loaded": 167,
+      "prepared": 165,
+      "reviewed": 53,
+      "batches": 114,
+      "lastProgress": "2026-11-11T14:50:51.395864+00:00",
+      "message": "Local Laya: starting model"
+    },
+    {
+      "stage": "loading_model",
+      "status": "running",
+      "loaded": 167,
+      "prepared": 165,
+      "reviewed": 53,
+      "batches": 114,
+      "lastProgress": "2026-11-11T14:51:00.995578+00:00",
+      "message": "Local Laya: loading model"
+    },
+    {
+      "stage": "running_inference",
+      "status": "running",
+      "loaded": 167,
+      "prepared": 165,
+      "reviewed": 53,
+      "batches": 114,
+      "lastProgress": "2026-11-11T14:51:43.118470+00:00",
+      "message": "Local Laya: running inference"
+    },
+    {
+      "stage": "preparing_images",
+      "status": "running",
+      "loaded": 173,
+      "prepared": 170,
+      "reviewed": 53,
+      "batches": 114,
+      "lastProgress": "2026-11-11T14:51:45.130498+00:00",
+      "message": "Preparing loaded exposure cd32b42c7994979f3e23765f"
+    },
+    {
+      "stage": "running_inference",
+      "status": "running",
+      "loaded": 173,
+      "prepared": 173,
+      "reviewed": 53,
+      "batches": 115,
+      "lastProgress": "2026-11-11T14:51:45.781520+00:00",
+      "message": "Local Laya: running inference"
+    },
+    {
+      "stage": "running_inference",
+      "status": "running",
+      "loaded": 174,
+      "prepared": 173,
+      "reviewed": 55,
+      "batches": 116,
+      "lastProgress": "2026-11-11T14:51:47.021917+00:00",
+      "message": "Local Laya: running inference"
+    },
+    {
+      "stage": "preparing_images",
+      "status": "running",
+      "loaded": 174,
+      "prepared": 174,
+      "reviewed": 55,
+      "batches": 116,
+      "lastProgress": "2026-11-11T14:51:47.647025+00:00",
+      "message": "Preparing loaded exposure c886e623c8603ed047f608a9"
+    },
+    {
+      "stage": "running_inference",
+      "status": "running",
+      "loaded": 174,
+      "prepared": 174,
+      "reviewed": 55,
+      "batches": 117,
+      "lastProgress": "2026-11-11T14:51:49.002058+00:00",
+      "message": "Local Laya: running inference"
+    },
+    {
+      "stage": "preparing_images",
+      "status": "running",
+      "loaded": 176,
+      "prepared": 0,
+      "reviewed": 55,
+      "batches": 119,
+      "lastProgress": "2026-11-11T14:51:50.665814+00:00",
+      "message": "Preparing loaded exposure 77e0d74e21207bad7581ff03"
+    },
+    {
+      "stage": "starting_model",
+      "status": "running",
+      "loaded": 180,
+      "prepared": 176,
+      "reviewed": 55,
+      "batches": 119,
+      "lastProgress": "2026-11-11T14:52:09.648748+00:00",
+      "message": "Local Laya: starting model"
+    },
+    {
+      "stage": "loading_model",
+      "status": "running",
+      "loaded": 180,
+      "prepared": 176,
+      "reviewed": 55,
+      "batches": 119,
+      "lastProgress": "2026-11-11T14:52:19.162246+00:00",
+      "message": "Local Laya: loading model"
+    },
+    {
+      "stage": "running_inference",
+      "status": "running",
+      "loaded": 180,
+      "prepared": 176,
+      "reviewed": 55,
+      "batches": 119,
+      "lastProgress": "2026-11-11T14:53:03.382898+00:00",
+      "message": "Local Laya: running inference"
+    },
+    {
+      "stage": "preparing_images",
+      "status": "running",
+      "loaded": 190,
+      "prepared": 178,
+      "reviewed": 55,
+      "batches": 119,
+      "lastProgress": "2026-11-11T14:53:05.429014+00:00",
+      "message": "Preparing loaded exposure af2cad6de538bd19cbed7887"
+    },
+    {
+      "stage": "running_inference",
+      "status": "running",
+      "loaded": 191,
+      "prepared": 190,
+      "reviewed": 57,
+      "batches": 120,
+      "lastProgress": "2026-11-11T14:53:07.008021+00:00",
+      "message": "Local Laya: running inference"
+    }
+  ],
+  "errors": [],
+  "live": "running_inference · Local Laya: running inference · 256 discovered · 174 loaded · 174 prepared · 55 Laya reviewed · 0 unavailable cutouts · 0 review errors · 82 pending downloads · 128 preliminary compatible · 0 validated for motion · Last progress: 11/11/2026, 10:51:48 pm",
+  "cancelled": {
+    "latency_ms": 2716,
+    "status": "cancelled",
+    "reviewed": 55,
+    "batches": 119,
+    "progress": "cancelled · Review cancelled; local inference process terminated. · 256 discovered · 175 loaded · 174 prepared · 55 Laya reviewed · 0 unavailable cutouts · 0 review errors · 81 pending downloads · 128 preliminary compatible · 0 validated for motion · Last progress: 11/11/2026, 10:51:50 pm Reviewed counts unique exposures with every eligible tile reviewed, not all pixels or all dates. Coverage lists masked/unmatched pixels. Scientific motion suitability remains uncertain: precision bandpass calibration, PSF matching, field-star registration and systematics are unvalidated. Laya is a general visual model; suggestions are not detections or probabilities."
+  },
+  "resumed": {
+    "latency_ms": 1009,
+    "status": "cancelled",
+    "reviewed": 57,
+    "batches": 122,
+    "progress": "cancelled · Review cancelled before inference. · 256 discovered · 191 loaded · 191 prepared · 57 Laya reviewed · 0 unavailable cutouts · 0 review errors · 65 pending downloads · 156 preliminary compatible · 0 validated for motion · Last progress: 11/11/2026, 10:53:08 pm Reviewed counts unique exposures with every eligible tile reviewed, not all pixels or all dates. Coverage lists masked/unmatched pixels. Scientific motion suitability remains uncertain: precision bandpass calibration, PSF matching, field-star registration and systematics are unvalidated. Laya is a general visual model; suggestions are not detections or probabilities."
+  },
+  "exposureIdsUnique": true,
+  "cropKeysUnique": true,
+  "model": {
+    "installed": true,
+    "missing": [],
+    "inference_verified": true,
+    "last_success_at": "2026-11-11T14:53:08.617266+00:00",
+    "worker_running": true,
+    "note": "Installed files do not prove successful inference. See a completed review receipt and runtime/laya-worker.log.",
+    "model": "thaitea/laya-vision",
+    "source": "https://github.com/r33drichards/laya-vision",
+    "local": true
+  }
+}

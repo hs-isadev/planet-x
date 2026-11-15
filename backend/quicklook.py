@@ -2,6 +2,7 @@
 import numpy as np
 from scipy.ndimage import median_filter,label
 from .analysis import load_products
+from .archive import same_calibration_release
 
 def standardized(product):
     a=np.asarray(product['value'],float);v=np.asarray(product['variance'],float)
@@ -21,7 +22,7 @@ def standardized(product):
 
 def comparable(a,b):
     wa,wb=a.get('wavelength_um'),b.get('wavelength_um')
-    return a.get('detector')==b.get('detector') and wa is not None and wb is not None and abs(wa-wb)<=.025 and abs(a['mjd']-b['mjd'])>=1
+    return a.get('detector')==b.get('detector') and same_calibration_release(a.get('release'), b.get('release')) and wa is not None and wb is not None and abs(wa-wb)<=.025 and abs(a['mjd']-b['mjd'])>=1
 
 def enhanced_rgba(frame,reference=None):
     a,va,snr,valid=standardized(load_products(frame))
@@ -41,7 +42,9 @@ def change_masks(current,reference):
     good=ma&mb
     # LVF wavelengths vary across each exposure. Matching only the field-center
     # wavelength can paint real spectral differences red elsewhere in the image.
-    if 'wavelength' in current and 'wavelength' in reference:
+    if 'wavelength' not in current or 'wavelength' not in reference:
+        good[:] = False
+    else:
         wa=np.asarray(current['wavelength']);wb=np.asarray(reference['wavelength'])
         good &= np.isfinite(wa)&np.isfinite(wb)&(np.abs(wa-wb)<=.025)
     significance=np.divide(a-b,np.sqrt(va+vb),out=np.zeros(a.shape),where=good)
@@ -56,4 +59,4 @@ def change_masks(current,reference):
         return mask&(counts[regions]>=2)
     appear=islands(appear);disappear=islands(disappear)
     residual=islands(good&(np.abs(significance)>=4)&((sa>=3)|(sb>=3)))
-    return dict(appearance=appear,disappearance=disappear,residual=residual,red=appear|disappear|residual,comparable=good,significance=significance)
+    return dict(appearance=appear,disappearance=disappear,residual=residual,red=appear|disappear|residual,comparable=good,significance=significance,assessment='uncertain',warnings=['Approximate WCS-WAVE compatibility; precision CWAVE/CBAND not validated.','No PSF matching or field-star astrometric validation.','Background-model error and resampling covariance omitted; significance is a quicklook, not a calibrated detection.'])

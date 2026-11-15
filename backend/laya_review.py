@@ -1,6 +1,7 @@
 """Experimental LOCAL Laya Vision review of genuine algorithm-proposed image regions."""
-import json,sys,subprocess,threading,queue,time,io,base64,atexit
+import json,sys,subprocess,threading,queue,time,io,base64,atexit,os,signal
 from pathlib import Path
+from datetime import datetime, timezone
 import numpy as np
 from PIL import Image,ImageDraw
 from scipy.ndimage import label
@@ -9,53 +10,124 @@ from .archive import ROOT,CACHE,key_for,atomic_json,fetch_frame
 from .analysis import load_products
 from .quicklook import standardized,change_masks,comparable
 LOCK=threading.Lock();REVIEWS={};PROC=None;LINES=queue.Queue()
-PYTHON=ROOT/'runtime/laya-venv'/('Scripts/python.exe' if sys.platform=='win32' else 'bin/python')
-def installed():
-    return PYTHON.exists() and (ROOT/'runtime/laya-model-revision.json').exists() and (ROOT/'runtime/laya-venv/Lib/site-packages/laya').exists() if sys.platform=='win32' else PYTHON.exists() and (ROOT/'runtime/laya-model-revision.json').exists()
-def infer(file,note):
-    global PROC,LINES
+LAST_SUCCESS_AT=None
+RUNTIME=Path(os.environ.get('LAYA_RUNTIME_DIR') or ROOT/'runtime').resolve()
+PYTHON=RUNTIME/'laya-venv'/('Scripts/python.exe' if sys.platform=='win32' else 'bin/python')
+MODEL_REVISION=RUNTIME/'laya-model-revision.json'
+class ReviewCancelled(RuntimeError):
+    pass
+
+def availability():
+    required = [PYTHON, MODEL_REVISION, RUNTIME/'laya-model/vlm_agent_config.json', RUNTIME/'laya-model/model.safetensors', RUNTIME/'laya-model/backbone/config.json']
+    if sys.platform=='win32':
+        required.append(RUNTIME/'laya-venv/Lib/site-packages/laya')
+    missing = [p.relative_to(RUNTIME).as_posix() for p in required if not p.exists()]
+    note='Installed files do not prove successful inference. Check the review status for the result.'
+    if missing:
+        note=('Laya Vision is not installed on this Render instance. Use the local app or a model-capable host. Red change overlays still work independently.'
+              if os.environ.get('RENDER')=='true' else
+              'Laya Vision is missing runtime files. Run python scripts/setup_laya.py and restart the app.')
+    return dict(installed=not missing, missing=missing,
+                inference_verified=LAST_SUCCESS_AT is not None, last_success_at=LAST_SUCCESS_AT, worker_running=PROC is not None and PROC.poll() is None,
+                note=note)
+
+def shutdown_worker():
+    global PROC, LINES
+    proc, PROC = PROC, None
+    LINES = queue.Queue()
+    if proc is not None:
+        try:
+            if sys.platform == 'win32':
+                # A venv python.exe is a launcher with a child interpreter on Windows.
+                subprocess.run([str(Path(os.environ.get('SystemRoot', 'C:/Windows'))/'System32/taskkill.exe'),
+                    '/PID', str(proc.pid), '/T', '/F'], stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, timeout=5, creationflags=subprocess.CREATE_NO_WINDOW)
+            else:
+                os.killpg(proc.pid, signal.SIGKILL)
+            proc.wait(timeout=5)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        for stream in (proc.stdin, proc.stdout):
+            try:
+                stream.close()
+            except (OSError, AttributeError):
+                pass
+
+atexit.register(shutdown_worker)
+
+def infer(file, note, cancelled=lambda: False, progress=lambda stage: None, timeout=240):
+    # Caller owns LOCK. A killed worker's queue is discarded; late results cannot
+    # be attributed to the next request. Requests also carry an explicit ID.
+    global PROC, LINES, LAST_SUCCESS_AT
+    import uuid
+    if cancelled():
+        raise ReviewCancelled('Review cancelled before inference.')
     if PROC is None or PROC.poll() is not None:
-        LINES=queue.Queue();log=open(ROOT/'runtime/laya-worker.log','a',encoding='utf8')
-        PROC=subprocess.Popen([str(PYTHON),str(ROOT/'backend/laya_worker.py')],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log,text=True,bufsize=1,creationflags=subprocess.CREATE_NO_WINDOW if sys.platform=='win32' else 0)
-        stream=PROC.stdout;channel=LINES
+        LINES = queue.Queue()
+        with open(RUNTIME/'laya-worker.log', 'a', encoding='utf8') as log:
+            PROC = subprocess.Popen([str(PYTHON), str(ROOT/'backend/laya_worker.py')], cwd=ROOT,
+                env={**os.environ, 'LAYA_RUNTIME_DIR': str(RUNTIME)},
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=log, text=True, bufsize=1,
+                start_new_session=sys.platform != 'win32',
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0)
+        stream, channel = PROC.stdout, LINES
         def reader():
             for line in stream:
-                try:channel.put(json.loads(line))
-                except ValueError:continue
-            channel.put({'ok':False,'error':'Local Laya worker stopped. See runtime/laya-worker.log.'})
-        threading.Thread(target=reader,daemon=True).start()
-    PROC.stdin.write(json.dumps(dict(image=str(file),note=note))+'\n');PROC.stdin.flush()
-    try:result=LINES.get(timeout=240)
-    except queue.Empty:
-        PROC.kill();PROC=None
-        raise RuntimeError('Local Laya inference timed out; no model decision was substituted.')
-    if not result.get('ok'):raise RuntimeError(result.get('error','Local Laya inference failed'))
-    return result['result']
-def shutdown_worker():
-    global PROC
-    if PROC is not None:
-        try:PROC.stdin.close();PROC.wait(timeout=8)
-        except Exception:
-            try:PROC.kill()
-            except OSError:pass
-        PROC=None
-atexit.register(shutdown_worker)
+                try:
+                    channel.put(json.loads(line))
+                except ValueError:
+                    continue
+            channel.put({'ok': False, 'error': 'Local Laya worker stopped. See runtime/laya-worker.log.'})
+        threading.Thread(target=reader, daemon=True).start()
+    request_id = uuid.uuid4().hex
+    deadline = time.monotonic() + timeout
+    try:
+        progress('starting_model')
+        PROC.stdin.write(json.dumps(dict(request_id=request_id, image=str(file), note=note))+'\n')
+        PROC.stdin.flush()
+        while True:
+            if cancelled():
+                raise ReviewCancelled('Review cancelled; local inference process terminated.')
+            remaining = deadline-time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError(f'Local Laya exceeded {timeout}s. Worker terminated; completed crops retained. Resume to retry. See runtime/laya-worker.log.')
+            try:
+                result = LINES.get(timeout=min(.25, remaining))
+            except queue.Empty:
+                continue
+            if result.get('request_id') not in (None, request_id):
+                continue
+            if 'stage' in result:
+                progress(result['stage'])
+                continue
+            if not result.get('ok'):
+                raise RuntimeError(result.get('error', 'Local Laya inference failed'))
+            LAST_SUCCESS_AT = datetime.now(timezone.utc).isoformat()
+            return result['result']
+    except Exception:
+        shutdown_worker()
+        raise
 
 def gray(product):
     _,_,snr,good=standardized(product)
-    v=(np.arcsinh(3*np.clip((np.nan_to_num(snr)-2.5)/9.5,0,1))/np.arcsinh(3)*232).astype('u1')
+    normalized=(np.arcsinh(np.nan_to_num(snr)/2)+np.arcsinh(2.5))/(np.arcsinh(10)+np.arcsinh(2.5))
+    v=(np.clip(normalized,0,1)*235).astype('u1')
     rgb=np.repeat(v[...,None],3,axis=-1);rgb[~good]=[35,45,57]
     return rgb
 def review_pair(a,b,identity):
     earlier,later=sorted([a,b],key=lambda f:f['mjd']);pa,pb=load_products(earlier),load_products(later)
     if pa['value'].shape!=pb['value'].shape:raise ValueError('Comparison grids differ.')
-    masks=change_masks(pb,pa);regions,n=label(masks['red'])
+    masks=change_masks(pb,pa)
+    if masks['comparable'].sum()<9:
+        raise ValueError('Fewer than nine usable pixels share a preliminary wavelength match. Comparison unassessed.')
+    regions,n=label(masks['red'])
     objects=[]
     for i in range(1,n+1):
         yy,xx=np.where(regions==i)
         if len(xx):objects.append((len(xx),float(xx.mean()),float(yy.mean())))
     objects.sort(reverse=True);limited=len(objects)>8;objects=objects[:8]
     ga,gb=gray(pa),gray(pb);h,w=ga.shape[:2];answers=[]
+    ga[~masks['comparable']]=gb[~masks['comparable']]=[35,45,57]
     if not objects:objects=[(0,(w-1)/2,(h-1)/2)]
     for index,(count,x,y) in enumerate(objects):
         x0=max(0,min(w-16,int(x)-8));y0=max(0,min(h-16,int(y)-8));x1=min(w,x0+16);y1=min(h,y0+16)
@@ -73,9 +145,8 @@ def review_pair(a,b,identity):
         result=infer(file,note);answer=result.get('answers',{}).get('change',{})
         choice=answer.get('choice','uncertain')
         if not isinstance(choice,str):choice=str(choice)
-        accepted=choice in ['appeared or brightened','disappeared or faded','shifted position']
-        answers.append(dict(x=(x+.5)/w,y=1-(y+.5)/h,radius=max(8,np.sqrt(count)*2)/w,pixels=count,choice=choice,highlight_red=accepted and count>0,answer=answer))
-    return dict(status='complete',regions=answers,frame=a['index'],reference=b['index'],dates=[earlier['date'],later['date']],limited=limited,model=json.loads((ROOT/'runtime/laya-model-revision.json').read_text()),provenance='computed / experimental local AI review',message=(f'Laya reviewed {len(answers)} proposed regions' if objects[0][0] else 'Laya assessed the whole field; no localized statistical candidate')+(' (first 8 only)' if limited else ''),note='General visual model; scores are not calibrated for SPHEREx. Red rings = model favors a visible change; amber = other/uncertain. Not confirmed motion, a source identification, or a validated astronomical detection.')
+        answers.append(dict(x=(x+.5)/w,y=1-(y+.5)/h,radius=max(8,np.sqrt(count)*2)/w,pixels=count,choice=choice,assessment='uncertain'))
+    return dict(status='complete',regions=answers,frame=a['index'],reference=b['index'],dates=[earlier['date'],later['date']],limited=limited,model=json.loads(MODEL_REVISION.read_text()),provenance='computed / experimental local AI review',message=(f'Laya reviewed {len(answers)} proposed regions' if objects[0][0] else 'Laya assessed the whole field; no localized statistical candidate')+(' (first 8 only)' if limited else ''),note='General visual model; scores are not calibrated for SPHEREx. Amber rings mark model-reviewed regions. Interpretation remains uncertain pending wavelength calibration, registration and PSF validation.')
 def run_review(a,b,identity,file):
     try:
         with LOCK:
@@ -84,10 +155,11 @@ def run_review(a,b,identity,file):
 def install_laya_routes(app,jobs,guard):
     @app.get('/api/laya/status')
     def status():
-        return dict(installed=installed(),model='thaitea/laya-vision',source='https://github.com/r33drichards/laya-vision',local=True)
+        return dict(**availability(),model='thaitea/laya-vision',source='https://github.com/r33drichards/laya-vision',local=True)
     @app.post('/api/jobs/{jobid}/laya')
     def start(jobid:str,frame:int):
-        if not installed():raise HTTPException(503,'Laya Vision is not installed or its checkpoint download has not completed.')
+        model=availability()
+        if not model['installed']:raise HTTPException(503,model['note'])
         with guard:
             if jobid not in jobs:raise HTTPException(404,'Observation session expired.')
             frames=jobs[jobid]['frames']
@@ -121,7 +193,7 @@ def install_laya_routes(app,jobs,guard):
                 threading.Thread(target=prepare,daemon=True).start()
                 return REVIEWS[identity]
             b=dict(max(others,key=lambda f:abs(f['mjd']-a['mjd'])))
-        identity='laya-'+key_for(a['cache_id']+'|'+b['cache_id']+'|'+(ROOT/'runtime/laya-model-revision.json').read_text()+'|prompt-v1')
+        identity='laya-'+key_for(a['cache_id']+'|'+b['cache_id']+'|'+(ROOT/'runtime/laya-model-revision.json').read_text()+'|prompt-v2-compatibility')
         file=CACHE/(identity+'.json')
         if file.exists():
             result=json.loads(file.read_text());REVIEWS[identity]=dict(result,id=identity);return REVIEWS[identity]

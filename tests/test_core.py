@@ -49,6 +49,7 @@ def test_documented_query():
     assert 'spherex.artifact' in query and 'spherex.plane' in query
     assert "CONTAINS(POINT('ICRS', 133.0, -7.0), p.poly)" in query
     assert 'ORDER BY p.time_bounds_lower' in query
+    assert "/dr1/" in query and "/qr3/" in query and "/qr2/" not in query
 
 
 def test_job_pipeline_and_png(tmp_path,monkeypatch):
@@ -110,6 +111,7 @@ def test_discovery_prefers_newest_release_and_caches(tmp_path,monkeypatch):
     table=Table(rows=[
         ('ibe/data/spherex/qr2/level2/level2_obs1D6_spx_v20.fits',60001.,'SPHEREx-D6'),
         ('ibe/data/spherex/qr3/level2/level2_obs1D6_spx_v25.fits',60001.,'SPHEREx-D6'),
+        ('ibe/data/spherex/dr1/level2/level2_obs1D6_spx_v27.fits',60001.,'SPHEREx-D6'),
         ('ibe/data/spherex/qr3/level2/level2_obs2D6_spx_v25.fits',60000.,'SPHEREx-D6')
     ],names=['uri','time_bounds_lower','energy_bandpassname'])
     calls=[]
@@ -124,7 +126,7 @@ def test_discovery_prefers_newest_release_and_caches(tmp_path,monkeypatch):
     monkeypatch.setattr(archive.pyvo.dal,'TAPService',Service)
     first=archive.discover(133,-7)
     second=archive.discover(133,-7)
-    assert len(first)==2 and all(r['release']=='qr3' for r in first)
+    assert [r['release'] for r in first]==['qr3','dr1']
     assert [r['mjd'] for r in first]==[60000,60001]
     assert first==second and len(calls)==1
 

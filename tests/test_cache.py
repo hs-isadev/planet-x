@@ -74,3 +74,28 @@ def test_equivalent_float_catalog_query_reuses_genuine_cache(tmp_path,monkeypatc
     (tmp_path/('gaia-'+catalogs.key_for(q1)+'.json')).write_text(json.dumps(payload))
     assert catalogs.cached_gaia_query(q2)==payload
     assert catalogs.cached_gaia_query(q2.replace('133.79512916666667','134.79512916666667')) is None
+
+
+def test_shared_exposure_is_prepared_before_other_later_frames(tmp_path, monkeypatch):
+    import numpy as np
+    from backend import main
+
+    monkeypatch.setattr(main, 'CACHE', tmp_path)
+    monkeypatch.setitem(main.CONFIG, 'concurrent_downloads', 1)
+    rows = [dict(id=str(i), url='test-only', mjd=60000+i, date='test-only',
+                 band='SPHEREx-D6', detector=6) for i in range(10)]
+    monkeypatch.setattr(main, 'discover', lambda *args: rows)
+    calls = []
+
+    def fetch(frame, *args):
+        calls.append(frame['id'])
+        np.save(tmp_path / (frame['id']+'.npy'), np.arange(16, dtype='f4').reshape(4, 4))
+        return frame['id'], dict(unit='MJy/sr')
+
+    monkeypatch.setattr(main, 'fetch_frame', fetch)
+    job = dict(ra=1, dec=2, fov=8, frames=[], contrast=None, status='querying')
+    main.prioritize_exposure(job, '4', None)
+    main.run_job(job)
+    assert calls[:2] == ['0', '4']
+    assert len(calls) == len(set(calls)) == len(rows)
+    assert [frame['id'] for frame in job['frames']] == [frame['id'] for frame in rows]

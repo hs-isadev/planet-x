@@ -1,0 +1,8 @@
+Live archive smoke test executed 2026-11-09.
+Command: RUN_LIVE_IRSA=1 python -m pytest tests/test_live_wise.py -m live -q --tb=short
+Result: 1 failed in 24.97 seconds.
+Failure stage: pyvo TAPService.search -> POST https://irsa.ipac.caltech.edu/TAP/sync
+Exception: DALFormatError wrapping requests.ConnectionError / ConnectionResetError 10054.
+No archive observations were received. Source visibility and motion were not tested successfully.
+
+Separate astroquery.Simbad attempts for Barnard's Star, eps Indi B, RW Aur and R Dra failed at the SIMBAD capabilities endpoint.

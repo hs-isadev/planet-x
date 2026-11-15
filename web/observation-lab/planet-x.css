@@ -1,0 +1,8 @@
+.main-modes, #import-shortcut { display: none !important; }
+
+.plot-with-guide{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,22%);gap:12px;align-items:start}
+#light-chart-guide{padding:12px;background:#161617;border:1px solid #343437;border-radius:8px;font-size:.8rem;line-height:1.4}
+#light-chart-guide h4{font-size:.9rem;margin:0 0 8px;color:#fff}
+#light-chart-guide p{margin:0 0 8px}
+#light-chart-guide p:last-child{margin:0}
+@media(max-width:700px){.plot-with-guide{grid-template-columns:1fr}}

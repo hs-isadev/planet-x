@@ -8,7 +8,7 @@ const star={id:'barnard',name:"Barnard's Star",xyz_pc:[2,0,0],planets:[{star_rad
 const stars={objects:[star]};
 function makeView(mode){
  const view=Object.create(ObservatoryScene.prototype);
- Object.assign(view,{camera:new THREE.PerspectiveCamera(),controls:{target:new THREE.Vector3(),enabled:true},renderer:{domElement:{style:{}}},reduced:false,mode,selected:mode==='solar'?'sun':'barnard',solarData:solar,starsData:stars,items:[],stopFlight(){},beaconLabel:null});
+ Object.assign(view,{camera:new THREE.PerspectiveCamera(),controls:{target:new THREE.Vector3(),enabled:true},renderer:{domElement:{style:{}}},content:{visible:true},reduced:false,mode,selected:mode==='solar'?'sun':'barnard',solarData:solar,starsData:stars,items:[],stopFlight(){},beaconLabel:null});
  view.solar=async data=>{view.mode='solar';view.solarData=data;view.local=null;view.items=data.objects.map(d=>({data:d,pos:view.vector(d.xyz_au),radius:d.id==='earth'?.01:.1}));};
  view.stars=data=>{view.mode='stars';view.starsData=data;view.local=null;view.items=data.objects.map(d=>({data:d,pos:view.vector(d.xyz_pc),radius:0}));};
  view.exitLocal=()=>{view.local=null;};
@@ -28,13 +28,21 @@ function makeView(mode){
  return view;
 }
 
+async function trace(view){
+ view.cachedFlightSolar={items:solar.objects.map(d=>({data:d,pos:view.vector(d.xyz_au),radius:d.id==='earth'?.01:.1}))};
+ view.activateFlightSolar=()=>view.solar(solar);
+ const result=view.trace(context,solar,()=>{}),flight=view.flight;
+ assert.ok(flight?.sample,'Earth trace runs on one continuous sampled flight');
+ for(let i=0;i<=1000;i++){const pose=flight.sample(i/1000);view.camera.position.copy(pose.position);view.controls.target.copy(pose.target);assert.ok(pose.position.toArray().every(Number.isFinite));}
+ view.flight=null;flight.done(true);return result;
+}
 const context={direction_ecliptic:[1,0,0]};
 for(const mode of ['solar','stars']){
  const view=makeView(mode);
  if(mode==='solar'){await view.solar(solar);view.camera.position.set(0,.2,.5);}
  else{view.stars(stars);view.stellarCloseup(view.items[0]);view.camera.position.set(0,.15,44);}
  const saved=view.camera.position.clone(),target=view.controls.target.clone();
- assert.equal(await view.trace(context,solar,()=>{}),true);
+ assert.equal(await trace(view),true);
  assert.equal(view.mode,'solar');assert.equal(view.selected,'earth');
  assert.ok(view.controls.target.distanceTo(view.items.find(i=>i.data.id==='earth').pos)<1e-10);
  view.stayOnEarth();assert.equal(view.journey,false);assert.equal(view.controls.enabled,true);assert.ok(view.traceReturn);
@@ -47,7 +55,8 @@ for(const mode of ['solar','stars']){
 }
 
 const cancelled=makeView('stars');cancelled.stars(stars);cancelled.stellarCloseup(cancelled.items[0]);cancelled.camera.position.set(0,0,30);
-cancelled.flyForward=async()=>{cancelled.travelToken++;return false;};
-assert.equal(await cancelled.trace(context,solar,()=>{}),false);
+cancelled.cachedFlightSolar={items:solar.objects.map(d=>({data:d,pos:cancelled.vector(d.xyz_au),radius:.01}))};
+const pending=cancelled.trace(context,solar,()=>{});const flight=cancelled.flight;flight.sample(.1);cancelled.travelToken++;flight.done(false);cancelled.flight=null;
+assert.equal(await pending,false);
 await cancelled.cancelTrace();assert.equal(cancelled.mode,'stars');assert.equal(cancelled.selected,'barnard');assert.equal(cancelled.journey,false);assert.equal(cancelled.controls.enabled,true);
 console.log('PASS: solar and stellar journeys reach Earth, support staying, return to the saved viewpoint, and recover from cancellation.');

@@ -1,8 +1,24 @@
 import * as THREE from 'three';
 import {corona} from './plasma.js';
-import {addMoons,addPlanets} from './companions.js';
+import {addMoons,addPlanets} from './companions.js?v=gaia-host';
 import {travelDust} from './travel-dust.js';
 const $=id=>document.getElementById(id);
+function starProfile() {
+ const width=64,pixels=new Uint8Array(width*width*4);
+ for(let y=0;y<width;y++)for(let x=0;x<width;x++){
+  const r=Math.hypot(2*(x+.5)/width-1,2*(y+.5)/width-1);
+  const edge=THREE.MathUtils.clamp((1-r)/.22,0,1);
+  const alpha=edge*(.82*Math.exp(-14*r*r)+.22*Math.exp(-4.4*r*r));
+  const i=4*(y*width+x);
+  pixels[i]=pixels[i+1]=pixels[i+2]=255;
+  pixels[i+3]=Math.round(255*Math.min(1,alpha));
+ }
+ const texture=new THREE.DataTexture(pixels,width,width,THREE.RGBAFormat);
+ texture.minFilter=texture.magFilter=THREE.LinearFilter;
+ texture.needsUpdate=true;
+ return texture;
+}
+
 export function installContext(C){
  const solar=C.prototype.solar,close=C.prototype.stellarCloseup,exit=C.prototype.exitLocal,stars=C.prototype.stars;
  C.prototype.solar=async function(data){
@@ -16,25 +32,88 @@ export function installContext(C){
  };
  C.prototype.stars=function(...args){stars.apply(this,args);this.installTravelDust();this.loadContextSky();};
  C.prototype.installTravelDust=function(){if(this.dustUpdate)return;this.dustUpdate=travelDust(this);const tick=new THREE.Group();tick.userData.update=()=>this.dustUpdate();this.scene.add(tick);};
- C.prototype.loadContextSky=function(){if(this.contextSkyLoading)return;this.contextSkyLoading=true;fetch('/api/context-sky').then(r=>{if(!r.ok)throw Error('Catalog backdrop unavailable');return r.json();}).then(data=>{this.addCatalogSky(data);}).catch(()=>{this.contextSkyLoading=false;});};
+ C.prototype.loadContextSky=function(){
+  if(!this.contextCatalogReady)this.contextCatalogReady=fetch('/api/context-sky').then(response=>{
+   if(!response.ok)throw Error('Catalog backdrop unavailable');
+   return response.json();
+  }).then(data=>{this.addCatalogSky(data);return data;}).catch(()=>{
+   this.contextCatalogReady=null;
+   return null;
+  });
+  return this.contextCatalogReady;
+ };
  C.prototype.addCatalogSky=function(data){
-  if(!this.sky){this.sky=new THREE.Group();this.sky.userData.catalog=true;this.scene.add(this.sky);this.skyIds=new Set();}
-  for(const d of data.objects){if(this.skyIds.has(d.id))continue;this.skyIds.add(d.id);let sprite=this.makeHalo(d);
-   sprite.userData.catalogObject=d;sprite.userData.passive=d.id.startsWith('host:');sprite.userData.icrs=this.vector(d.xyz_pc);this.sky.add(sprite);
+  if(this.sky)return;
+  // Limit angular density across the catalog. Keep real rows with valid distances.
+  const counts=new Map(), entries=[];
+  const sorted=data.objects.filter(source=>!source.expanded_catalog).sort((a,b)=>a.distance_pc-b.distance_pc||a.id.localeCompare(b.id));
+  for(const source of sorted){
+   if(!source.xyz_pc?.every(Number.isFinite)||!Number.isFinite(source.ra)||!Number.isFinite(source.dec))continue;
+   const cell=Math.floor(source.ra/12)+':'+Math.floor((source.dec+90)/12);
+   const count=counts.get(cell)||0;
+   if(count>=2)continue;
+   counts.set(cell,count+1);
+   entries.push(source);
+   if(entries.length>=512)break;
   }
+  entries.push(...data.objects.filter(source=>source.expanded_catalog&&source.xyz_pc?.every(Number.isFinite)));
+  this.sky=new THREE.Group();
+  this.sky.userData.catalog=true;
+  this.sky.userData.sourceCount=data.objects.length;
+  this.scene.add(this.sky);
+  const directions=entries.map(source=>this.vector(source.xyz_pc));
+  const positions=new Float32Array(entries.length*3), colors=new Float32Array(entries.length*3);
+  entries.forEach((source,index)=>{
+   const color=new THREE.Color((source.teff_gspphot||0)>6500?'#b1c7eb':source.teff_gspphot<4700?'#d4b297':'#ccd2db');
+   color.toArray(colors,index*3);
+  });
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+  geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  geometry.boundingSphere=new THREE.Sphere(new THREE.Vector3(),3001);
+  const material=new THREE.PointsMaterial({size:5.6,map:starProfile(),sizeAttenuation:false,vertexColors:true,transparent:true,opacity:.86,alphaTest:.012,depthWrite:false});
+  const points=new THREE.Points(geometry,material);
+  points.userData.catalogEntries=entries;
+  this.sky.add(points);
+  const raw=new THREE.Vector3(), lastOrigin=new THREE.Vector3(Infinity,Infinity,Infinity);
+  let lastMode,lastLocal,lastCatalogStars;
+  const epsilon=THREE.MathUtils.degToRad(23.439291111);
+  const sin=Math.sin(epsilon),cos=Math.cos(epsilon);
   this.sky.userData.update=()=>{
    this.sky.visible=!this.surface;
-   const eps=THREE.MathUtils.degToRad(23.439291111);
-   for(const sprite of this.sky.children){const raw=sprite.userData.icrs.clone();
-    if(this.local?.item?.data.name?.toLowerCase()===sprite.userData.catalogObject.name.toLowerCase()){sprite.visible=false;continue;}
-    if(this.mode==='stars')raw.sub(this.local?.item?.pos||this.camera.position);
-    else {const y=-raw.z,z=raw.y;raw.set(raw.x,-Math.sin(eps)*y+Math.cos(eps)*z,-(Math.cos(eps)*y+Math.sin(eps)*z));}
-    if(raw.lengthSq()<1e-12){sprite.visible=false;continue;}sprite.visible=true;raw.normalize();
-    sprite.position.copy(this.camera.position).addScaledVector(raw,3000);
-    const mag=sprite.userData.catalogObject.phot_g_mean_mag,px=mag==null?1.2:THREE.MathUtils.clamp(4-mag*.22,1.3,4);
-    sprite.scale.setScalar(3000*2*Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2))*px*(this.starSize||1)/this.h);
+   this.sky.position.copy(this.camera.position);
+   material.size=THREE.MathUtils.clamp(5.6*(this.starSize||1),2.4,12);
+   const origin=this.local?.item?.pos||this.camera.position;
+   const local=this.local?.item?.data.id;
+   const catalogStars=this.mode==='stars'?this.visibleCatalogStars:null;
+   if(this.mode===lastMode&&local===lastLocal&&lastCatalogStars===catalogStars&&(this.mode!=='stars'||origin.equals(lastOrigin)))return;
+   lastMode=this.mode;lastLocal=local;lastCatalogStars=catalogStars;lastOrigin.copy(origin);
+   for(let i=0;i<entries.length;i++){
+    raw.copy(directions[i]);
+    if(this.mode==='stars')raw.sub(origin);
+    else {const y=-raw.z,z=raw.y;raw.set(raw.x,-sin*y+cos*z,-(cos*y+sin*z));}
+    if(entries[i].id===local||(!local&&catalogStars?.has(entries[i].id))||raw.lengthSq()<1e-12)raw.set(0,0,0);
+    else raw.setLength(3000);
+    raw.toArray(positions,i*3);
    }
+   geometry.attributes.position.needsUpdate=true;
   };
+  this.sky.userData.update();
+ };
+ C.prototype.catalogAtPointer=function(pointer){
+  const points=this.sky?.children[0];
+  const entries=points?.userData.catalogEntries;
+  if(!this.sky?.visible||!entries)return null;
+  const positions=points.geometry.attributes.position.array;
+  const projected=new THREE.Vector3();
+  let best=null, radius=6;
+  for(let i=0;i<entries.length;i++){
+   projected.fromArray(positions,i*3).applyMatrix4(points.matrixWorld).project(this.camera);
+   if(projected.z<0||projected.z>=1)continue;
+   const distance=Math.hypot((projected.x-pointer.x)*this.w/2,(projected.y-pointer.y)*this.h/2);
+   if(distance<radius){radius=distance;best=entries[i];}
+  }
+  return best;
  };
  C.prototype.stellarCloseup=function(item,...args){
   close.call(this,item,...args);
@@ -48,6 +127,7 @@ export function installContext(C){
   const context=this.local;
   const show=planets=>{if(this.local!==context)return;item.data.planets=planets;addPlanets(this,item,planets);};
   this.companionsReady=item.data.planets?Promise.resolve(show(item.data.planets)):
+    this.journey?Promise.resolve(show([])):
    item.data.ra!=null?fetch('/api/companions?'+new URLSearchParams({ra:item.data.ra,dec:item.data.dec,name:item.data.name})).then(r=>{if(!r.ok)throw Error('Planet catalog unavailable');return r.json();}).then(data=>show(data.planets||[])).catch(()=>{if(this.local===context){$('stellar-system').textContent='Planet catalog unavailable';$('stellar-provenance').textContent+=' Planet catalog could not load; no orbit has been invented.';}}):Promise.resolve(show([]));
  };
  C.prototype.systemOverview=function(){
@@ -65,8 +145,8 @@ export function installContext(C){
   this.exitLocal();const i=this.items.find(i=>i.data.id===this.selected);if(!i)return;
   const selected=this.selected,d=Math.max(i.radius*4.4,this.camera.position.distanceTo(this.controls.target));
   const direction=this.camera.position.clone().sub(i.pos).normalize();if(!direction.length())direction.set(0,.25,1).normalize();
-  await this.turnLeftTo(i.pos.clone().sub(this.camera.position),550,'');
-  if(this.selected!==selected)return;
+  const finished=await this.turnLeftTo(i.pos.clone().sub(this.camera.position),550,'');
+  if(!finished||this.journey||this.selected!==selected)return;
   return this.fly(i.pos,i.pos.clone().addScaledVector(direction,d),1050);
  };
  // Every orbit-camera zoom uses the same gradual geometric-distance path.

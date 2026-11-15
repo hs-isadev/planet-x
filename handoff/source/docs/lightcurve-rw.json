@@ -1,0 +1,41 @@
+{
+  "status": 200,
+  "result": {
+    "provenance": "computed",
+    "source_pixels": "observed",
+    "group": {
+      "id": "D1:42",
+      "detector": 1,
+      "band": "SPHEREx-D1",
+      "wavelength_min_um": 1.05,
+      "wavelength_max_um": 1.075,
+      "frames": [
+        0,
+        206
+      ],
+      "stackable": true
+    },
+    "points": [
+      {
+        "status": "missing",
+        "reason": "Aperture is masked, clipped, or lacks a usable background annulus.",
+        "valid_fraction": 0.9655172413793104,
+        "frame": 0,
+        "mjd": 60919.419647,
+        "date": "2025-09-01T10:04:17.501Z"
+      },
+      {
+        "status": "missing",
+        "reason": "Aperture is masked, clipped, or lacks a usable background annulus.",
+        "valid_fraction": 0.9259259259259259,
+        "frame": 206,
+        "mjd": 61107.880113,
+        "date": "2026-03-08T21:07:21.763Z"
+      }
+    ],
+    "reduced_chi2_constant": null,
+    "loaded": 9,
+    "discovered": 333,
+    "note": "Native-pixel 18.45 arcsec aperture flux ± statistical error, local background annulus; no aperture/PSF/calibration correction. Only this detector and 0.025 µm center-wavelength bin is plotted. Residual wavelength response, crowding and calibration can mimic variability. Missing apertures are omitted, never interpolated. Loaded observations only; rerun as prefetch progresses."
+  }
+}

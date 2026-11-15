@@ -25,7 +25,7 @@ export function addPlanets(view,item,planets){
    planet.rotation.y=time*.1;
   };
   planet.userData.update(view.activityTime||0);
-  if(list){const button=document.createElement('button');button.className='quiet';button.textContent=p.name;button.title='Catalog orbit: '+p.semimajor_au+' AU · '+p.period_days+' days. Planet size enlarged.';button.onclick=()=>view.planetCloseup(planet);list.append(button);}
+  if(list){const button=document.createElement('button');button.className='quiet';button.textContent=p.name;button.title=(p.semimajor_estimated?'Estimated orbital scale: ':'Catalog orbit: ')+p.semimajor_au.toPrecision(3)+' AU · '+p.period_days+' days. Planet size enlarged.';button.onclick=()=>view.planetCloseup(planet);list.append(button);}
  });
  group.add(new THREE.PointLight(0xfff4e8,3,0,0));
  view.local.systemExtent=extent;
@@ -33,7 +33,7 @@ export function addPlanets(view,item,planets){
  view.camera.far=Math.max(view.camera.far,extent*40);view.camera.updateProjectionMatrix();
  const button=document.getElementById('stellar-system');button.hidden=false;button.disabled=!planets.length;button.textContent=planets.length?'View all '+planets.length+' planet orbits':'No catalogued planet orbits';
  const label=document.getElementById('stellar-provenance');
- label.textContent+=planets.length?' '+planets.length+' catalogued planets. Circular orbit planes, phases and appearances are illustrative; planet sizes are enlarged for visibility. '+(planets.some(p=>!p.star_radius_solar)?'Host radius is unavailable; stellar size normalization is approximate.':''):' No measured planetary orbits for this target are installed in this catalog. This does not establish that it has no planets.';
+ label.textContent+=planets.length?' '+planets.length+' catalogued planets. Circular orbit planes, phases and appearances are illustrative; planet sizes are enlarged for visibility. '+(planets.some(p=>p.semimajor_estimated)?'An orbital radius was estimated from the period and host mass. ':'')+(planets.some(p=>!p.star_radius_solar)?'Host radius is unavailable; stellar size normalization is approximate.':''):' No measured planetary orbits for this target are installed in this catalog. This does not establish that it has no planets.';
 }
 
 export async function addMoons(view,data,version){

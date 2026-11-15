@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "realGaiaCatalog": true,
+  "checks": [
+    "actual nearby catalog rendered",
+    "select/focus/zoom/reset",
+    "five responsive widths",
+    "arbitrary coordinate field mode",
+    "source to SPHEREx and return retains 3D selection",
+    "unknown-depth list and physical-distance legend"
+  ],
+  "pageErrors": []
+}

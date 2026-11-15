@@ -1,0 +1,125 @@
+{
+  "validation": "Synchronous handlers and preserved real observations; ASGI, browser and fresh network access are not verified.",
+  "targets": {
+    "barnard": {
+      "cached": 295,
+      "discovered": 364,
+      "rendered_png_bytes": 7934,
+      "fov": 8.0,
+      "first_date": "2025-08-15T20:45:11.376Z",
+      "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W33_2C/l2b-v20-2025-267/3/level2_2025W33_2C_0321_1D3_spx_l2b-v20-2025-267.fits",
+      "raw_unchanged": true
+    },
+    "epsilon": {
+      "cached": 4,
+      "discovered": 449,
+      "rendered_png_bytes": 5904,
+      "fov": 8.0,
+      "first_date": "2025-04-24T20:31:57.101Z",
+      "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W17_4B/l2b-v20-2025-240/2/level2_2025W17_4B_0017_1D2_spx_l2b-v20-2025-240.fits",
+      "raw_unchanged": true
+    },
+    "wise": {
+      "cached": 52,
+      "discovered": 256,
+      "rendered_png_bytes": 8599,
+      "fov": 8.0,
+      "first_date": "2025-05-05T16:48:02.419Z",
+      "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W19_1B/l2b-v20-2025-241/3/level2_2025W19_1B_0116_1D3_spx_l2b-v20-2025-241.fits",
+      "raw_unchanged": true
+    },
+    "rw": {
+      "cached": 2,
+      "discovered": 333,
+      "rendered_png_bytes": 7088,
+      "fov": 8.0,
+      "first_date": "2025-09-01T10:04:17.501Z",
+      "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W36_1A/l2b-v20-2025-271/4/level2_2025W36_1A_0095_1D4_spx_l2b-v20-2025-271.fits",
+      "raw_unchanged": true
+    },
+    "rdraconis": {
+      "cached": 2,
+      "discovered": 2483,
+      "rendered_png_bytes": 5719,
+      "fov": 8.0,
+      "first_date": "2025-06-06T11:22:23.837Z",
+      "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W23_2B/l2b-v20-2025-252/4/level2_2025W23_2B_0206_1D4_spx_l2b-v20-2025-252.fits",
+      "raw_unchanged": true
+    }
+  },
+  "motion": {
+    "error": "No comparable same-detector pair at least 30 days apart."
+  },
+  "lightcurves": {
+    "rw": {
+      "error": "Load repeated exposures in one 0.025 micrometer detector/wavelength group. No cross-band curve is substituted."
+    },
+    "rdraconis": {
+      "error": "Load repeated exposures in one 0.025 micrometer detector/wavelength group. No cross-band curve is substituted."
+    }
+  },
+  "gaia_overlay": {
+    "markers": 149,
+    "motion_applied": 132,
+    "notes": [
+      "Markers are catalog predictions, not detections in SPHEREx pixels.",
+      "Gaia proper motions are applied where available; parallax displacement is not modeled.",
+      "WISE date-dependent markers use unique Gaia proper-motion associations at the documented MJD 55400 motion-fit position. Unmatched/blend-swapped sources retain stationary WISE coordinates. AllWISE apparent motions are not extrapolated."
+    ]
+  },
+  "wise_overlay": {
+    "markers": 306,
+    "motion_applied": 80,
+    "notes": [
+      "Markers are catalog predictions, not detections in SPHEREx pixels.",
+      "Gaia proper motions are applied where available; parallax displacement is not modeled.",
+      "WISE date-dependent markers use unique Gaia proper-motion associations at the documented MJD 55400 motion-fit position. Unmatched/blend-swapped sources retain stationary WISE coordinates. AllWISE apparent motions are not extrapolated."
+    ]
+  },
+  "barnard_planets": [
+    {
+      "name": "Barnard d",
+      "semimajor_au": 0.0188,
+      "period_days": 2.3402,
+      "radius_earth": 0.694,
+      "star_radius_solar": 0.185,
+      "temperature_k": 3195.0,
+      "provenance": "catalog / computed",
+      "source": "https://exoplanetarchive.ipac.caltech.edu/",
+      "note": "Catalog period and orbital scale. Circular face-on layout, phase, inclination, display size and appearance are illustrative; not a measured planet position."
+    },
+    {
+      "name": "Barnard b",
+      "semimajor_au": 0.0229,
+      "period_days": 3.1542,
+      "radius_earth": 0.72,
+      "star_radius_solar": 0.185,
+      "temperature_k": 3195.0,
+      "provenance": "catalog / computed",
+      "source": "https://exoplanetarchive.ipac.caltech.edu/",
+      "note": "Catalog period and orbital scale. Circular face-on layout, phase, inclination, display size and appearance are illustrative; not a measured planet position."
+    },
+    {
+      "name": "Barnard e",
+      "semimajor_au": 0.0381,
+      "period_days": 6.7392,
+      "radius_earth": 0.637,
+      "star_radius_solar": 0.185,
+      "temperature_k": 3195.0,
+      "provenance": "catalog / computed",
+      "source": "https://exoplanetarchive.ipac.caltech.edu/",
+      "note": "Catalog period and orbital scale. Circular face-on layout, phase, inclination, display size and appearance are illustrative; not a measured planet position."
+    },
+    {
+      "name": "Barnard c",
+      "semimajor_au": 0.0274,
+      "period_days": 4.1244,
+      "radius_earth": 0.743,
+      "star_radius_solar": 0.185,
+      "temperature_k": 3195.0,
+      "provenance": "catalog / computed",
+      "source": "https://exoplanetarchive.ipac.caltech.edu/",
+      "note": "Catalog period and orbital scale. Circular face-on layout, phase, inclination, display size and appearance are illustrative; not a measured planet position."
+    }
+  ]
+}

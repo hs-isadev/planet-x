@@ -1,0 +1,93 @@
+{
+  "at": "2026-11-11T14:56:05.078Z",
+  "errors": [],
+  "playback": {
+    "displayed": [
+      {
+        "index": 1,
+        "mjd": 60800.700028,
+        "date": "2 / 206 · 2025-05-05T16:48:02.419Z · SPHEREx-D6 · 4.962 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/1.png?cmap=gray&stretch=asinh&black=0.6534516024589538&white=1.0554756555557276"
+      },
+      {
+        "index": 2,
+        "mjd": 60800.701521,
+        "date": "3 / 206 · 2025-05-05T16:50:11.414Z · SPHEREx-D3 · 2.414 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/2.png?cmap=gray&stretch=asinh&black=0.12022881716489792&white=1.2976703481674028"
+      },
+      {
+        "index": 3,
+        "mjd": 60800.701521,
+        "date": "4 / 206 · 2025-05-05T16:50:11.414Z · SPHEREx-D6 · 4.998 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/3.png?cmap=gray&stretch=asinh&black=0.6534516024589538&white=1.0554756555557276"
+      },
+      {
+        "index": 4,
+        "mjd": 60800.834438,
+        "date": "5 / 206 · 2025-05-05T20:01:35.443Z · SPHEREx-D3 · 2.209 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/4.png?cmap=gray&stretch=asinh&black=0.12022881716489792&white=1.2976703481674028"
+      },
+      {
+        "index": 5,
+        "mjd": 60800.834438,
+        "date": "6 / 206 · 2025-05-05T20:01:35.443Z · SPHEREx-D6 · 4.855 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/5.png?cmap=gray&stretch=asinh&black=0.6534516024589538&white=1.0554756555557276"
+      },
+      {
+        "index": 6,
+        "mjd": 60801.106596,
+        "date": "7 / 206 · 2025-05-06T02:33:29.894Z · SPHEREx-D5 · 4.290 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/6.png?cmap=gray&stretch=asinh&black=0.2880327218770981&white=0.6991806278228755"
+      },
+      {
+        "index": 7,
+        "mjd": 60801.106596,
+        "date": "8 / 206 · 2025-05-06T02:33:29.894Z · SPHEREx-D2 · 1.516 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/7.png?cmap=gray&stretch=asinh&black=0.21601028099656105&white=1.990721010446538"
+      },
+      {
+        "index": 8,
+        "mjd": 60801.108089,
+        "date": "9 / 206 · 2025-05-06T02:35:38.890Z · SPHEREx-D5 · 4.327 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/8.png?cmap=gray&stretch=asinh&black=0.2880327218770981&white=0.6991806278228755"
+      },
+      {
+        "index": 9,
+        "mjd": 60801.108089,
+        "date": "10 / 206 · 2025-05-06T02:35:38.890Z · SPHEREx-D2 · 1.554 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/9.png?cmap=gray&stretch=asinh&black=0.21601028099656105&white=1.990721010446538"
+      },
+      {
+        "index": 10,
+        "mjd": 60801.109581,
+        "date": "11 / 206 · 2025-05-06T02:37:47.798Z · SPHEREx-D5 · 4.364 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/10.png?cmap=gray&stretch=asinh&black=0.2880327218770981&white=0.6991806278228755"
+      },
+      {
+        "index": 11,
+        "mjd": 60801.109581,
+        "date": "12 / 206 · 2025-05-06T02:37:47.798Z · SPHEREx-D2 · 1.591 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/11.png?cmap=gray&stretch=asinh&black=0.21601028099656105&white=1.990721010446538"
+      },
+      {
+        "index": 12,
+        "mjd": 60801.111073,
+        "date": "13 / 206 · 2025-05-06T02:39:56.707Z · SPHEREx-D2 · 1.629 µm",
+        "url": "/api/jobs/0f31c79589d84b43be26ce08dc5666e2/frames/12.png?cmap=gray&stretch=asinh&black=0.21601028099656105&white=1.990721010446538"
+      }
+    ],
+    "ordered": true,
+    "datesMatch": true
+  },
+  "initial": "1 / 206 · 2025-05-05T16:48:02.419Z · SPHEREx-D3 · 2.365 µm",
+  "observingView": "2025-05-06T02:39:56.707Z · D2 · 056c56e2438573ac4a5fcebc · 8 arcmin patch · Patch corners projected onto the original detector using the observed FITS WCS and cutout offsets. The detector outline is geometry only. · Illustrative polar terminator orbit. Spacecraft position and attitude are unavailable.",
+  "spectrum": {
+    "allDates": 21,
+    "measurements": 208,
+    "usable": 39,
+    "coverage": "6 / 30 usable native aperture measurements. Missing values are never interpolated. Date A is blue; date B is amber. No fitted chemical match. Coverage 1.046–4.862 µm is discontinuous. Absorption depends on source and intervening material, response, resolution and signal-to-noise. No identification is made.",
+    "evidenceExport": "planet-x-evidence.json",
+    "observations": 256
+  },
+  "brightnessHistory": "D2 · 1.575–1.600 µm. 3 / 3 usable measurements. Constant-flux reduced χ² 0.41. Same detector and 0.025 micrometer wavelength group; statistical errors only. A fixed common footprint of unflagged registered pixels excludes masked cores in every epoch; values are a brightness index, not total source flux. No masked values are filled or interpolated. PSF, calibration, crowding and residual wavelength effects can mimic variability; this curve alone does not establish intrinsic stellar variability."
+}

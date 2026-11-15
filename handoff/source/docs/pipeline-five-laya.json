@@ -1,0 +1,359 @@
+{
+  "targets": [
+    {
+      "name": "Barnard’s Star",
+      "job_id": "b56ed073c95b4287b35af3f3e86aeb18",
+      "review_id": "laya-seq-c90342cf079be9e0eb2f2bad",
+      "discovered": 364,
+      "loaded": 246,
+      "prepared": 246,
+      "reviewed": 2,
+      "pending": 118,
+      "failed_downloads": 0,
+      "review_compatible": 232,
+      "scientifically_comparable": 0,
+      "status": "cancelled",
+      "stage": "cancelled",
+      "message": "Review cancelled; local inference process terminated.",
+      "failed": [],
+      "batches_done": 9,
+      "unique_batch_keys": 9,
+      "cancellation_seconds": 0.72,
+      "events": [
+        {
+          "status": "running",
+          "stage": "preparing_images",
+          "loaded": 0,
+          "prepared": 0,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": null,
+          "message": "Reviewing available temporal crops while archive loading continues."
+        },
+        {
+          "status": "running",
+          "stage": "starting_model",
+          "loaded": 246,
+          "prepared": 246,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": "2026-11-11T10:11:35.606267+00:00",
+          "message": "Local Laya: starting model"
+        },
+        {
+          "status": "running",
+          "stage": "loading_model",
+          "loaded": 246,
+          "prepared": 246,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": "2026-11-11T10:11:50.194126+00:00",
+          "message": "Local Laya: loading model"
+        },
+        {
+          "status": "running",
+          "stage": "running_inference",
+          "loaded": 246,
+          "prepared": 246,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": "2026-11-11T10:12:41.357559+00:00",
+          "message": "Local Laya: running inference"
+        },
+        {
+          "status": "running",
+          "stage": "starting_model",
+          "loaded": 246,
+          "prepared": 246,
+          "reviewed": 0,
+          "batches_done": 6,
+          "last_progress_at": "2026-11-11T10:12:55.417742+00:00",
+          "message": "Local Laya: starting model"
+        },
+        {
+          "status": "running",
+          "stage": "running_inference",
+          "loaded": 246,
+          "prepared": 246,
+          "reviewed": 0,
+          "batches_done": 6,
+          "last_progress_at": "2026-11-11T10:12:55.438960+00:00",
+          "message": "Local Laya: running inference"
+        },
+        {
+          "status": "running",
+          "stage": "running_inference",
+          "loaded": 246,
+          "prepared": 246,
+          "reviewed": 2,
+          "batches_done": 9,
+          "last_progress_at": "2026-11-11T10:13:01.382792+00:00",
+          "message": "Local Laya: running inference"
+        }
+      ]
+    },
+    {
+      "name": "Epsilon Indi B",
+      "job_id": "447369d3438543dbb54e4b652e6cea68",
+      "review_id": "laya-seq-6b2822f0dc11c9fe2278c7fc",
+      "discovered": 449,
+      "loaded": 22,
+      "prepared": 22,
+      "reviewed": 2,
+      "pending": 427,
+      "failed_downloads": 0,
+      "review_compatible": 3,
+      "scientifically_comparable": 0,
+      "status": "cancelled",
+      "stage": "cancelled",
+      "message": "Review cancelled before inference.",
+      "failed": [],
+      "batches_done": 4,
+      "unique_batch_keys": 4,
+      "cancellation_seconds": 0.31,
+      "events": [
+        {
+          "status": "running",
+          "stage": "preparing_images",
+          "loaded": 0,
+          "prepared": 0,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": null,
+          "message": "Reviewing available temporal crops while archive loading continues."
+        },
+        {
+          "status": "running",
+          "stage": "starting_model",
+          "loaded": 22,
+          "prepared": 22,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": "2026-11-11T10:13:04.624928+00:00",
+          "message": "Local Laya: starting model"
+        },
+        {
+          "status": "running",
+          "stage": "loading_model",
+          "loaded": 22,
+          "prepared": 22,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": "2026-11-11T10:13:14.958103+00:00",
+          "message": "Local Laya: loading model"
+        },
+        {
+          "status": "running",
+          "stage": "running_inference",
+          "loaded": 22,
+          "prepared": 22,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": "2026-11-11T10:14:02.656290+00:00",
+          "message": "Local Laya: running inference"
+        },
+        {
+          "status": "running",
+          "stage": "running_inference",
+          "loaded": 22,
+          "prepared": 22,
+          "reviewed": 2,
+          "batches_done": 4,
+          "last_progress_at": "2026-11-11T10:14:06.355069+00:00",
+          "message": "Local Laya: running inference"
+        }
+      ]
+    },
+    {
+      "name": "WISE 0855",
+      "job_id": "42dc4c063c1e4805bf928b475d5fb44a",
+      "review_id": "laya-seq-98049acc3bf619410107f50a",
+      "discovered": 256,
+      "loaded": 133,
+      "prepared": 133,
+      "reviewed": 37,
+      "pending": 123,
+      "failed_downloads": 0,
+      "review_compatible": 73,
+      "scientifically_comparable": 0,
+      "status": "cancelled",
+      "stage": "cancelled",
+      "message": "Review cancelled before inference.",
+      "failed": [],
+      "batches_done": 80,
+      "unique_batch_keys": 80,
+      "cancellation_seconds": 0.33,
+      "events": [
+        {
+          "status": "running",
+          "stage": "preparing_images",
+          "loaded": 0,
+          "prepared": 0,
+          "reviewed": 0,
+          "batches_done": 76,
+          "last_progress_at": "2026-11-11T10:05:11.685403+00:00",
+          "message": "Reviewing available temporal crops while archive loading continues."
+        },
+        {
+          "status": "running",
+          "stage": "waiting_model",
+          "loaded": 133,
+          "prepared": 133,
+          "reviewed": 35,
+          "batches_done": 76,
+          "last_progress_at": "2026-11-11T10:14:17.713755+00:00",
+          "message": "Waiting for local model; 35 exposures covered so far."
+        },
+        {
+          "status": "running",
+          "stage": "running_inference",
+          "loaded": 133,
+          "prepared": 133,
+          "reviewed": 35,
+          "batches_done": 76,
+          "last_progress_at": "2026-11-11T10:14:18.018439+00:00",
+          "message": "Local Laya: running inference"
+        },
+        {
+          "status": "running",
+          "stage": "running_inference",
+          "loaded": 133,
+          "prepared": 133,
+          "reviewed": 37,
+          "batches_done": 80,
+          "last_progress_at": "2026-11-11T10:14:21.197767+00:00",
+          "message": "Local Laya: running inference"
+        }
+      ]
+    },
+    {
+      "name": "RW Aurigae",
+      "job_id": "440c650e9fb9442bae31e13e0470c90f",
+      "review_id": "laya-seq-0035535c795f07629221f898",
+      "discovered": 333,
+      "loaded": 19,
+      "prepared": 19,
+      "reviewed": 0,
+      "pending": 314,
+      "failed_downloads": 0,
+      "review_compatible": 0,
+      "scientifically_comparable": 0,
+      "status": "paused",
+      "stage": "waiting_images",
+      "message": "0 / 333 exposures have all eligible crops reviewed. Input is paused or stalled; resume image loading and review.",
+      "failed": [],
+      "batches_done": 0,
+      "unique_batch_keys": 0,
+      "cancellation_seconds": null,
+      "events": [
+        {
+          "status": "running",
+          "stage": "preparing_images",
+          "loaded": 0,
+          "prepared": 0,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": null,
+          "message": "Reviewing available temporal crops while archive loading continues."
+        }
+      ],
+      "followup": {
+        "job_id": "ffbeaccf9ad64cafbe1328bccd39a75f",
+        "loaded": 46,
+        "prepared": 46,
+        "reviewed": 7,
+        "review_compatible": 7,
+        "scientifically_comparable": 0,
+        "failed_downloads": 0,
+        "pending": 287,
+        "status": "running",
+        "stage": "waiting_images",
+        "batches_done": 16,
+        "unique_batch_keys": 16
+      }
+    },
+    {
+      "name": "R Draconis",
+      "job_id": "2b80b203de754667b756bda657dde305",
+      "review_id": "laya-seq-366c52da60e421886cfbac19",
+      "discovered": 2483,
+      "loaded": 214,
+      "prepared": 214,
+      "reviewed": 2,
+      "pending": 2269,
+      "failed_downloads": 0,
+      "review_compatible": 176,
+      "scientifically_comparable": 0,
+      "status": "cancelled",
+      "stage": "cancelled",
+      "message": "Review cancelled; local inference process terminated.",
+      "failed": [],
+      "batches_done": 4,
+      "unique_batch_keys": 4,
+      "cancellation_seconds": 1.03,
+      "events": [
+        {
+          "status": "running",
+          "stage": "preparing_images",
+          "loaded": 0,
+          "prepared": 0,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": null,
+          "message": "Reviewing available temporal crops while archive loading continues."
+        },
+        {
+          "status": "running",
+          "stage": "starting_model",
+          "loaded": 214,
+          "prepared": 214,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": "2026-11-11T10:14:41.364868+00:00",
+          "message": "Local Laya: starting model"
+        },
+        {
+          "status": "running",
+          "stage": "running_inference",
+          "loaded": 214,
+          "prepared": 214,
+          "reviewed": 0,
+          "batches_done": 0,
+          "last_progress_at": "2026-11-11T10:14:42.145830+00:00",
+          "message": "Local Laya: running inference"
+        },
+        {
+          "status": "running",
+          "stage": "starting_model",
+          "loaded": 214,
+          "prepared": 214,
+          "reviewed": 0,
+          "batches_done": 2,
+          "last_progress_at": "2026-11-11T10:14:43.731889+00:00",
+          "message": "Local Laya: starting model"
+        },
+        {
+          "status": "running",
+          "stage": "running_inference",
+          "loaded": 214,
+          "prepared": 214,
+          "reviewed": 0,
+          "batches_done": 2,
+          "last_progress_at": "2026-11-11T10:14:44.390678+00:00",
+          "message": "Local Laya: running inference"
+        },
+        {
+          "status": "running",
+          "stage": "starting_model",
+          "loaded": 214,
+          "prepared": 214,
+          "reviewed": 2,
+          "batches_done": 4,
+          "last_progress_at": "2026-11-11T10:14:46.206913+00:00",
+          "message": "Local Laya: starting model"
+        }
+      ]
+    }
+  ],
+  "scope": "Real loaded subset, bounded integration run; pending archive exposures remain unreviewed."
+}

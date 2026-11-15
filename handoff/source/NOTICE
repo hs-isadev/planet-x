@@ -1,0 +1,16 @@
+Planet X — The SPHEREx Observatory
+Copyright 2026 DevLogic Services
+Apache License, Version 2.0
+
+Independent community project for NASA Space Apps 2026. Not endorsed by NASA.
+Astronomical data attribution: NASA / SPHEREx / Caltech / IPAC / IRSA.
+SIMBAD coordinate service: CDS, Strasbourg.
+AI implementation assistance: OpenAI ChatGPT / Codex.
+Third-party software and font licensing remain with their respective owners.
+
+Current frontend: original no-build application code under Apache-2.0.
+Three.js 0.187.0 retains its MIT license in web/vendor/LICENSE.
+Aladin Lite 3.8.2 is an unmodified, separately loaded LGPL v3 module; license texts and source links are included in web/vendor/. CDS attribution remains visible.
+Planet maps and illustrative models: NASA/Goddard SVS, NASA/JPL/USGS, NASA/JPL/Space Science Institute, and NASA VTAD. Exact asset provenance is in web/assets/sources.json. These third-party materials retain their original terms.
+
+Selected moon orbital scales and periods: NASA/JPL Solar System Dynamics, https://ssd.jpl.nasa.gov/sats/elem/sep.html . Moon mean radii: https://ssd.jpl.nasa.gov/sats/phys_par/ . Circular layouts, phases and display scales are illustrative, not JPL ephemerides.
