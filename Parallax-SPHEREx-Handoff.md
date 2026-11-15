@@ -89,3 +89,10 @@ Not fixable in code: Render's free plan sleeps after 15 minutes without traffic 
 - **Focus on any rock:** `web/asteroid-focus.js`. Click a rock, use Scale / orbit → Fly to asteroid, Random asteroid, Random Kuiper object, or Asteroid belt. The camera follows the body along its orbit; a detailed, sunlit close-up model at true size replaces it, with an info card.
 - **Controls:** `web/free-controls.js` replaces OrbitControls in the 3D context. No pole lock (orbit over the top freely), right/middle/shift-drag or two fingers to pan, Q/E roll, frame-rate-independent damping. Zoom in `navigation.js` is now a constant ratio per wheel notch eased in at a fixed rate (no slow start, no runaway when leaving the Solar System).
 - **Loader:** a minimal theme at the end of `web/space-loader.css` (hairline progress, one accent, fade transitions; the 3D cover now fades out instead of vanishing).
+
+## Update: unlimited live loading and the downloaded date bundle
+
+- **Live IRSA loading has no cap.** Every live archive request is paged (60 per request, `SPHEREX_LIVE_BATCH`), and the viewer keeps requesting the next batch until IRSA has nothing more: every date in one-per-date mode, every exposure in All exposures mode. Custom positions are no longer sampled down to 400 frames. Batches are ordered dates-first, so early batches already span the whole time range.
+- **Stop / Continue:** a "Stop loading" button appears while batches chain. Stopping keeps everything loaded so far; "Continue loading" resumes from the same offset. Busy-worker and network errors are retried with backoff instead of ending the run.
+- **Fixed:** live requests ignored the All exposures toggle (the server still read the old `sampling` option). It now honours `all_exposures`.
+- **Bundle:** the dates downloaded with `scripts/download_more_dates.py` are included (354 new FITS cutouts plus previews). Barnard's Star 356→358 frames (40 dates, all IRSA lists), Epsilon Indi B 60→65 dates, Proxima Centauri 7→47 dates, R Dra 222→225 dates, RW Aur 80→103 frames. The previous sessions stay in the bundle; the index files point at the newer sessions, which contain every frame of the old ones.

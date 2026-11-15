@@ -182,6 +182,11 @@ def contains_expected_position(record, field):
                 and -.5 <= y < image.header['NAXIS2'] - .5)
 
 
+def all_exposures(options):
+    """True when the viewer asked for every exposure rather than one per observing date."""
+    return bool(options.get('all_exposures')) or options.get('sampling') == 'all'
+
+
 def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_only=False, page=None):
     progress('Querying IRSA for SPHEREx observations…')
     new_dates = bool(page and page.get('new_dates')) and archive_rows is None
@@ -213,7 +218,7 @@ def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_
     failures = list(dict.fromkeys(row['discovery_warning'] for row in rows if row.get('discovery_warning')))
     total = len(rows)
     preset = default_preset(field, options)
-    daily = preset and options.get('sampling') != 'all'
+    daily = preset and not all_exposures(options)
     if new_dates:
         _, saved = view_entry(field['key']) if preset else (None, None)
         if not saved:
@@ -224,14 +229,19 @@ def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_
         alternatives = {(group[0]['id'], group[0]['detector']): group[1:2] for group in groups}
         rows = [group[0] for group in groups]
         page['candidate_dates'] = len(rows)
-    if archive_rows is None and not preset:
+    # Live archive requests are paged: each request downloads one batch and the viewer keeps asking for the
+    # next one until every observation (or, in one-per-date mode, every date) is loaded or the user presses Stop.
+    # Paging therefore replaces the old sampled cap. Requests without a page (cache warmers) keep the sample.
+    paged = archive_rows is None and page is not None
+    if archive_rows is None and not preset and not paged:
         rows = sample_frames(rows)
-    if (LOW_MEMORY or new_dates) and archive_rows is None and page is not None:
+    if paged:
         representative_count = None
-        if daily and not new_dates:
+        if not new_dates:
+            # Every date first, then same-day extras, so even the first batches span the whole time range.
             groups = observing_days(rows)
             representatives = [group[0] for group in groups]
-            representative_count = len(representatives)
+            representative_count = len(representatives) if daily else None
             first = sample_frames(representatives, LIVE_BATCH_SIZE)
             identities = {(row['id'], row['detector']) for row in first}
             remainder = representatives + [row for group in groups for row in group[1:]]
@@ -493,7 +503,7 @@ def publish_live_preview(job_id, options, records, total):
         if frame and frame[2]['center_inside'] and frame[2]['coverage'] > 0:
             prepared.append(frame)
     metadata = [frame[2] for frame in prepared]
-    daily = default_preset(catalog_field(None, options), options) and options.get('sampling') != 'all'
+    daily = default_preset(catalog_field(None, options), options) and not all_exposures(options)
     if daily:
         chosen = {(day[0]['id'], day[0]['detector']) for day in observing_days(metadata)}
         prepared = [frame for frame in prepared if (frame[2]['id'], frame[2]['detector']) in chosen]
@@ -646,8 +656,9 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
         matched = len(dedup)
         limited = False
         preset = default_preset(catalog_field(None, options), options)
-        daily = not preparing_cache and preset and options.get('sampling') != 'all'
-        if not preparing_cache and not preset:
+        daily = not preparing_cache and preset and not all_exposures(options)
+        live_paged = archive_requested and archive_rows is None and not archive_error
+        if not preparing_cache and not preset and not live_paged:
             limited = max(matched, archive_total or 0) > ALTERNATE_FRAME_LIMIT
             ordered = sorted(dedup.values(), key=lambda r: (r['mjd'], r['detector'], r['id']))
             dedup = {(r['id'], r['detector']): r for r in sample_frames(ordered)}

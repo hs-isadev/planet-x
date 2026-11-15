@@ -567,8 +567,9 @@ function sessionReady(session, request, {keepView=false}={}) {
   if (!session.frames.length) emptyActions(session);
   $("archive-search").classList.toggle("primary-hint", !session.frames.length && !excluded.length);
   const savedCounts = session.saved_dates != null && session.saved_exposures != null;
-  $("next-live-batch").hidden = session.next_archive_offset == null;
-  $("next-live-batch").textContent = session.new_dates_search ? "More new dates" : "More live observations";
+  // While batches are chaining, Stop is shown instead; Continue only appears once loading has paused.
+  $("next-live-batch").hidden = session.next_archive_offset == null || state.chaining === state.requestVersion;
+  $("next-live-batch").textContent = session.new_dates_search ? "Continue finding new dates" : "Continue loading";
   $("next-live-batch").onclick = () => search("archive", session.next_archive_offset,
     {newDates: session.new_dates_search, sampling: session.options.sampling});
   $("search-new-dates").hidden = !savedCounts || !session.snapshot;
@@ -786,44 +787,75 @@ function loadingMessage(label) {
   bar.firstChild.style.width = `${(now/total*100).toFixed(1)}%`;
 }
 
-// The archive worker returns a limited number of observations per request. Keep asking for the next batch (each
-// reply holds everything fetched so far) until the archive list is exhausted or the user starts something else.
+// The archive worker downloads one batch per request. Keep asking for the next batch (each reply holds everything
+// fetched so far) until IRSA has nothing more to give, the user presses Stop, or they start something else.
+// Busy workers and network hiccups are retried with a growing pause; only a run of failures ends the loop.
+const loadedDates = frames => new Set(frames.filter(f => !f.mosaic && f.timestamp).map(f => f.timestamp.slice(0, 10))).size;
 async function chainBatches(first, request) {
-  let result = first, busy = 0;
-  const version = request.version;
+  let result = first, failures = 0;
+  const version = request.version, stopButton = $("stop-live-batch");
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const active = () => version === state.requestVersion && state.stopChain !== version;
+  const progressText = r => {
+    const total = r.archive_matches ? ` of ${r.archive_matches} exposures` : "";
+    return `${r.frames.length} observations · ${loadedDates(r.frames)} dates loaded${total}`;
+  };
+  state.chaining = version;
   $("next-live-batch").hidden = true;
+  stopButton.hidden = false;
+  stopButton.disabled = false;
+  stopButton.textContent = "Stop loading";
+  stopButton.onclick = () => {
+    state.stopChain = version;
+    stopButton.disabled = true;
+    stopButton.textContent = "Stopping after this batch…";
+  };
+  let reason = "";
   try {
-    while (result.next_archive_offset != null && version === state.requestVersion) {
-      status(`${result.frames.length} observations loaded · fetching more from IRSA…`, "busy");
-      let job;
+    while (result.next_archive_offset != null && active()) {
+      status(`${progressText(result)} · fetching more from IRSA…`, "busy");
+      let next = null;
       try {
-        job = await api("/observation-lab/api/jobs", {method:"POST", headers:{"Content-Type":"application/json"},
+        const job = await api("/observation-lab/api/jobs", {method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({...request.options, source:"archive", field:request.field,
-            archive_offset: result.next_archive_offset, new_dates: request.newDates, mosaic: false})});
+            archive_offset: result.next_archive_offset, new_dates: request.newDates,
+            all_exposures: state.allExposures, mosaic: false})});
+        next = job.result;
+        while (!next && version === state.requestVersion) {
+          const progress = await api(`/observation-lab/api/jobs/${job.id}`);
+          if (progress.status === "failed") throw new Error(progress.stage);
+          if (progress.status === "complete") { next = progress.result; break; }
+          if (progress.stage) status(`${progressText(result)} · ${progress.stage}`, "busy");
+          await wait(1500);
+        }
       } catch (error) {
-        // The single worker may still be finishing another request: wait and ask again a few times.
-        if (++busy > 6 || !/busy/i.test(error.message)) throw error;
-        await new Promise(resolve => setTimeout(resolve, 4000));
+        // The single worker may still be finishing another request, or IRSA briefly failed: back off and retry.
+        if (++failures > 8) throw error;
+        status(`${progressText(result)} · ${/busy/i.test(error.message) ? "server busy" : "IRSA hiccup"}, retrying…`, "busy");
+        await wait(Math.min(30000, 3000 * failures));
         continue;
       }
-      let next = job.result;
-      while (!next && version === state.requestVersion) {
-        const progress = await api(`/observation-lab/api/jobs/${job.id}`);
-        if (progress.status === "failed") throw new Error(progress.stage);
-        if (progress.status === "complete") { next = progress.result; break; }
-        if (progress.stage) status(`${result.frames.length} loaded · ${progress.stage}`, "busy");
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
       if (!next || version !== state.requestVersion) return;
-      busy = 0;
+      failures = 0;
+      // A batch that adds nothing and does not advance would loop forever; treat it as the end.
+      if (next.next_archive_offset != null && next.next_archive_offset <= result.next_archive_offset) next.next_archive_offset = null;
       result = next;
       sessionReady(result, request, {keepView: true});
     }
+    if (version === state.requestVersion) {
+      reason = state.stopChain === version ? "Stopped" : "All available observations loaded";
+      status(`${reason} · ${progressText(state.session || result)}`);
+    }
   } catch (error) {
-    if (version === state.requestVersion) status(`Stopped loading more observations: ${error.message}`, "error");
+    if (version === state.requestVersion) status(`Paused loading: ${error.message}. Press Continue loading to resume.`, "error");
   } finally {
-    // If it stopped early, the manual button picks up where it left off.
-    if (version === state.requestVersion && state.session) $("next-live-batch").hidden = state.session.next_archive_offset == null;
+    if (state.stopChain === version) state.stopChain = null;
+    if (state.chaining === version) state.chaining = null;
+    if (version === state.requestVersion) {
+      stopButton.hidden = true;
+      // If it stopped early, Continue picks up exactly where it left off.
+      if (state.session) $("next-live-batch").hidden = state.session.next_archive_offset == null;
+    }
   }
 }
 
@@ -1388,7 +1420,7 @@ $("vesta-next-guide").onclick = () => {
 };
 for (const id of ["ra","dec"]) $(id).addEventListener("input", () => {
   state.title = "Sky patch"; state.field = "custom"; state.objectContext = null;
-  for (const control of ["search-new-dates","exposure-sampling","view-saved-dates","next-live-batch"]) $(control).hidden = true;
+  for (const control of ["search-new-dates","exposure-sampling","view-saved-dates","next-live-batch","stop-live-batch"]) $(control).hidden = true;
   for (const button of $("fields").children) button.setAttribute("aria-current","false");
 });
 $("play").onclick = play;

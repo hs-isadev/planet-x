@@ -1,0 +1,29 @@
+{
+  "id": "2026W32_2A_0027_1",
+  "detector": 1,
+  "timestamp": "2026-08-06T14:18:39.059Z",
+  "mjd": 61258.596285405096,
+  "version": "7.0.5",
+  "unit": "MJy / sr",
+  "exposure": 113.5826,
+  "native_shape": [
+    76,
+    146
+  ],
+  "center": [
+    217.45981884062613,
+    -62.62464661801849
+  ],
+  "radius_deg": 0.14253438569734875,
+  "processed_mjd": 61264.272138900466,
+  "sha256": "2791d6f15100f774d3341fd3169880e64120242cc001999bf3cca8653e9901a6",
+  "file_bytes": 4127040,
+  "requested_source_width_deg": 0.25,
+  "download_center": [
+    217.39232147200883,
+    -62.67607511676666
+  ],
+  "download_url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr3/level2/2026W32_2A/l2b-v27-2026-223/1/level2_2026W32_2A_0027_1D1_spx_l2b-v27-2026-223.fits?center=217.39232147200883%2C-62.67607511676666&size=0.25",
+  "provenance": "Official IRSA FITS; observation and detector verified; padded source for sky alignment",
+  "transport": "IRSA cutout service"
+}
