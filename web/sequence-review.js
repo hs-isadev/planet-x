@@ -4,6 +4,12 @@ export function installSequenceReview(view){
  let timer,epoch=0,activeId,jobId,starting=false;
  let reportVersion;
  const report = $('laya-report');
+ const availability=$('laya-availability');
+ availability.closest('details').addEventListener('toggle',async event=>{
+  if(!event.currentTarget.open)return;
+  try{const state=await view.api('/api/laya/status');availability.textContent=state.inference_verified?'Laya has completed inference on this server.':state.note;}
+  catch(error){availability.textContent=error.message;}
+ });
  const labels = {
   possible_position_shift: 'Possible position shift',
   appeared_or_brightened: 'Appeared or brightened',

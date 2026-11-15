@@ -170,3 +170,9 @@ body[data-sun-sky] #sky-target-marker{display:none}
 #saved-archive-progress{padding:7px 14px;margin:0 20px}#saved-archive-progress[open]{background:var(--surface-2)}#saved-archive-progress p{margin:5px 0}
 
 .partner-controls{display:flex;align-items:flex-start;flex-direction:column;gap:4px}#partner-evidence ul{padding-left:16px;font-size:.86rem}#partner-neossat-results{max-height:12rem;overflow:auto}
+
+#catalog-atlas{width:min(980px,94vw);max-height:90vh;padding:18px;}
+#atlas-stage{width:100%;height:clamp(230px,49vh,540px);background:#090f19;border-radius:6px;overflow:hidden;}
+#atlas-stage canvas{display:block;width:100%;height:100%;touch-action:none;}
+.atlas-tools{display:flex;align-items:end;flex-wrap:wrap;gap:8px 14px;}
+#atlas-pick{min-height:1.4em;margin:8px 0;}

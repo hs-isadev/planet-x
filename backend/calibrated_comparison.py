@@ -23,6 +23,8 @@ def calibration_key(release, detector, kind):
         raise ValueError("Calibration is unavailable for this detector or release.")
     if kind == "spectral_wcs":
         version = WAVE_VERSION[release]
+    elif kind == "solid_angle_pixel_map":
+        version = "cal-sapm-v2-2025-164" if release == "qr2" else "cal-sapm-v3-2026-191"
     elif kind == "epsf":
         if release == "qr2":
             release = "qr3"

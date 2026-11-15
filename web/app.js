@@ -236,7 +236,7 @@ async function contextView(){setWorkspace('context');observations?.close();docum
 // Wire navigation before importing optional views or starting catalog requests.
 $('universe-home').onclick=()=>contextView();
 $('observation-close').onclick=()=>contextView();
-let {ObservationDrawer}=await import('./observations.js?v=spectrum-export');observations=new ObservationDrawer({api,toast,icon});satelliteView=installSatelliteView(observations,{
+let {ObservationDrawer}=await import('./observations.js?v=observation-lab');observations=new ObservationDrawer({api,toast,icon});satelliteView=installSatelliteView(observations,{
  pinTarget,
  getTarget:()=>skyTarget,
  openContext:()=>openTargetContext(true)
@@ -246,7 +246,8 @@ observations.open();
 presets();
 $('observation-close').onclick=()=>contextView();
 $('search-toggle').onclick=()=>{observations.open();$('search-panel').hidden=false;document.body.classList.toggle('mobile-search');$('object-query').focus();};
-let params=new URLSearchParams(location.search);if(params.has('fov')){$('fov').value=params.get('fov');$('fov').oninput();}if(params.has('ra')&&params.has('dec')){$('ra').value=params.get('ra');$('dec').value=params.get('dec');const exposure=params.get('exposure');const legacy=params.get('frame');const frame=legacy!=null&&/^[0-9]+$/.test(legacy)&&Number.isSafeInteger(Number(legacy))?Number(legacy):null;observations.search('Shared sky field',frame,/^[0-9a-f]{24}$/.test(exposure||'')?exposure:null);}else if(params.get('key'))observations.openFile(params.get('key'));
+$('vesta-example-open').onclick=()=>observations.openVesta();
+let params=new URLSearchParams(location.search);if(params.has('fov')){$('fov').value=params.get('fov');$('fov').oninput();}if(params.get('example')==='vesta')observations.openVesta(/^[0-9a-f]{24}$/.test(params.get('exposure')||'')?params.get('exposure'):null);else if(params.has('ra')&&params.has('dec')){$('ra').value=params.get('ra');$('dec').value=params.get('dec');const exposure=params.get('exposure');const legacy=params.get('frame');const frame=legacy!=null&&/^[0-9]+$/.test(legacy)&&Number.isSafeInteger(Number(legacy))?Number(legacy):null;observations.search('Shared sky field',frame,/^[0-9a-f]{24}$/.test(exposure||'')?exposure:null);}else if(params.get('key'))observations.openFile(params.get('key'));
 
 function rotateSpaceVector(v,outward){let e=23.439291111*Math.PI/180,x=v.x,y=-v.z,z=v.y;if(outward)return v.set(x,Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y-Math.sin(e)*z));return v.set(x,-Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y+Math.sin(e)*z));}
 function prefetchUniverse(){if(!cosmicReady)cosmicReady=api('/api/space?'+new URLSearchParams({ra:133.79512916666667,dec:-7.245147222222222,fov:8,scope:'nearby',radius_pc:10,include_simbad:true})).then(data=>{if(scene){scene.universeData=data;}return data;}).catch(e=>{cosmicReady=null;throw e;});return cosmicReady;}
@@ -358,5 +359,17 @@ function openSpherexTarget(){
 }
 
 
-const {installGuide}=await import('./guide.js');
+const {installGuide}=await import('./guide.js?v=groq-fallbacks');
 installGuide(()=>{const v=observations,point=skyTarget?.point;return {view:document.body.dataset.workspace||'spherex',target_name:skyTarget?.name||$('observation-title').textContent,ra:point?.ra??v.job?.ra??null,dec:point?.dec??v.job?.dec??null,job_id:v.jobId||null,exposure_id:v.current()?.id||null,review_id:v.sequence?.id||null,review_available:!!v.sequence?.batches_done};});
+
+const atlasButton=$('physical-atlas-open');
+atlasButton.onclick=async()=>{
+ const {installCatalogAtlas}=await import('./catalog-atlas.js');
+ installCatalogAtlas((point,name,redshift)=>{
+  $('ra').value=point.ra.toFixed(8);$('dec').value=point.dec.toFixed(8);
+  $('object-query').value='';
+  observations.search(name);
+  observations.atlasRedshift=Number.isFinite(redshift)?redshift:0;
+ });
+ atlasButton.click();
+};

@@ -6,8 +6,12 @@ import uuid
 import numpy as np
 from astropy.io import fits
 from astropy.time import Time
-from fastapi import HTTPException, Query, Request
+from fastapi import HTTPException, Query, Request, Response
+import httpx
+from .observation_tools import clicked_track, epsf_measure, identify_click, inspect_pixel, moving_track, render_flag_mask
 from pydantic import BaseModel, Field
+from typing import Literal
+from requests.exceptions import RequestException
 from .archive import CONFIG,CACHE,atomic_json,key_for,prune_cache,ensure_frame_files
 from .cloud import list_archive,first_exposure,cloud_cutout
 from .analysis import group_frames,load_products,stack_products,combine_images,render_computed,sky_at_click,motion_fit,aperture_measure
@@ -25,6 +29,12 @@ class Mark(BaseModel):
 
 class Track(BaseModel):
     points:list[Mark]=Field(min_length=2,max_length=100)
+
+
+class EphemerisTrack(BaseModel):
+    designation: str = Field(default='', max_length=60)
+    anchors: list[Mark] = Field(default_factory=list, max_length=2)
+    group: str = Field(default='all', max_length=32)
 
 
 def install_analysis_routes(app,jobs,guard,clients):
@@ -150,6 +160,62 @@ def install_analysis_routes(app,jobs,guard,clients):
             return motion_fit(job,[p.model_dump() for p in body.points])
         except ValueError as exc:raise HTTPException(422,str(exc))
 
+    def inspection_frame(identity, exposure):
+        job = job_for(identity)
+        frame = next((f for f in job['frames'] if f['id']==exposure and f['status']=='ready'), None)
+        if frame is None:
+            raise HTTPException(404, 'Select a loaded exposure.')
+        return job, frame
+
+    @app.get('/api/jobs/{identity}/pixels/{exposure}')
+    def pixels(identity: str, exposure: str, request: Request, x: float=Query(ge=0, le=1), y: float=Query(ge=0, le=1)):
+        throttle_client(request, 'pixels', 60)
+        job, frame = inspection_frame(identity, exposure)
+        try:
+            return inspect_pixel(job, frame, x, y)
+        except (OSError, ValueError, KeyError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get('/api/jobs/{identity}/identify/{exposure}')
+    def identify(identity: str, exposure: str, request: Request, x: float=Query(ge=0,le=1), y: float=Query(ge=0,le=1)):
+        throttle_client(request, 'identify', 12)
+        job, frame = inspection_frame(identity, exposure)
+        return identify_click(job, frame, x, y)
+
+    @app.get('/api/jobs/{identity}/flags/{exposure}.png')
+    def flag_mask(identity: str, exposure: str, request: Request):
+        throttle_client(request, 'flag-mask', 45)
+        job, frame = inspection_frame(identity, exposure)
+        try:
+            return Response(render_flag_mask(job, frame), media_type='image/png',
+                            headers={'Cache-Control':'private, max-age=3600'})
+        except (OSError, ValueError, KeyError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post('/api/jobs/{identity}/ephemeris')
+    def ephemeris(identity: str, body: EphemerisTrack, request: Request):
+        throttle_client(request, 'ephemeris', 5)
+        job = job_for(identity)
+        frames = sorted((dict(f) for f in job['frames'] if f['status']=='ready'),
+                        key=lambda f: (f['mjd'], f['id']))
+        if body.group in {f'D{i}' for i in range(1,7)}:
+            frames = [f for f in frames if f['detector']==int(body.group[1:])]
+        elif body.group != 'all':
+            group = next((g for g in group_frames(frames) if g['id']==body.group), None)
+            frames = [f for f in frames if group and f['index'] in group['frames']]
+        if not frames:
+            raise HTTPException(422, 'Load a SPHEREx exposure in the selected group first.')
+        try:
+            if body.designation:
+                return moving_track(job, frames, body.designation)
+            if not body.anchors:
+                raise ValueError('Enter a designation or mark one or two native positions.')
+            return clicked_track(job, frames, body.anchors)
+        except httpx.HTTPError as exc:
+            raise HTTPException(502, 'JPL Horizons could not be reached. Retry shortly.') from exc
+        except (ValueError, KeyError, IndexError, TypeError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
     @app.get('/api/jobs/{identity}/calibrated-pair')
     def calibrated_pair(identity: str, request: Request,
                         a: str = Query(max_length=64), b: str = Query(max_length=64),
@@ -166,19 +232,33 @@ def install_analysis_routes(app,jobs,guard,clients):
         return compare_pair(field, first, second, x, y, include_image=True)
 
     @app.get('/api/jobs/{identity}/spectrum')
-    def spectrum(identity:str,request:Request,x:float=Query(ge=0,le=1),y:float=Query(ge=0,le=1),radius:float=Query(default=18.45,ge=6.15,le=45)):
+    def spectrum(identity:str,request:Request,x:float=Query(ge=0,le=1),y:float=Query(ge=0,le=1),radius:float=Query(default=18.45,ge=6.15,le=45),method:Literal['aperture','epsf']='aperture'):
         from .calibrated_comparison import cached_aperture_calibration
         throttle_client(request,'spectrum',20)
         job=job_for(identity);position=sky_at_click(job,x,y);points=[]
-        for frame in list(job['frames']):
-            if frame['status']!='ready':continue
+        frames=[f for f in job['frames'] if f['status']=='ready']
+        available=len(frames)
+        calibration_cache={}
+        if method=='epsf' and available>64:
+            frames=[frames[int(i)] for i in np.linspace(0,available-1,64)]
+        for frame in frames:
             calibration_url=None
             try:
                 if not (CACHE/(frame["cache_id"]+".fits")).exists():
                     raise FileNotFoundError('Native FITS not cached. Reload this exposure before measuring; no display pixels substituted.')
                 with fits.open(CACHE/(frame['cache_id']+'.fits'),memmap=False) as hdus:
-                    calibration,calibration_url=cached_aperture_calibration(hdus,frame)
-                    measurement=aperture_measure(hdus,position,radius,calibration)
-            except (ValueError,KeyError,OSError) as exc:measurement=dict(status='missing',reason=str(exc))
-            points.append(dict(measurement,frame=frame['index'],exposure_id=frame.get('id'),date=frame.get('date') or Time(frame['mjd'],format='mjd').isot+'Z',mjd=frame['mjd'],detector=frame.get('detector'),source_url=frame.get('url') or frame.get('cutout_url'),quality_flags=frame.get('source_flag_values',[]),wavelength_calibration='released CWAVE/CBAND' if calibration_url else 'approximate WCS-WAVE',calibration_url=calibration_url))
-        return dict(provenance='computed',source_pixels='observed',ra=float(position.ra.deg),dec=float(position.dec.deg),radius_arcsec=radius,normalized_position=[x,y],points=points,notes=['Quicklook aperture flux, not a calibrated or aperture-corrected source spectrum.','Native pixels and conservative flags are used; background is estimated in a local annulus. No resampled display pixels are measured.','Measurements identify which wavelength map was used. Released CWAVE/CBAND is used where cached. Other measurements use approximate WCS-WAVE.','Error bars include native variance and annulus background uncertainty; calibration and confusion systematics are omitted.','Observations are taken at different times. Variability can shape this wavelength plot.'])
+                    if method=='epsf':
+                        key=(frame.get('release'),frame.get('detector'))
+                        measurement=epsf_measure(hdus,frame,position,calibration_cache.setdefault(key,{}))
+                        calibration_url=measurement.pop('calibration_url',None)
+                    else:
+                        calibration,calibration_url=cached_aperture_calibration(hdus,frame)
+                        measurement=aperture_measure(hdus,position,radius,calibration)
+            except (ValueError,KeyError,OSError,RequestException) as exc:measurement=dict(status='missing',reason=str(exc))
+            measurement.pop('wavelength_calibration',None)
+            points.append(dict(measurement,release=frame.get('release'),frame=frame['index'],exposure_id=frame.get('id'),date=frame.get('date') or Time(frame['mjd'],format='mjd').isot+'Z',mjd=frame['mjd'],detector=frame.get('detector'),source_url=frame.get('url') or frame.get('cutout_url'),quality_flags=frame.get('source_flag_values',[]),wavelength_calibration='released CWAVE/CBAND' if calibration_url else 'approximate WCS-WAVE',calibration_url=calibration_url))
+        if method=='epsf':
+            return dict(provenance='computed',source_pixels='observed',method=method,available=available,
+                        ra=float(position.ra.deg),dec=float(position.dec.deg),radius_arcsec=None,
+                        normalized_position=[x,y],points=points,notes=['Forced measurements use released ePSF, solid-angle and spectral calibration files.','Review-flagged points are excluded from dip screening.','Errors omit calibration and confusion systematics.'])
+        return dict(provenance='computed',source_pixels='observed',method=method,available=available,ra=float(position.ra.deg),dec=float(position.dec.deg),radius_arcsec=radius,normalized_position=[x,y],points=points,notes=['Quicklook aperture flux, not a calibrated or aperture-corrected source spectrum.','Native pixels and conservative flags are used; background is estimated in a local annulus. No resampled display pixels are measured.','Measurements identify which wavelength map was used. Released CWAVE/CBAND is used where cached. Other measurements use approximate WCS-WAVE.','Error bars include native variance and annulus background uncertainty; calibration and confusion systematics are omitted.','Observations are taken at different times. Variability can shape this wavelength plot.'])

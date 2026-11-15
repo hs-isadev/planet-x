@@ -38,7 +38,7 @@ export function strongestSpectralDip(points) {
 
 export function installCandidateInspector(view){
  const box=document.createElement('section');box.id='candidate-inspector';box.hidden=true;
- box.innerHTML='<h3>Candidate evidence</h3><p id="candidate-position" class="micro"></p><label>Observation date A<select id="spectrum-date-a"></select></label><label>Compare date B<select id="spectrum-date-b"></select></label><label class="check"><input id="spectrum-features" type="checkbox">Show reference-feature windows</label><p id="spectrum-coverage" class="micro" role="status"></p><p id="spectrum-dip" class="micro"></p><p class="micro">Reference windows are ±λ/(2R), calculated from nominal instrumental resolution, not measured absorption widths. H I reference uses air wavelength; no vacuum or redshift correction is applied. These overlays cannot identify a chemical.</p><div id="feature-sources" class="micro"></div><label>Your review<select id="candidate-class"><option value="uncertain">Uncertain</option><option value="possible_motion">Possible motion</option><option value="brightness_change">Brightness change</option><option value="artifact">Artifact</option></select></label><p id="classification-help" class="micro"></p><button id="candidate-lightcurve" class="quiet">Measure same-band brightness history</button><button id="spectrum-export" class="quiet">Download spectrum CSV</button><button id="evidence-export" class="quiet">Export reproducible evidence card</button><details><summary>Measurements and source observations</summary><div style="max-height:260px;overflow:auto"><table id="spectrum-measurements"><thead><tr><th>Date / detector</th><th>λ / µm</th><th>Flux ± error / µJy</th><th>Quality</th></tr></thead><tbody></tbody></table></div></details>';
+ box.innerHTML='<h3>Candidate evidence</h3><p id="candidate-position" class="micro"></p><label>Observation date A<select id="spectrum-date-a"></select></label><label>Compare date B<select id="spectrum-date-b"></select></label><label class="check"><input id="spectrum-features" type="checkbox">Show reference-feature windows</label><label>Reference redshift <input id="spectrum-redshift" type="number" min="0" max="10" step="any" value="0"></label><label>Release <select id="spectrum-release"></select></label><label class="check"><input id="spectrum-review" type="checkbox">Show review-flagged measurements</label><p id="spectrum-coverage" class="micro" role="status"></p><p id="spectrum-dip" class="micro"></p><p class="micro">Reference windows are ±λ/(2R), calculated from nominal instrumental resolution, not measured absorption widths. H I reference uses air wavelength. Reference windows scale by (1 + z); the observed wavelengths stay fixed. These overlays cannot identify a chemical.</p><div id="feature-sources" class="micro"></div><label>Your review<select id="candidate-class"><option value="uncertain">Uncertain</option><option value="possible_motion">Possible motion</option><option value="brightness_change">Brightness change</option><option value="artifact">Artifact</option></select></label><p id="classification-help" class="micro"></p><button id="candidate-lightcurve" class="quiet">Measure same-band brightness history</button><button id="spectrum-export" class="quiet">Download spectrum CSV</button><button id="evidence-export" class="quiet">Export reproducible evidence card</button><details><summary>Measurements and source observations</summary><div style="max-height:260px;overflow:auto"><table id="spectrum-measurements"><thead><tr><th>Date / detector</th><th>λ / µm</th><th>Flux ± error / µJy</th><th>Quality</th></tr></thead><tbody></tbody></table></div></details>';
  $('spectrum').after(box);
  $('measure-center-spectrum').onclick=async()=>{
   if(!view.current()){view.toast('Load an observed frame to measure the spectrum.');return;}
@@ -46,10 +46,10 @@ export function installCandidateInspector(view){
   const button=$('measure-center-spectrum');
   button.disabled=true;$('measurement-note').textContent='Measuring native flux at each available wavelength…';
   try{
-   const result=await view.api('/api/jobs/'+job+'/spectrum?'+new URLSearchParams({x:.5,y:.5,radius:$('aperture-radius').value}));
+   const result=await view.api('/api/jobs/'+job+'/spectrum?'+new URLSearchParams({x:.5,y:.5,radius:$('aperture-radius').value,method:$('spectrum-method').value}));
    if(job!==view.jobId||token!==view.measureToken)return;
    view.plotSpectrum(result);
-   $('measurement-note').textContent='Field-center aperture spectrum.';
+   $('measurement-note').textContent=result.notes.join(' ');
    $('spectrum').scrollIntoView({block:'nearest'});
   }catch(error){if(token===view.measureToken)$('measurement-note').textContent=error.message;}
   finally{button.disabled=false;}
@@ -121,7 +121,7 @@ export function installCandidateInspector(view){
   if(!xy||!this.image||this.computed||this.candidate.jobId!==this.jobId)return;
   const canvas=$('science'), ctx=canvas.getContext('2d');
   ctx.strokeStyle='#d9b66f';ctx.lineWidth=1.5;ctx.beginPath();
-  ctx.arc(xy[0]*canvas.width,xy[1]*canvas.height,this.candidate.radius_arcsec/(this.job.fov*60)*canvas.width,0,2*Math.PI);ctx.stroke();
+  ctx.arc(xy[0]*canvas.width,xy[1]*canvas.height,this.candidate.radius_arcsec==null?7:this.candidate.radius_arcsec/(this.job.fov*60)*canvas.width,0,2*Math.PI);ctx.stroke();
  };
  $('candidate-lightcurve').onclick=async()=>{
   const point=view.candidate?.normalized_position;
@@ -129,10 +129,14 @@ export function installCandidateInspector(view){
   $('lightcurve').closest('details').open=true;
   await view.sourceLightcurve(...point);
  };
- const oldReset=view.reset.bind(view);view.reset=function(...args){full=null;comparison=null;anchor=null;box.hidden=true;this.candidate=null;return oldReset(...args);};
+ const oldReset=view.reset.bind(view);view.reset=function(...args){this.atlasRedshift=0;full=null;comparison=null;anchor=null;box.hidden=true;this.candidate=null;return oldReset(...args);};
  view.plotSpectrum=function(r){
-  full=r;comparison=null;anchor=null;this.candidate={ra:r.ra,dec:r.dec,radius_arcsec:r.radius_arcsec,normalized_position:r.normalized_position,measurements:r.points,notes:r.notes,jobId:this.jobId};box.hidden=false;
-  $('candidate-position').textContent='ICRS '+r.ra.toFixed(8)+'°, '+r.dec.toFixed(8)+'° · fixed '+r.radius_arcsec+'″ aperture. This is a fixed sky position, not an automatically tracked object.';
+  full=r;comparison=null;anchor=null;this.candidate={method:r.method,ra:r.ra,dec:r.dec,radius_arcsec:r.radius_arcsec,normalized_position:r.normalized_position,measurements:r.points,notes:r.notes,jobId:this.jobId};box.hidden=false;
+  $('candidate-position').textContent='ICRS '+r.ra.toFixed(8)+'°, '+r.dec.toFixed(8)+'° · '+(r.method==='epsf'?'forced ePSF at a fixed position':'fixed '+r.radius_arcsec+'″ aperture')+' · '+r.points.length+' / '+(r.available??r.points.length)+' loaded exposures measured or attempted.';
+  $('spectrum-redshift').value=String(this.atlasRedshift||0);
+  const releases=[...new Set(r.points.map(p=>p.release).filter(Boolean))].sort();
+  $('spectrum-release').replaceChildren(new Option('All releases','all'), ...releases.map(v=>new Option(v.toUpperCase(),v)));
+  if(r.method==='epsf'&&releases.length>1)$('spectrum-release').value=releases.includes('dr1')?'dr1':releases.at(-1);
   const dates=[...new Set(r.points.map(p=>(p.date||'').slice(0,10)).filter(Boolean))].sort();
   $('spectrum-date-a').replaceChildren(new Option('All dates (mixed epochs)','all'),...dates.map(d=>new Option(d,d)));
   $('spectrum-date-b').replaceChildren(new Option('No second date','none'),...dates.map(d=>new Option(d,d)));
@@ -141,32 +145,40 @@ export function installCandidateInspector(view){
  };
  function render(){
   if(!full)return;const a=$('spectrum-date-a').value,b=$('spectrum-date-b').value;
-  const selected=full.points.filter(p=>a==='all'||p.date?.startsWith(a)||b!=='none'&&p.date?.startsWith(b));
-  const good=selected.filter(p=>p.status==='ok'&&Number.isFinite(p.wavelength_um)&&Number.isFinite(p.flux_ujy)&&Number.isFinite(p.error_ujy));
-  const c=$('spectrum'),ctx=c.getContext('2d');c.hidden=false;ctx.fillStyle='#10151c';ctx.fillRect(0,0,c.width,c.height);ctx.font='11px monospace';ctx.fillStyle='#dce4ee';
+  const release=$('spectrum-release').value;
+  const selected=full.points.filter(p=>(release==='all'||p.release===release)&&(a==='all'||p.date?.startsWith(a)||b!=='none'&&p.date?.startsWith(b)));
+  const z=Math.max(0,Math.min(10,Number($('spectrum-redshift').value)||0));
+  const shifted=references.map(ref=>({...ref,lambda:ref.lambda*(1+z)}));
+  if(view.candidate)view.candidate.reference_redshift=z;
+  const usable=selected.filter(p=>Number.isFinite(p.wavelength_um)&&Number.isFinite(p.flux_ujy)&&Number.isFinite(p.error_ujy));
+  const good=usable.filter(p=>p.status==='ok');
+  const plot=$('spectrum-review').checked?usable:good;
+  const c=$('spectrum');c.onclick=null;const ctx=c.getContext('2d');c.hidden=false;ctx.fillStyle='#10151c';ctx.fillRect(0,0,c.width,c.height);ctx.font='11px monospace';ctx.fillStyle='#dce4ee';
   const rows=$('spectrum-measurements').querySelector('tbody');rows.replaceChildren();
-  for(const p of selected){const tr=document.createElement('tr');for(const text of [(p.date||'MJD '+p.mjd)+' / D'+p.detector,p.wavelength_um==null?'unavailable':p.wavelength_um.toFixed(4)+(p.passband_low_um==null?' (approx.)':' ['+p.passband_low_um.toFixed(3)+'–'+p.passband_high_um.toFixed(3)+']'),p.status==='ok'?p.flux_ujy.toPrecision(4)+' ± '+p.error_ujy.toPrecision(3):'unavailable',(p.quality_flags||[]).join(', ')+' '+(p.reason||p.wavelength_calibration||'Conservative aperture mask')]){const td=document.createElement('td');td.textContent=text;tr.append(td);}if(p.source_url){const link=document.createElement('a');link.href=p.source_url;link.textContent='Original '+p.exposure_id;link.target='_blank';link.rel='noreferrer';tr.firstChild.append(document.createElement('br'),link);const jump=document.createElement('button');jump.className='quiet';jump.textContent='Show frame';jump.onclick=async()=>{view.stop();view.clearComputed();$('group').value='all';view.refreshFrames();const index=view.frames.findIndex(f=>f.index===p.frame);if(index>=0){view.position=index;await view.show();}};tr.firstChild.append(jump);}rows.append(tr);}
+  for(const p of selected){const tr=document.createElement('tr');for(const text of [(p.date||'MJD '+p.mjd)+' / D'+p.detector,p.wavelength_um==null?'unavailable':p.wavelength_um.toFixed(4)+(p.passband_low_um==null?' (approx.)':' ['+p.passband_low_um.toFixed(3)+'–'+p.passband_high_um.toFixed(3)+']'),Number.isFinite(p.flux_ujy)?p.flux_ujy.toPrecision(4)+' ± '+p.error_ujy.toPrecision(3):'unavailable',(p.quality_flags||[]).join(', ')+' '+(p.reason||p.wavelength_calibration||'Conservative aperture mask')]){const td=document.createElement('td');td.textContent=text;tr.append(td);}if(p.source_url){const link=document.createElement('a');link.href=p.source_url;link.textContent='Original '+p.exposure_id;link.target='_blank';link.rel='noreferrer';tr.firstChild.append(document.createElement('br'),link);const jump=document.createElement('button');jump.className='quiet';jump.textContent='Show frame';jump.onclick=async()=>{view.stop();view.clearComputed();$('group').value='all';view.refreshFrames();const index=view.frames.findIndex(f=>f.index===p.frame);if(index>=0){view.position=index;await view.show();}};tr.firstChild.append(jump);}rows.append(tr);}
   let note=good.length+' / '+selected.length+' usable native aperture measurements. Missing values are never interpolated. ';
   note+=good.filter(p=>p.calibration_url).length+' use released wavelength calibration. ';
   note+=a==='all'?'Different dates are mixed; variability can resemble a spectral feature. ':'Date A is blue; date B is amber. No fitted chemical match. ';
   $('spectrum-dip').textContent='';
-  if(!good.length){ctx.fillText('Insufficient unmasked native data for a spectrum.',20,40);$('spectrum-coverage').textContent=note;return;}
-  const min=Math.min(...good.map(p=>p.wavelength_min_um??p.wavelength_um)),max=Math.max(...good.map(p=>p.wavelength_max_um??p.wavelength_um));
-  const lo=Math.min(0,...good.map(p=>p.flux_ujy-p.error_ujy)),hi=Math.max(...good.map(p=>p.flux_ujy+p.error_ujy));
+  if(!plot.length){ctx.fillText('Insufficient unmasked native data for a spectrum.',20,40);$('spectrum-coverage').textContent=note;return;}
+  const min=Math.min(...plot.map(p=>p.wavelength_min_um??p.wavelength_um)),max=Math.max(...plot.map(p=>p.wavelength_max_um??p.wavelength_um));
+  const lo=Math.min(0,...plot.map(p=>p.flux_ujy-p.error_ujy)),hi=Math.max(...plot.map(p=>p.flux_ujy+p.error_ujy));
   const x=v=>48+(v-min)/(max-min||1)*450,y=v=>250-(v-lo)/(hi-lo||1)*210;
   ctx.strokeStyle='#84929f';ctx.beginPath();ctx.moveTo(45,35);ctx.lineTo(45,250);ctx.lineTo(505,250);ctx.stroke();ctx.fillText('Flux / µJy',48,15);ctx.fillText('λ '+min.toFixed(3)+'–'+max.toFixed(3)+' µm',125,282);
-  if($('spectrum-features').checked)for(const r of references){if(r.lambda<min||r.lambda>max)continue;ctx.fillStyle='#d9b66f25';const left=Math.max(min,r.lambda-r.lambda/r.R/2),right=Math.min(max,r.lambda+r.lambda/r.R/2);ctx.fillRect(x(left),35,x(right)-x(left),215);ctx.fillStyle='#d9b66f';ctx.save();ctx.translate(x(r.lambda),145);ctx.rotate(-Math.PI/2);ctx.fillText(r.name,0,0);ctx.restore();}
-  for(const p of good){ctx.strokeStyle=ctx.fillStyle=b!=='none'&&p.date?.startsWith(b)?'#d9b66f':'#c4d5e3';ctx.beginPath();ctx.moveTo(x(p.wavelength_um),y(p.flux_ujy-p.error_ujy));ctx.lineTo(x(p.wavelength_um),y(p.flux_ujy+p.error_ujy));ctx.moveTo(x(p.wavelength_min_um??p.wavelength_um),y(p.flux_ujy));ctx.lineTo(x(p.wavelength_max_um??p.wavelength_um),y(p.flux_ujy));ctx.stroke();ctx.beginPath();ctx.arc(x(p.wavelength_um),y(p.flux_ujy),3,0,2*Math.PI);ctx.fill();}
+  if($('spectrum-features').checked)for(const r of shifted){if(r.lambda<min||r.lambda>max)continue;ctx.fillStyle='#d9b66f25';const left=Math.max(min,r.lambda-r.lambda/r.R/2),right=Math.min(max,r.lambda+r.lambda/r.R/2);ctx.fillRect(x(left),35,x(right)-x(left),215);ctx.fillStyle='#d9b66f';ctx.save();ctx.translate(x(r.lambda),145);ctx.rotate(-Math.PI/2);ctx.fillText(r.name,0,0);ctx.restore();}
+  const hitPoints=[];
+  for(const p of plot){hitPoints.push({x:x(p.wavelength_um),y:y(p.flux_ujy),id:p.exposure_id});ctx.strokeStyle=ctx.fillStyle=b!=='none'&&p.date?.startsWith(b)?'#d9b66f':'#c4d5e3';ctx.beginPath();ctx.moveTo(x(p.wavelength_um),y(p.flux_ujy-p.error_ujy));ctx.lineTo(x(p.wavelength_um),y(p.flux_ujy+p.error_ujy));ctx.moveTo(x(p.wavelength_min_um??p.wavelength_um),y(p.flux_ujy));ctx.lineTo(x(p.wavelength_max_um??p.wavelength_um),y(p.flux_ujy));ctx.stroke();ctx.beginPath();if(p.status==='ok'){ctx.arc(x(p.wavelength_um),y(p.flux_ujy),3,0,2*Math.PI);ctx.fill();}else{const px=x(p.wavelength_um),py=y(p.flux_ujy);ctx.moveTo(px-4,py-4);ctx.lineTo(px+4,py+4);ctx.moveTo(px+4,py-4);ctx.lineTo(px-4,py+4);ctx.stroke();}}
+  c.onclick=event=>{const r=c.getBoundingClientRect(),px=(event.clientX-r.left)*c.width/r.width,py=(event.clientY-r.top)*c.height/r.height;const nearest=hitPoints.map(p=>({...p,d:Math.hypot(px-p.x,py-p.y)})).sort((a,b)=>a.d-b.d)[0];if(nearest?.id&&nearest.d<14)view.selectExposure(nearest.id);};
   const dip=strongestSpectralDip(good);
   if(dip){
    ctx.strokeStyle='#ffb764';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x(dip.wave),y(dip.point.flux_ujy),8,0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;
-   const matches=references.filter(ref=>Math.abs(ref.lambda-dip.wave)<=Math.max(dip.halfBand,ref.lambda/(2*ref.R)));
+   const matches=shifted.filter(ref=>Math.abs(ref.lambda-dip.wave)<=Math.max(dip.halfBand,ref.lambda/(2*ref.R)));
    $('spectrum-dip').textContent='Strongest supported dip: '+dip.wave.toFixed(4)+' µm · '+dip.point.date.slice(0,10)+' · D'+dip.point.detector+
     ' · '+Math.round(dip.depth*100)+'% below nearby samples. '+(matches.length?'Reference overlap: '+matches.map(ref=>ref.name).join(', ')+'. ':'No listed reference feature overlaps. ')+
     'Candidate only. Check another epoch and calibrated spectrum before assigning a species.';
   }else $('spectrum-dip').textContent='No supported absorption dip in the usable samples. A dip needs two nearby continuum samples from the same detector and date.';
   $('spectrum-coverage').textContent=note+'Coverage '+min.toFixed(3)+'–'+max.toFixed(3)+' µm is discontinuous. Absorption depends on source and intervening material, response, resolution and signal-to-noise. No identification is made.';
  }
- for(const id of ['spectrum-date-a','spectrum-date-b','spectrum-features'])$(id).onchange=render;
+ for(const id of ['spectrum-date-a','spectrum-date-b','spectrum-features','spectrum-redshift','spectrum-release','spectrum-review'])$(id).onchange=render;
  $('evidence-export').onclick=()=>{if(!view.candidate||view.candidate.jobId!==view.jobId)return;const j=view.job;const card={schema:'planet-x-evidence-v1',created_at:new Date().toISOString(),source:'IRSA SPHEREx real observations',candidate:view.candidate,calibrated_comparison:comparison?{...comparison,difference:comparison.difference?{...comparison.difference,image:undefined}:undefined}:null,volunteer_classification:$('candidate-class').value,classification_status:'unverified user assessment',coordinate_search:{ra:j.ra,dec:j.dec,fov:j.fov},current_exposure:view.current(),manual_positions:view.marks,brightness_history:view.lightcurve||null,review_receipt:view.sequence||null,scientific_assessment:'uncertain',method:'Native fixed aperture spectrum; optional local-background residual quicklook; Laya suggestions separate from measured residuals',warnings:['A calibrated pair check, when present, applies only to its two listed exposures and tested neighborhood. The general red overlay is a quicklook.','No model scores are detection probabilities.','A fixed aperture does not automatically follow a moving source.'],observations:j.frames.map(f=>({id:f.id,date:f.date,mjd:f.mjd,detector:f.detector,wavelength_um:f.wavelength_um,url:f.url,status:f.status,error:f.error,quality_flags:f.source_flag_values})),reproduce_url:location.origin+'/?'+new URLSearchParams({ra:j.ra,dec:j.dec,fov:j.fov})};const u=URL.createObjectURL(new Blob([JSON.stringify(card,null,2)],{type:'application/json'}));view.download(u,'planet-x-evidence.json');setTimeout(()=>URL.revokeObjectURL(u),1000);};
 }

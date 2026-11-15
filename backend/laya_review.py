@@ -11,18 +11,25 @@ from .analysis import load_products
 from .quicklook import standardized,change_masks,comparable
 LOCK=threading.Lock();REVIEWS={};PROC=None;LINES=queue.Queue()
 LAST_SUCCESS_AT=None
-PYTHON=ROOT/'runtime/laya-venv'/('Scripts/python.exe' if sys.platform=='win32' else 'bin/python')
-def installed():
-    return PYTHON.exists() and (ROOT/'runtime/laya-model-revision.json').exists() and (ROOT/'runtime/laya-venv/Lib/site-packages/laya').exists() if sys.platform=='win32' else PYTHON.exists() and (ROOT/'runtime/laya-model-revision.json').exists()
+RUNTIME=Path(os.environ.get('LAYA_RUNTIME_DIR') or ROOT/'runtime').resolve()
+PYTHON=RUNTIME/'laya-venv'/('Scripts/python.exe' if sys.platform=='win32' else 'bin/python')
+MODEL_REVISION=RUNTIME/'laya-model-revision.json'
 class ReviewCancelled(RuntimeError):
     pass
 
 def availability():
-    required = [PYTHON, ROOT/'runtime/laya-model-revision.json', ROOT/'runtime/laya-model/vlm_agent_config.json', ROOT/'runtime/laya-model/model.safetensors', ROOT/'runtime/laya-model/backbone/config.json']
-    missing = [str(p.relative_to(ROOT)) for p in required if not p.exists()]
-    return dict(installed=installed() and not missing, missing=missing,
+    required = [PYTHON, MODEL_REVISION, RUNTIME/'laya-model/vlm_agent_config.json', RUNTIME/'laya-model/model.safetensors', RUNTIME/'laya-model/backbone/config.json']
+    if sys.platform=='win32':
+        required.append(RUNTIME/'laya-venv/Lib/site-packages/laya')
+    missing = [p.relative_to(RUNTIME).as_posix() for p in required if not p.exists()]
+    note='Installed files do not prove successful inference. Check the review status for the result.'
+    if missing:
+        note=('Laya Vision is not installed on this Render instance. Use the local app or a model-capable host. Red change overlays still work independently.'
+              if os.environ.get('RENDER')=='true' else
+              'Laya Vision is missing runtime files. Run python scripts/setup_laya.py and restart the app.')
+    return dict(installed=not missing, missing=missing,
                 inference_verified=LAST_SUCCESS_AT is not None, last_success_at=LAST_SUCCESS_AT, worker_running=PROC is not None and PROC.poll() is None,
-                note='Installed files do not prove successful inference. See a completed review receipt and runtime/laya-worker.log.')
+                note=note)
 
 def shutdown_worker():
     global PROC, LINES
@@ -57,8 +64,9 @@ def infer(file, note, cancelled=lambda: False, progress=lambda stage: None, time
         raise ReviewCancelled('Review cancelled before inference.')
     if PROC is None or PROC.poll() is not None:
         LINES = queue.Queue()
-        with open(ROOT/'runtime/laya-worker.log', 'a', encoding='utf8') as log:
+        with open(RUNTIME/'laya-worker.log', 'a', encoding='utf8') as log:
             PROC = subprocess.Popen([str(PYTHON), str(ROOT/'backend/laya_worker.py')], cwd=ROOT,
+                env={**os.environ, 'LAYA_RUNTIME_DIR': str(RUNTIME)},
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=log, text=True, bufsize=1,
                 start_new_session=sys.platform != 'win32',
                 creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0)
@@ -138,7 +146,7 @@ def review_pair(a,b,identity):
         choice=answer.get('choice','uncertain')
         if not isinstance(choice,str):choice=str(choice)
         answers.append(dict(x=(x+.5)/w,y=1-(y+.5)/h,radius=max(8,np.sqrt(count)*2)/w,pixels=count,choice=choice,assessment='uncertain'))
-    return dict(status='complete',regions=answers,frame=a['index'],reference=b['index'],dates=[earlier['date'],later['date']],limited=limited,model=json.loads((ROOT/'runtime/laya-model-revision.json').read_text()),provenance='computed / experimental local AI review',message=(f'Laya reviewed {len(answers)} proposed regions' if objects[0][0] else 'Laya assessed the whole field; no localized statistical candidate')+(' (first 8 only)' if limited else ''),note='General visual model; scores are not calibrated for SPHEREx. Amber rings mark model-reviewed regions. Interpretation remains uncertain pending wavelength calibration, registration and PSF validation.')
+    return dict(status='complete',regions=answers,frame=a['index'],reference=b['index'],dates=[earlier['date'],later['date']],limited=limited,model=json.loads(MODEL_REVISION.read_text()),provenance='computed / experimental local AI review',message=(f'Laya reviewed {len(answers)} proposed regions' if objects[0][0] else 'Laya assessed the whole field; no localized statistical candidate')+(' (first 8 only)' if limited else ''),note='General visual model; scores are not calibrated for SPHEREx. Amber rings mark model-reviewed regions. Interpretation remains uncertain pending wavelength calibration, registration and PSF validation.')
 def run_review(a,b,identity,file):
     try:
         with LOCK:
@@ -150,7 +158,8 @@ def install_laya_routes(app,jobs,guard):
         return dict(**availability(),model='thaitea/laya-vision',source='https://github.com/r33drichards/laya-vision',local=True)
     @app.post('/api/jobs/{jobid}/laya')
     def start(jobid:str,frame:int):
-        if not installed():raise HTTPException(503,'Laya Vision is not installed or its checkpoint download has not completed.')
+        model=availability()
+        if not model['installed']:raise HTTPException(503,model['note'])
         with guard:
             if jobid not in jobs:raise HTTPException(404,'Observation session expired.')
             frames=jobs[jobid]['frames']

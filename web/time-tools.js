@@ -1,4 +1,4 @@
-import {installSequenceReview} from './sequence-review.js';
+import {installSequenceReview} from './sequence-review.js?v=laya-runtime';
 const $=id=>document.getElementById(id);
 function reviewProgress(r){return [r.stage||r.status, r.message, (r.discovered??r.total)+' discovered',r.loaded+' loaded', (r.prepared??'?')+' prepared',r.reviewed+' Laya reviewed', (r.failed_downloads??0)+' unavailable cutouts', (r.review_errors??r.failed?.length??0)+' review errors', (r.batches_done??0)+' crops reviewed', (r.pending_downloads??'?')+' pending downloads', (r.review_compatible??'?')+' preliminary compatible', (r.scientifically_comparable??0)+' validated for motion', 'Last progress: '+(r.last_progress_at?new Date(r.last_progress_at).toLocaleString():'none yet')].join(' · ');}
 export function installTimeTools(view){
@@ -14,6 +14,14 @@ export function installTimeTools(view){
  view.sourceLightcurve=curve;
  $('target-lightcurve').onclick=()=>curve();
  let oldClick=view.click.bind(view);view.click=async function(e){if($('click-action').value==='lightcurve'){let r=$('science').getBoundingClientRect();await curve((e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height);}else await oldClick(e);};
- function plot(r){let c=$('lightcurve'),ctx=c.getContext('2d');c.hidden=false;ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#10151c';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#dce4ee';ctx.font='12px monospace';let p=r.points.filter(p=>p.status==='ok');if(p.length<2){ctx.fillText('Fewer than two valid apertures. No curve inferred.',18,40);return;}let x0=Math.min(...p.map(p=>p.mjd)),x1=Math.max(...p.map(p=>p.mjd)),lo=Math.min(...p.map(p=>p.flux_ujy-p.error_ujy)),hi=Math.max(...p.map(p=>p.flux_ujy+p.error_ujy));let x=v=>62+(v-x0)/(x1-x0||1)*530,y=v=>245-(v-lo)/(hi-lo||1)*210;ctx.strokeStyle='#84929f';ctx.beginPath();ctx.moveTo(58,24);ctx.lineTo(58,245);ctx.lineTo(598,245);ctx.stroke();ctx.fillText((r.measurement_method?.startsWith('common')?'Common footprint /':'Aperture flux /')+' µJy',64,18);ctx.fillText(hi.toPrecision(3),5,39);ctx.fillText(lo.toPrecision(3),5,245);ctx.fillText('MJD '+x0.toFixed(1)+' — '+x1.toFixed(1),155,282);for(let a of p){ctx.strokeStyle='#c4d5e3';ctx.fillStyle='#c4d5e3';ctx.beginPath();ctx.moveTo(x(a.mjd),y(a.flux_ujy-a.error_ujy));ctx.lineTo(x(a.mjd),y(a.flux_ujy+a.error_ujy));ctx.stroke();ctx.beginPath();ctx.arc(x(a.mjd),y(a.flux_ujy),3,0,Math.PI*2);ctx.fill();}}
+ const curveCanvas=$('lightcurve');
+ let curvePoints=[];
+ curveCanvas.onclick=event=>{
+  const rect=curveCanvas.getBoundingClientRect();
+  const x=(event.clientX-rect.left)*curveCanvas.width/rect.width,y=(event.clientY-rect.top)*curveCanvas.height/rect.height;
+  const nearest=curvePoints.map(p=>({...p,d:Math.hypot(x-p.x,y-p.y)})).sort((a,b)=>a.d-b.d)[0];
+  if(nearest?.d<14&&nearest.exposureId)view.selectExposure(nearest.exposureId);
+ };
+ function plot(r){curvePoints=[];let c=$('lightcurve'),ctx=c.getContext('2d');c.hidden=false;ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#10151c';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#dce4ee';ctx.font='12px monospace';let p=r.points.filter(p=>p.status==='ok');if(p.length<2){ctx.fillText('Fewer than two valid apertures. No curve inferred.',18,40);return;}let x0=Math.min(...p.map(p=>p.mjd)),x1=Math.max(...p.map(p=>p.mjd)),lo=Math.min(...p.map(p=>p.flux_ujy-p.error_ujy)),hi=Math.max(...p.map(p=>p.flux_ujy+p.error_ujy));let x=v=>62+(v-x0)/(x1-x0||1)*530,y=v=>245-(v-lo)/(hi-lo||1)*210;ctx.strokeStyle='#84929f';ctx.beginPath();ctx.moveTo(58,24);ctx.lineTo(58,245);ctx.lineTo(598,245);ctx.stroke();ctx.fillText((r.measurement_method?.startsWith('common')?'Common footprint /':'Aperture flux /')+' µJy',64,18);ctx.fillText(hi.toPrecision(3),5,39);ctx.fillText(lo.toPrecision(3),5,245);ctx.fillText('MJD '+x0.toFixed(1)+' — '+x1.toFixed(1),155,282);for(let a of p){curvePoints.push({x:x(a.mjd),y:y(a.flux_ujy),exposureId:a.exposure_id||view.job?.frames[a.frame]?.id});ctx.strokeStyle='#c4d5e3';ctx.fillStyle='#c4d5e3';ctx.beginPath();ctx.moveTo(x(a.mjd),y(a.flux_ujy-a.error_ujy));ctx.lineTo(x(a.mjd),y(a.flux_ujy+a.error_ujy));ctx.stroke();ctx.beginPath();ctx.arc(x(a.mjd),y(a.flux_ujy),3,0,Math.PI*2);ctx.fill();}}
  installSequenceReview(view);
 }

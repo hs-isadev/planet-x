@@ -160,3 +160,14 @@ Resume with the same command. Add `--retry-failed` to retry failed files after c
 Open **Cross-mission evidence** beside the SPHEREx frames. The panel can show Gaia DR3 reference stars, pass the same ICRS coordinates and field size to WiseView for an older infrared blink, or query public NEOSSat footprints at CADC. It distinguishes a service timeout from a successful query with no overlapping products. Export a JSON receipt with the original SPHEREx exposure, Gaia settings, linked WISE field, and NEOSSat metadata if queried. Gaia's catalog reference epoch is J2016.0. Each survey has its own observing times, bands, and angular resolution. See the linked SPHEREx and CSA notebooks for reproducing independent checks.
 
 For the public web service, see [Deploying on Render](docs/RENDER_DEPLOYMENT.md).
+
+
+### Observation lab tools
+
+Open **Track a moving source** in SPHEREx and choose **Load archived Vesta example** for two D3 IRSA observations from 4–5 August 2025. **Measure track** compares native centroids against JPL Horizons, using exposure midpoints when provided by FITS. The observer is identified in the result. A geocentric fallback lacks the spacecraft parallax. For an unnamed source, use **Mark motion** on one frame for a fixed search position or two frames for a straight between-epoch search guide. Fits can be rejected when a source is masked, blends with another, or falls outside the field. Speed is projected on the sky and measured between successful fits.
+
+**Inspect native pixel** reads the original cutout brightness, uncertainty, wavelength, and flags. **Detector flag overlay** shows pixels excluded by the display mask. **Identify clicked source** checks SIMBAD and IMCCE SkyBoT in parallel at the exposure time. A positional match is a lead to verify.
+
+**Forced ePSF** uses released wavelength, solid-angle and ePSF calibration products for fixed-position spectra. It evaluates up to 64 evenly spaced loaded exposures, retains negative measurements, and marks poor fits for review. The spectrum panel can separate releases and shift reference windows by a user-specified redshift. Click a spectrum or light-curve point to see its underlying exposure.
+
+In **3D Context → Scale / orbit → Physical atlas**, browse catalog distances from Gaia DR3 or DESI DR1. Use the Gaia year slider to project cataloged 3D velocities, and click a point to inspect its parameters, radial uncertainty, or SPHEREx sky field. The atlas uses incomplete catalog samples. [Data sources and credits](web/assets/atlas-credits.txt).

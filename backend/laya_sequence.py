@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from .archive import CACHE, ROOT, key_for, atomic_json
 from .analysis import load_products
 from .quicklook import standardized, comparable, change_masks
-from .laya_review import availability, infer, LOCK, ReviewCancelled
+from .laya_review import availability, infer, LOCK, ReviewCancelled, MODEL_REVISION
 
 TASKS = {}
 TASK_LOCK = threading.RLock()
@@ -25,7 +25,7 @@ def utc():
 
 
 def sequence_identity(job):
-    model = ROOT/'runtime/laya-model-revision.json'
+    model = MODEL_REVISION
     revision = model.read_text() if model.exists() else 'unavailable'
     return 'laya-seq-'+key_for('|'.join([VERSION, revision, str(float(job['ra'])),
         str(float(job['dec'])), str(float(job['fov']))]+sorted(f['id'] for f in job['frames'])))
@@ -301,8 +301,7 @@ def install_sequence_routes(app, jobs, guard):
     def start(jobid: str, summary: bool = False):
         model = availability()
         if not model['installed']:
-            missing = ', '.join(model['missing']) or 'Laya package in the runtime environment'
-            raise HTTPException(503, 'Local Laya is missing '+missing+'. Run scripts/setup_laya.py.')
+            raise HTTPException(503, model['note'])
         with guard:
             if jobid not in jobs:
                 raise HTTPException(404, 'Observation session expired; repeat the coordinate search to resume saved review.')

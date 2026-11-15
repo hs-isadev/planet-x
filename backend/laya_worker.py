@@ -2,10 +2,11 @@
 import sys,os,json,traceback,contextlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-os.environ['TORCHINDUCTOR_CACHE_DIR']=str(ROOT/'runtime/torch-inductor')
-os.environ['TORCH_HOME']=str(ROOT/'runtime/torch')
-os.environ['TRITON_CACHE_DIR']=str(ROOT/'runtime/triton')
-os.environ['HF_HOME']=str(ROOT/'runtime/huggingface')
+RUNTIME=Path(os.environ.get('LAYA_RUNTIME_DIR') or ROOT/'runtime').resolve()
+os.environ['TORCHINDUCTOR_CACHE_DIR']=str(RUNTIME/'torch-inductor')
+os.environ['TORCH_HOME']=str(RUNTIME/'torch')
+os.environ['TRITON_CACHE_DIR']=str(RUNTIME/'triton')
+os.environ['HF_HOME']=str(RUNTIME/'huggingface')
 os.environ['HF_HUB_OFFLINE']='1'
 os.environ['TRANSFORMERS_OFFLINE']='1'
 os.environ['HF_HUB_DISABLE_XET']='1'
@@ -21,7 +22,7 @@ for line in sys.stdin:
             if agent is None:
                 print(json.dumps({'request_id':request_id,'stage':'loading_model'}),file=sys.__stdout__,flush=True)
                 torch.set_num_threads(4)
-                agent=laya.load_vlm(str(ROOT/'runtime/laya-model'),device='cuda' if torch.cuda.is_available() else 'cpu',dtype='fp32')
+                agent=laya.load_vlm(str(RUNTIME/'laya-model'),device='cuda' if torch.cuda.is_available() else 'cpu',dtype='fp32')
                 agent.model.float()  # Keep the vision connector and embeddings in the same dtype.
             print(json.dumps({'request_id':request_id,'stage':'running_inference'}),file=sys.__stdout__,flush=True)
             result=agent.predict({'image':Image.open(request['image']).convert('RGB'),'note':request['note']},{

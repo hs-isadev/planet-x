@@ -37,7 +37,7 @@ If the build cannot find the Dockerfile, confirm the branch and leave Root Direc
 
 ## 4. Add the optional Groq guide key
 
-In the Render service, open **Environment → Add Environment Variable**. Set the key name to `GROQ_API_KEY` and enter your value there. Choose **Save and deploy** to apply it to the running service. Locally, copy `.env.example` to `.env` and add the value after `GROQ_API_KEY=`. Git and Docker exclude the local secret file.
+In the Render service, open **Environment → Add Environment Variable**. Set the key name to `GROQ_API_KEY` and enter your value there. Choose **Save and deploy** to apply it to the running service. To choose a model, set optional `GROQ_MODEL`. The app defaults to `openai/gpt-oss-20b` and falls back to `openai/gpt-oss-120b` when the preferred model is unavailable or rate-limited. An optional comma-separated `GROQ_FALLBACK_MODELS` adds alternatives. Locally, copy `.env.example` to `.env` and add the value after `GROQ_API_KEY=`. Git and Docker exclude the local secret file.
 
 You can also use **New → Blueprint** and point Render at the repository and `render-preview` branch. Render reads `render.yaml` and prompts you for the Groq key. Use the manual Web Service setup if you want to deploy without supplying a key.
 
@@ -45,6 +45,8 @@ You can also use **New → Blueprint** and point Render at the repository and `r
 
 - The Free instance can spin down when idle and its filesystem is temporary. Your laptop's saved SPHEREx archive stays local. The hosted app fetches cutouts on demand.
 - For a lasting cloud cache, a paid service can mount a disk at `/var/data`. Set `SPHEREX_STORAGE_ROOT=/var/data`. This saves future cloud downloads on the disk.
-- Laya's local model weights are not part of the deployment. The hosted app can still use IRSA imagery, the spectral plot, deterministic comparisons, and the partner archive lookups.
+- The Free Render image does not include the Laya runtime or checkpoint. Use Laya on the local app with `python scripts/setup_laya.py` and restart, or use a host that can run the model. The installer and app both accept `LAYA_RUNTIME_DIR` for separately provisioned model files. The hosted app can still use real IRSA imagery, measured tracks, and deterministic red change overlays.
 
 [Render deploy walkthrough](https://render.com/docs/your-first-deploy) · [Docker settings](https://render.com/docs/docker) · [Secrets](https://render.com/docs/configure-environment-variables) · [Free instance limits](https://render.com/docs/free)
+
+The hosted Vesta example fetches two archived exposures from IRSA and caches them after the first load.
