@@ -60,6 +60,18 @@
     history.replaceState(history.state, "", url);
   }
 
+  async function extraTargets() {     // tracked bodies added by scripts/fetch_track.py
+    try {
+      const r = await fetch(BASE + "index.json", {cache: "no-cache"});
+      if (!r.ok) return;
+      for (const s of (await r.json()).studies || []) {
+        if (TARGETS.some(t => t[0] === s.field)) continue;
+        TARGETS.push([s.field, s.mode === "track" ? `${s.name} (tracked)` : s.name]);
+        ui.select?.append(el("option", {value: s.field, text: TARGETS.at(-1)[1]}));
+      }
+    } catch { /* optional */ }
+  }
+
   function build() {
     const anchor = document.getElementById("light-panel");
     if (!anchor || document.getElementById("motion-study")) return false;
@@ -76,7 +88,8 @@
 
     ui.tabs = el("div", {class: "ms-tabs", role: "tablist"},
       el("button", {type: "button", role: "tab", "data-tab": "timelapse", text: "2010–2026 time-lapse · 4.6 µm"}),
-      el("button", {type: "button", role: "tab", "data-tab": "visits", text: "SPHEREx visits · same wavelength"}));
+      el("button", {type: "button", role: "tab", "data-tab": "visits", text: "SPHEREx visits · same wavelength"}),
+      el("button", {type: "button", role: "tab", "data-tab": "sky", text: "Fixed sky · tiles", hidden: ""}));
     ui.tabs.addEventListener("click", e => { const t = e.target.closest("[data-tab]"); if (t) { view.tab = t.dataset.tab; view.index = 0; view.b = null; render(); } });
     ui.bands = el("div", {class: "ms-bands", role: "group", "aria-label": "Wavelength"});
     ui.modes = el("div", {class: "ms-modes", role: "group", "aria-label": "View mode"},
@@ -151,10 +164,8 @@
   function frames() {
     const d = view.data;
     if (!d) return [];
-    if (d.mode === "track") {
-      if (view.tab === "sky") return d.sky.map(f => ({...f, label: `${f.date} · fixed sky · ${fmt(f.scale_arcsec * f.size / 60, 0)}′ field`}));
-      return d.timelapse.map(f => ({...f, label: `${f.date} · SPHEREx D${f.detector} · centred on Vesta`}));
-    }
+    if (view.tab === "sky" && d.sky?.length) return d.sky.map(f => ({...f, label: `${f.date} · fixed sky · ${f.layout ? f.layout + " tiles · " : ""}${fmt(f.scale_arcsec * f.size / 60, 0)}′ field`}));
+    if (d.mode === "track") return d.timelapse.map(f => ({...f, label: `${f.date} · SPHEREx D${f.detector} · centred on ${d.name}`}));
     if (view.tab === "timelapse") return d.timelapse.map(t => ({...t, label: `${t.date} · ${t.mission} · ${t.frames} exposure${t.frames === 1 ? "" : "s"} stacked`}));
     return d.visits.filter(v => v.stacks[view.band]).map(v => {
       const s = v.stacks[view.band];
@@ -187,12 +198,14 @@
     document.getElementById("ms-sub").textContent = track ? `${d.name} · ${d.kind}. ${d.counts.spherex_frames} SPHEREx exposures in ${d.counts.spherex_visits} visit${d.counts.spherex_visits === 1 ? "" : "s"}.` :
       `${d.name} · ${d.kind}. ${d.counts.spherex_frames} SPHEREx exposures in ${d.counts.spherex_visits} visits` +
       (d.counts.wise_frames ? ` + ${d.counts.wise_frames} WISE/NEOWISE exposures in ${d.counts.wise_visits} visits.` : ".");
+    const hasSky = Boolean(d.sky?.length);
     if (track && view.tab === "visits") view.tab = "timelapse";
-    if (!track && view.tab === "sky") view.tab = "timelapse";
-    const [t1, t2] = ui.tabs.querySelectorAll("[data-tab]");
-    t1.textContent = track ? "Follow Vesta · centred on it" : "2010–2026 time-lapse · 4.6 µm";
-    t2.textContent = track ? "Fixed sky · watch it cross" : "SPHEREx visits · same wavelength";
-    t2.dataset.tab = track ? "sky" : "visits";
+    if (!hasSky && view.tab === "sky") view.tab = "timelapse";
+    const [t1, t2, t3] = ui.tabs.querySelectorAll("[data-tab]");
+    t1.textContent = track ? `Follow ${d.name} · centred on it` : "2010–2026 time-lapse · 4.6 µm";
+    t2.hidden = track;
+    t3.hidden = !hasSky;
+    t3.textContent = track ? "Fixed sky · watch it cross" : "Fixed sky · across tiles";
     for (const b of ui.tabs.querySelectorAll("[data-tab]")) {
       const on = b.dataset.tab === view.tab;
       b.setAttribute("aria-selected", String(on));
@@ -202,7 +215,7 @@
       const button = el("button", {type: "button", "data-band": b.key, "aria-pressed": String(b.key === view.band), text: b.label});
       button.addEventListener("click", () => { view.band = b.key; view.index = 0; view.b = null; render(); });
       return button;
-    }) : [el("span", {class: "ms-note", text: track ? (view.tab === "sky" ? "Each exposure drawn on one fixed patch of sky: the data window moves with Vesta, so it keeps going after leaving the original field." : "Every exposure re-centred on Vesta, so the background stars stream past and Vesta stays put.") : d.counts.wise_frames ? "WISE/NEOWISE W2 and SPHEREx at the same 4.6 µm wavelength, one image per visit." : "No WISE/NEOWISE epochs bundled for this target yet."})]));
+    }) : [el("span", {class: "ms-note", text: view.tab === "sky" ? (d.tiles ? `Fixed ${fmt(d.tiles.tile_arcmin, 0)}′ sky tiles: one while the target sits inside a tile, its neighbour once it nears an edge, four at a corner. Stars stay put; the target walks across.` : `Each exposure drawn on one fixed patch of sky: the data window moves with ${d.name}, so it keeps going after leaving the original field.`) : track ? `Every exposure re-centred on ${d.name}, so the background stars stream past and it stays put.` : d.counts.wise_frames ? "WISE/NEOWISE W2 and SPHEREx at the same 4.6 µm wavelength, one image per visit." : "No WISE/NEOWISE epochs bundled for this target yet."})]));
     if (view.tab === "visits" && !d.bands.some(b => b.key === view.band) && d.bands.length) { view.band = d.bands[0].key; return render(); }
     const list = frames();
     view.index = Math.min(view.index, Math.max(0, list.length - 1));
@@ -307,19 +320,31 @@
 
   function drawMarks(ctx, k, size, list, current, ghost) {
     const now = list[current];
+    const same = f => now?.visit == null || f.visit === now.visit;   // fixed-sky scenes each have their own grid
+    if (now?.tiles) {
+      ctx.save(); ctx.font = "10px system-ui, sans-serif";
+      for (const t of now.tiles) {
+        const x = (t.x0 + .5) * k, y = (t.y0 + .5) * k, w = (t.x1 - t.x0) * k, h = (t.y1 - t.y0) * k;
+        if (!now.have?.includes(t.key)) { ctx.fillStyle = "rgba(255,255,255,.04)"; ctx.fillRect(x, y, w, h); }
+        ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.lineWidth = 1; ctx.setLineDash([3, 5]); ctx.strokeRect(x, y, w, h);
+        ctx.setLineDash([]); ctx.fillStyle = "rgba(245,245,247,.45)"; ctx.fillText(`tile ${t.key.replace("_", ",")}`, x + 5, y + 13);
+      }
+      if (now.layout) { ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(10, 10, 92, 20); ctx.fillStyle = "#f5f5f7"; ctx.fillText(`${now.layout} tiles`, 16, 24); }
+      ctx.restore();
+    }
     if (now?.trail) {           // fixed-sky Vesta view: its path through this visit
       ctx.strokeStyle = "rgba(108,184,255,.55)"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
       ctx.beginPath(); now.trail.forEach(([x, y], i) => i ? ctx.lineTo((x + .5) * k, (y + .5) * k) : ctx.moveTo((x + .5) * k, (y + .5) * k)); ctx.stroke();
       ctx.setLineDash([]);
     }
-    const pts = list.map(f => f.expected).filter(Boolean);
+    const pts = list.filter(same).map(f => f.expected).filter(Boolean);
     if (pts.length > 1) {          // catalog path across all frames
       ctx.strokeStyle = "rgba(185,163,245,.45)"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
       ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo((p.x + .5) * k, (p.y + .5) * k) : ctx.moveTo((p.x + .5) * k, (p.y + .5) * k)); ctx.stroke();
       ctx.setLineDash([]);
     }
     list.slice(0, current + 1).forEach((f, i) => {   // measured history
-      if (!f.measured) return;
+      if (!f.measured || !same(f)) return;
       ctx.fillStyle = i === current ? "rgba(108,184,255,1)" : "rgba(108,184,255,.35)";
       ctx.beginPath(); ctx.arc((f.measured.x + .5) * k, (f.measured.y + .5) * k, i === current ? 3 : 2, 0, 2 * Math.PI); ctx.fill();
     });
@@ -358,14 +383,14 @@
     const d = view.data;
     if (!d) return;
     ui.residualToggle.hidden = d.mode === "track";
-    ui.chartTitle.textContent = d.mode === "track" ? "Where Vesta was, exposure by exposure" : "Where it was versus where the catalog says it should be";
+    ui.chartTitle.textContent = d.mode === "track" ? `Where ${d.name} was, exposure by exposure` : "Where it was versus where the catalog says it should be";
     if (d.mode === "track") { ui.charts.replaceChildren(skyPath()); return; }
     ui.charts.replaceChildren(chart("east", "East offset"), chart("north", "North offset"));
   }
 
   function skyPath() {
     const path = view.data.path, W = 560, H = 300, L = 64, R = 16, T = 26, B = 40;
-    const s = svg("svg", {viewBox: `0 0 ${W} ${H}`, class: "ms-chart", role: "img", "aria-label": "Vesta's measured path on the sky"});
+    const s = svg("svg", {viewBox: `0 0 ${W} ${H}`, class: "ms-chart", role: "img", "aria-label": `${view.data.name}: measured path on the sky`});
     const ras = path.map(p => p.ra), decs = path.map(p => p.dec);
     const cd = Math.cos(decs.reduce((a, b) => a + b, 0) / decs.length * Math.PI / 180);
     let x0 = Math.min(...ras), x1 = Math.max(...ras), y0 = Math.min(...decs), y1 = Math.max(...decs);
@@ -377,7 +402,10 @@
     s.append(svg("text", {x: W - R, y: H - 22, "text-anchor": "end", fill: "#a1a1a6", "font-size": 10}, `RA ${fmt(x0, 2)}°`));
     s.append(svg("text", {x: L - 6, y: T + 10, "text-anchor": "end", fill: "#a1a1a6", "font-size": 10}, `${fmt(y1, 2)}°`));
     s.append(svg("text", {x: L - 6, y: H - B, "text-anchor": "end", fill: "#a1a1a6", "font-size": 10}, `${fmt(y0, 2)}°`));
-    s.append(svg("polyline", {points: path.map(p => `${sx(p.ra).toFixed(1)},${sy(p.dec).toFixed(1)}`).join(" "), fill: "none", stroke: "#56c8d8", "stroke-width": 1.5}));
+    for (const v of new Set(path.map(p => p.visit))) {   // one line per visit, no jump between visits
+      const seg = path.filter(p => p.visit === v);
+      s.append(svg("polyline", {points: seg.map(p => `${sx(p.ra).toFixed(1)},${sy(p.dec).toFixed(1)}`).join(" "), fill: "none", stroke: "#56c8d8", "stroke-width": 1.5}));
+    }
     for (const p of path) {
       if (p.predicted) s.append(svg("circle", {cx: sx(p.predicted[0]), cy: sy(p.predicted[1]), r: 6, fill: "none", stroke: "#b9a3f5", "stroke-width": 1.4}));
       const dot = svg("circle", {cx: sx(p.ra), cy: sy(p.dec), r: 3.6, fill: "#f5a35c", stroke: "#000", "stroke-width": .8});
@@ -477,7 +505,7 @@
     if (d.mode === "track") {
       const withJpl = d.path.filter(p => p.residual).length;
       ui.checks.replaceChildren(el("h3", {text: "Checks"}), el("ul", {},
-        el("li", {}, el("strong", {text: `${d.path.length} exposure${d.path.length === 1 ? "" : "s"}`}), ` in ${d.counts.spherex_visits} visit${d.counts.spherex_visits === 1 ? "" : "s"}; Vesta measured in each one.`),
+        el("li", {}, el("strong", {text: `${d.path.length} exposure${d.path.length === 1 ? "" : "s"}`}), ` in ${d.counts.spherex_visits} visit${d.counts.spherex_visits === 1 ? "" : "s"}; ${d.name} measured in each one.`),
         el("li", {}, el("strong", {text: `${withJpl} with a JPL position`}), withJpl ? " · the violet ring on the path chart." : " · run scripts/fetch_vesta_track.py to add JPL-tracked exposures.")));
       return;
     }
@@ -510,8 +538,9 @@
     if (TARGETS.some(t => t[0] === fieldKey) && fieldKey !== view.field) load(fieldKey);
   }
 
-  function start() {
+  async function start() {
     if (!build()) return;
+    await extraTargets();
     readUrl();
     const initial = view.field || (typeof state !== "undefined" && TARGETS.some(t => t[0] === state.field) ? state.field : "barnard");
     load(initial);

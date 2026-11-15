@@ -1,4 +1,5 @@
-import {installContextScopes} from './context-scopes.js';
+import {installContextScopes} from './context-scopes.js?v=collapse-1';
+import {installSkyView} from './sky-view.js?v=7';
 import {installSatelliteView} from './satellite-view.js?v=space-loader';
 import {installShowcase} from './showcase.js';
 const $=id=>document.getElementById(id);
@@ -38,7 +39,7 @@ function solarData(date) {
  }
  return initialSolar.promise;
 }
-const importScene=()=>import('./scene.js?v=upright');
+const importScene=()=>import('./scene.js?v=deep-5');
 function solarControls(){
  $('star-filters').hidden=true;document.body.dataset.scene='solar';
  $('solar-tab').setAttribute('aria-pressed','true');$('stars-tab').setAttribute('aria-pressed','false');
@@ -333,7 +334,7 @@ async function nearbyExitCatalog(){
  return objects?.length?{scope:'nearby',radius_pc:10,objects,unknown:[],notes:[catalog.note]}:prefetchUniverse();
 }
 window.addEventListener('cosmic-exit',async()=>{if(cosmicBusy||state.mode!=='solar')return;cosmicBusy=true;try{let data=await nearbyExitCatalog(),offset=rotateSpaceVector(scene.camera.position.clone(),true).multiplyScalar(1/206264.806247),up=rotateSpaceVector(scene.camera.up.clone(),true);await scene.scaleTransition(()=>{state.mode='stars';state.stars=data;document.body.dataset.scene='stars';scene.stars(data,false);scene.selected='origin';scene.controls.target.set(0,0,0);scene.camera.position.copy(offset);scene.camera.up.copy(up);scene.controls.update();select('origin');strip(data.objects,false);$('scene-title').textContent='Beyond the Solar System';$('scene-subtitle').textContent='Catalog positions · zoom toward the Sun to return';$('size-note').textContent='Catalog distances in parsecs';$('star-filters').hidden=false;});}catch(e){toast(e.message);}finally{cosmicBusy=false;}});
-window.addEventListener('cosmic-enter',async()=>{if(cosmicBusy||state.mode!=='stars')return;cosmicBusy=true;let offset=rotateSpaceVector(scene.camera.position.clone(),false).normalize().multiplyScalar(55),up=rotateSpaceVector(scene.camera.up.clone(),false);try{await scene.scaleTransition(async()=>{await showSolar();scene.stopFlight();scene.selected='sun';scene.controls.target.set(0,0,0);scene.camera.position.copy(offset);scene.camera.up.copy(up);scene.controls.update();select('sun');});}finally{cosmicBusy=false;}});
+window.addEventListener('cosmic-enter',async()=>{if(cosmicBusy||state.mode!=='stars')return;cosmicBusy=true;let offset=rotateSpaceVector(scene.camera.position.clone(),false).multiplyScalar(206264.806247),up=rotateSpaceVector(scene.camera.up.clone(),false);if(!(offset.length()>1))offset.setLength(55);try{await scene.scaleTransition(async()=>{await showSolar();scene.stopFlight();scene.selected='sun';scene.controls.target.set(0,0,0);scene.camera.position.copy(offset);scene.camera.up.copy(up);scene.controls.update();select('sun');});}finally{cosmicBusy=false;}});
 window.addEventListener('catalog-context-select',event=>{
  if(scene&&!cosmicBusy&&!scene.journey&&isCatalogStar(event.detail))focusCatalogStar(event.detail);
 });
@@ -491,3 +492,4 @@ $('context-star-query').oninput=async()=>{
  }
  if(!matches.length)display.textContent='No match in the installed catalog.';
 };
+const skyView=installSkyView({toast});window.parallaxSky=skyView;$('your-sky').onclick=()=>skyView.open();if(new URLSearchParams(location.search).has('sky'))skyView.open();

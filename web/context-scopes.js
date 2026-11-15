@@ -3,6 +3,19 @@ export function installContextScopes({getScene,contextView,showSolar,syncSceneCo
  const panel=document.getElementById('context-scopes');
  const buttons=[...panel.querySelectorAll('[data-scope]')];
  const note=document.getElementById('context-scope-note');
+ // Collapsible: the eyebrow becomes a toggle; the choice is remembered.
+ const eyebrow=panel.querySelector('.eyebrow');
+ const toggle=document.createElement('button');
+ toggle.type='button';toggle.className='scope-collapse';toggle.setAttribute('aria-controls','context-scopes');
+ const setCollapsed=on=>{panel.dataset.collapsed=String(on);toggle.setAttribute('aria-expanded',String(!on));
+  const current=buttons.find(b=>b.getAttribute('aria-pressed')==='true');
+  toggle.innerHTML='<span class="eyebrow">VIEW SCOPE</span>'+(on&&current?'<span class="scope-current">'+current.firstChild.textContent.trim()+'</span>':'')+'<span class="scope-chevron" aria-hidden="true">'+(on?'▸':'▾')+'</span>';
+  toggle.title=on?'Show view scopes':'Hide view scopes';try{localStorage.setItem('parallax-scope-collapsed',on?'1':'0');}catch{}};
+ toggle.addEventListener('click',()=>setCollapsed(panel.dataset.collapsed!=='true'));
+ eyebrow?.replaceWith(toggle);
+ let startCollapsed=false;try{startCollapsed=localStorage.getItem('parallax-scope-collapsed')==='1';}catch{}
+ setCollapsed(startCollapsed);
+ new MutationObserver(()=>{if(panel.dataset.collapsed==='true')setCollapsed(true);}).observe(panel,{subtree:true,attributeFilter:['aria-pressed']});
  // Let controls flow together at every viewport width, including when the
  // optional scale menu expands, instead of overlapping absolute-position rows.
  panel.parentElement?.append(document.getElementById('star-filters'));

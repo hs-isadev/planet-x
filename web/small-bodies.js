@@ -223,7 +223,7 @@ function createDust(random) {
         vec4 view = viewMatrix * world;
         float d = -view.z;
         // Illumination falls as 1/r²; a gentler r^-1.2 display stretch keeps the outer dust faintly visible.
-        vAlpha = min(.09, strength * bright * phase * pow(r, -1.2) * .05) * smoothstep(0., .02, d);
+        vAlpha = min(.022, strength * bright * phase * pow(r, -1.2) * .011) * smoothstep(0., .02, d);   // zodiacal light: real, but faint
         gl_PointSize = size * pixel;
         gl_Position = projectionMatrix * view;
       }`,
@@ -247,8 +247,9 @@ export function createSmallBodies(jupiter) {
   const group = new THREE.Group();
   group.name = 'Solar System small bodies';
   const variants = [0, 1, 2, 3].map(k => rockGeometry({seed: 11 + k, detail: 1, roughness: .32, craters: 6, shape: k === 2 ? 'elong' : 'potato'}));
+  // Asteroids are dark (geometric albedo ≈ 0.05 for C-types, ≈ 0.25 for S-types): no self-glow, sunlit side only.
   const material = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 1, metalness: 0, flatShading: true, vertexColors: true,
-    emissive: 0x1a1612, emissiveIntensity: .55});
+    emissive: 0x080706, emissiveIntensity: .25});
   const slots = variants.map(() => []);
   bodies.forEach((b, index) => { b.index = index; b.variant = b.group === 'named' ? 0 : index % 4; slots[b.variant].push(b); });
   const meshes = variants.map((geometry, k) => {
@@ -259,15 +260,27 @@ export function createSmallBodies(jupiter) {
       b.slot = slot;
       const palette = b.color ? [b.color] : TYPE_COLORS[b.type] || TYPE_COLORS.C;
       const c = new THREE.Color(palette[slot % palette.length]);
-      mesh.setColorAt(slot, b.group === 'named' ? c.multiplyScalar(1.25) : c);
+      b.base = c.clone().multiplyScalar(b.group === 'named' ? .95 : .72);
+      b.shade = -1;
+      mesh.setColorAt(slot, b.base);
     });
     group.add(mesh);
     return mesh;
   });
   const dust = createDust(random);
   group.add(dust);
+  // Distant (sub-pixel) asteroids are drawn as points of reflected sunlight, added to the scene's light: they
+  // never show as black specks against the Sun or a planet, and they are only as bright as their size allows.
+  const glints = new THREE.BufferGeometry();
+  const glintPos = new Float32Array(bodies.length * 3), glintCol = new Float32Array(bodies.length * 3);
+  glints.setAttribute('position', new THREE.BufferAttribute(glintPos, 3));
+  glints.setAttribute('color', new THREE.BufferAttribute(glintCol, 3));
+  const glintCloud = new THREE.Points(glints, new THREE.PointsMaterial({size: 1.7, sizeAttenuation: false, vertexColors: true,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
+  glintCloud.frustumCulled = false;
+  group.add(glintCloud);
 
-  const dummy = new THREE.Object3D(), temp = new THREE.Vector3(), camera = new THREE.Vector3();
+  const dummy = new THREE.Object3D(), temp = new THREE.Vector3(), camera = new THREE.Vector3(), tint = new THREE.Color();
   let hidden = -1, lastTick = -Infinity, pixelRatio = 1, dustOn = true;
   for (const b of bodies) b.pos = new THREE.Vector3();
 
@@ -284,7 +297,17 @@ export function createSmallBodies(jupiter) {
       const trueRadius = b.km / AU_KM;
       const distance = cameraPosition ? b.pos.distanceTo(camera) : overviewDistance;
       const minPx = b.group === 'named' ? 2.6 : b.group === 'kuiper' || b.group === 'plutino' || b.group === 'scattered' ? 1.15 : 1.35;
-      const scale = b.index === hidden ? 0 : Math.max(trueRadius, distance * perPixel * minPx);
+      const floor = distance * perPixel * minPx;
+      const solid = b.index !== hidden && trueRadius > floor * .45;
+      const scale = solid ? Math.max(trueRadius, floor) : 0;
+      // A rock smaller than a pixel is drawn at the minimum size, so dim it in proportion: what reaches the eye is
+      // its reflected light, not its drawn area. Close up (true size ≥ minimum) it shows at full albedo.
+      const shade = Math.round(Math.min(1, Math.max(b.group === 'named' ? .4 : .06, Math.pow(trueRadius / Math.max(floor, 1e-30), .4))) * 40) / 40;
+      if (shade !== b.shade) { b.shade = shade; mesh.setColorAt(b.slot, tint.copy(b.base).multiplyScalar(shade)); mesh.instanceColor.needsUpdate = true; }
+      b.pos.toArray(glintPos, b.index * 3);
+      // reflected light falls off with distance from the Sun (1/r²) as well as with size
+      const lit = solid || b.index === hidden ? 0 : Math.min(1, 2.2 / Math.max(b.pos.lengthSq(), .3)) * shade * (b.group === 'named' ? 2.4 : .45);
+      tint.copy(b.base).multiplyScalar(lit).toArray(glintCol, b.index * 3);
       dummy.position.copy(b.pos);
       dummy.rotation.set(b.spin, b.spin * 1.7 + days * b.spinRate * .2, b.spin * .7);
       dummy.scale.setScalar(scale);
@@ -292,6 +315,9 @@ export function createSmallBodies(jupiter) {
       mesh.setMatrixAt(b.slot, dummy.matrix);
     }
     for (const mesh of meshes) mesh.instanceMatrix.needsUpdate = true;
+    glints.attributes.position.needsUpdate = true;
+    glints.attributes.color.needsUpdate = true;
+    glintCloud.material.size = 1.7 * pixelRatio;
     dust.visible = dustOn;
     dust.rotation.y = days * tau / (365.256 * 2.4 ** 1.5);
     dust.material.uniforms.pixel.value = pixelRatio;
@@ -311,7 +337,7 @@ export function createSmallBodies(jupiter) {
   }
 
   update(0, 0);
-  group.dispose = () => { variants.forEach(g => g.dispose()); material.dispose(); dust.geometry.dispose(); dust.material.dispose(); meshes.forEach(m => m.dispose()); };
+  group.dispose = () => { variants.forEach(g => g.dispose()); material.dispose(); dust.geometry.dispose(); dust.material.dispose(); meshes.forEach(m => m.dispose()); glints.dispose(); glintCloud.material.dispose(); };
   return {
     mesh: group, update, pick, bodies,
     named: bodies.filter(b => b.group === 'named'),

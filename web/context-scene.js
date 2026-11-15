@@ -62,19 +62,21 @@ export function installContext(C){
   this.sky.userData.sourceCount=data.objects.length;
   this.scene.add(this.sky);
   const directions=entries.map(source=>this.vector(source.xyz_pc));
-  const positions=new Float32Array(entries.length*3), colors=new Float32Array(entries.length*3);
-  entries.forEach((source,index)=>{
-   const color=new THREE.Color((source.teff_gspphot||0)>6500?'#b1c7eb':source.teff_gspphot<4700?'#d4b297':'#ccd2db');
-   color.toArray(colors,index*3);
-  });
+  const positions=new Float32Array(entries.length*3), colors=new Float32Array(entries.length*3), flux=new Float32Array(entries.length);
+  // Absolute magnitude from the catalog's apparent G magnitude and distance, so the apparent brightness can be
+  // recomputed from wherever the camera is (Sun or another star).
+  const absolute=entries.map(source=>{const m=Number.isFinite(source.phot_g_mean_mag)?source.phot_g_mean_mag:9,d=Math.max(source.distance_pc||10,.01);return m-5*Math.log10(d/10);});
+  entries.forEach((source,index)=>starColor(source.teff_gspphot).toArray(colors,index*3));
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
   geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  geometry.setAttribute('flux',new THREE.BufferAttribute(flux,1));
   geometry.boundingSphere=new THREE.Sphere(new THREE.Vector3(),3001);
-  const material=new THREE.PointsMaterial({size:5.6,map:starProfile(),sizeAttenuation:false,vertexColors:true,transparent:true,opacity:.86,alphaTest:.012,depthWrite:false});
+  const material=starMaterial();
   const points=new THREE.Points(geometry,material);
   points.userData.catalogEntries=entries;
   this.sky.add(points);
+  addDeepSky(this);
   const raw=new THREE.Vector3(), lastOrigin=new THREE.Vector3(Infinity,Infinity,Infinity);
   let lastMode,lastLocal,lastCatalogStars;
   const epsilon=THREE.MathUtils.degToRad(23.439291111);
@@ -82,7 +84,8 @@ export function installContext(C){
   this.sky.userData.update=()=>{
    this.sky.visible=!this.surface;
    this.sky.position.copy(this.camera.position);
-   material.size=THREE.MathUtils.clamp(5.6*(this.starSize||1),2.4,12);
+   material.uniforms.boost.value=THREE.MathUtils.clamp((this.starSize||1)/2.5,.4,2);
+   material.uniforms.pixel.value=this.renderer.getPixelRatio();
    const origin=this.local?.item?.pos||this.camera.position;
    const local=this.local?.item?.data.id;
    const catalogStars=this.mode==='stars'?this.visibleCatalogStars:null;
@@ -92,11 +95,15 @@ export function installContext(C){
     raw.copy(directions[i]);
     if(this.mode==='stars')raw.sub(origin);
     else {const y=-raw.z,z=raw.y;raw.set(raw.x,-sin*y+cos*z,-(cos*y+sin*z));}
-    if(entries[i].id===local||(!local&&catalogStars?.has(entries[i].id))||raw.lengthSq()<1e-12)raw.set(0,0,0);
+    const hidden=entries[i].id===local||(!local&&catalogStars?.has(entries[i].id))||raw.lengthSq()<1e-12;
+    // apparent magnitude from this vantage point, then relative flux (mag 0 → 1)
+    flux[i]=hidden?0:Math.pow(10,-.4*(absolute[i]+5*Math.log10(Math.max(raw.length(),1e-6)/10)));
+    if(hidden)raw.set(0,0,0);
     else raw.setLength(3000);
     raw.toArray(positions,i*3);
    }
    geometry.attributes.position.needsUpdate=true;
+   geometry.attributes.flux.needsUpdate=true;
   };
   this.sky.userData.update();
  };
@@ -154,4 +161,80 @@ export function installContext(C){
  C.prototype.fly=function(target,pos,duration=1800){this.zoomImpulse=0;return fly.call(this,target,pos,duration);};
  const orbit=C.prototype.planetOrbit;
  C.prototype.planetOrbit=function(id=this.selected){if(this.mode==='solar'&&id==='sun'){this.showPaths=true;this.orbits.visible=true;this.orbits.children.forEach(o=>o.visible=true);return this.overview();}return orbit.call(this,id);};
+}
+
+// Star colour from effective temperature (black-body approximation, gently desaturated as the eye sees it).
+function starColor(teff){
+ const t=Math.min(40000,Math.max(2000,teff||5600))/100;
+ let r=t<=66?255:329.7*Math.pow(t-60,-.1332);
+ let g=t<=66?99.47*Math.log(t)-161.12:288.12*Math.pow(t-60,-.0755);
+ let b=t>=66?255:t<=19?0:138.52*Math.log(t-10)-305.04;
+ const c=new THREE.Color(Math.min(255,Math.max(0,r))/255,Math.min(255,Math.max(0,g))/255,Math.min(255,Math.max(0,b))/255);
+ return c.lerp(new THREE.Color(1,1,1),.45);
+}
+
+// Point stars: brighter stars are drawn larger and with a soft glow, as a camera or the eye records them. The
+// star itself is unresolved; the size encodes its apparent brightness (computed from the catalog magnitude).
+function starMaterial(){
+ return new THREE.ShaderMaterial({
+  transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+  uniforms:{boost:{value:1},pixel:{value:1}},
+  vertexShader:`attribute float flux;attribute vec3 color;uniform float boost;uniform float pixel;varying vec3 vColor;varying float vGlow;
+   void main(){
+    float m=-2.5*log(max(flux,1e-12))/log(10.);          // apparent magnitude
+    float s=clamp(1.6+9.5*pow(10.,-.13*(m-.5)),1.6,16.);   // mag 6 ≈ 3 px, mag 0 ≈ 10 px, Sirius-class ≈ 14 px
+    float a=clamp(1.25-.11*m,.18,1.);                       // faint stars fade, bright ones saturate
+    vColor=color*a; vGlow=clamp((2.5-m)/4.,0.,1.);
+    gl_PointSize=(flux>0.?s*boost:0.)*pixel;
+    gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec3 vColor;varying float vGlow;
+   void main(){vec2 q=gl_PointCoord-.5;float r=length(q)*2.;
+    float core=exp(-r*r*14.),halo=exp(-r*4.5)*.35*vGlow;
+    float spike=vGlow*.18*(exp(-abs(q.x)*60.)+exp(-abs(q.y)*60.))*(1.-r);
+    float i=core+halo+max(spike,0.);if(i<.01)discard;
+    gl_FragColor=vec4(vColor*i,1.);}`,
+ });
+}
+
+// Deep backdrop for the 3D views: 25,700 Hipparcos/HYG stars to V 7.5 and the Milky Way (same data as the
+// "Your sky" planetarium). Directions only, so it sits at infinity behind both the AU and the parsec scenes.
+function addDeepSky(scene){
+ const group=new THREE.Group();group.name='Deep sky backdrop';group.matrixAutoUpdate=false;
+ scene.sky.add(group);
+ const eps=THREE.MathUtils.degToRad(23.439291111),sn=Math.sin(eps),cs=Math.cos(eps);
+ // equatorial unit vector → scene direction, for each mode (same mapping the catalog points use)
+ const toStars=v=>new THREE.Vector3(v.x,v.z,-v.y);
+ const toSolar=v=>{const r=toStars(v),y=-r.z,z=r.y;return new THREE.Vector3(r.x,-sn*y+cs*z,-(cs*y+sn*z));};
+ const basis=f=>new THREE.Matrix4().makeBasis(f(new THREE.Vector3(1,0,0)),f(new THREE.Vector3(0,1,0)),f(new THREE.Vector3(0,0,1)));
+ const frames={stars:basis(toStars),solar:basis(toSolar)};
+ let starMat=null,mwMat=null,lastMode=null;
+ group.userData.update=()=>{
+  const mode=scene.mode==='stars'?'stars':'solar';
+  if(mode!==lastMode){group.matrix.copy(frames[mode]);group.matrixWorldNeedsUpdate=true;lastMode=mode;}
+  if(starMat){starMat.uniforms.minMag.value=mode==='stars'?3.2:-9;starMat.uniforms.pixel.value=scene.renderer.getPixelRatio();starMat.uniforms.boost.value=THREE.MathUtils.clamp((scene.starSize||2.5)/2.5,.5,2);}
+  if(mwMat)mwMat.uniforms.strength.value=scene.local?.4:1;
+ };
+ const tex=new THREE.TextureLoader().load('/assets/sky/milkyway.jpg');
+ tex.colorSpace=THREE.NoColorSpace;tex.minFilter=THREE.LinearMipmapLinearFilter;
+ mwMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide,uniforms:{map:{value:tex},strength:{value:1}},
+  vertexShader:`varying vec3 vDir;void main(){vDir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`uniform sampler2D map;uniform float strength;varying vec3 vDir;void main(){vec3 d=normalize(vDir);float ra=atan(d.y,d.x);if(ra<0.)ra+=6.2831853;float dec=asin(clamp(d.z,-1.,1.));
+   float v=texture2D(map,vec2(ra/6.2831853,.5+dec/3.1415926)).r;vec3 tint=mix(vec3(.5,.56,.75),vec3(1.,.88,.72),v);gl_FragColor=vec4(tint*pow(v,1.35)*.16*strength,1.);}`});
+ const mw=new THREE.Mesh(new THREE.SphereGeometry(2950,96,48),mwMat);mw.renderOrder=-3;mw.frustumCulled=false;group.add(mw);
+ fetch('/assets/sky/stars.bin').then(r=>r.ok?r.arrayBuffer():null).then(buffer=>{
+  if(!buffer)return;
+  const b=new Float32Array(buffer),n=b.length/4,pos=new Float32Array(n*3),mag=new Float32Array(n),col=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const ra=THREE.MathUtils.degToRad(b[i*4]),dec=THREE.MathUtils.degToRad(b[i*4+1]);
+   pos[i*3]=2900*Math.cos(dec)*Math.cos(ra);pos[i*3+1]=2900*Math.cos(dec)*Math.sin(ra);pos[i*3+2]=2900*Math.sin(dec);mag[i]=b[i*4+2];
+   const bv=b[i*4+3],t=4600*(1/(.92*bv+1.7)+1/(.92*bv+.62));starColor(t).toArray(col,i*3);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('mag',new THREE.BufferAttribute(mag,1));g.setAttribute('tint',new THREE.BufferAttribute(col,3));
+  starMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{pixel:{value:1},boost:{value:1},minMag:{value:-9}},
+   vertexShader:`attribute float mag;attribute vec3 tint;uniform float pixel;uniform float boost;uniform float minMag;varying vec3 vC;varying float vG;
+    void main(){float b=pow(10.,-.4*(mag-7.));float on=step(minMag,mag);
+     vC=tint*clamp(.085*pow(b,.45),.025,2.4)*on;vG=clamp(log(b)/4.-.6,0.,1.);
+     gl_PointSize=on>0.?clamp(1.3+2.1*pow(b,.24),1.3,22.)*boost*pixel:0.;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+   fragmentShader:`varying vec3 vC;varying float vG;void main(){vec2 q=gl_PointCoord-.5;float r=length(q)*2.;float i=exp(-r*r*6.)+.22*exp(-r*r*2.)+vG*(exp(-r*3.2)*.5+.07*(exp(-abs(q.x)*70.)+exp(-abs(q.y)*70.))*(1.-r));if(i<.004)discard;gl_FragColor=vec4(vC*i,1.);}`});
+  const p=new THREE.Points(g,starMat);p.frustumCulled=false;p.renderOrder=-2;group.add(p);
+ }).catch(()=>{});
+ group.userData.update();
 }

@@ -131,3 +131,36 @@ Rebuild after adding data (minutes per target; `MOTION_STUDY_CACHE=<dir>` makes 
 ## Update: nearby-star bundle
 
 `python -m scripts.download_more_dates --within-pc 5 --daily-only` (new `--within-pc` option) downloaded the star fields within 5 parsecs. The bundle now indexes 107 fields (3,090 frames). Only files referenced by an indexed session are committed. Local leftovers are not committed: exact duplicate cutouts of the same exposure at a different size (237), unreferenced FITS (244, 0.23 GB) and 119 superseded session folders. They can be deleted locally. The next tier (`--within-pc 10`) would add roughly as much again; check the push size first (GitHub rejects pushes over 2 GB).
+
+## Update: multi-tile tracking, "Your Sky" planetarium, realistic 3D sky
+
+**Tracking across tiles (any target).** `scripts/fetch_track.py` follows a moving target on fixed 10′ sky tiles
+(`backend/observation_lab_core/tiles.py`). Well inside a tile it downloads one cutout per exposure; within 1.5′ of an
+edge it adds the neighbour (2 tiles), at a corner 4, growing up to 3×3 before starting a new scene. Works for Horizons
+bodies (`vesta`, `ceres`, `pallas`, `juno`, `hygiea`, `psyche`, `eros`, or `--horizons <designation>`) and for stars
+(catalog proper motion + parallax). `--auto` checks every star target plus Vesta and only downloads when a star's
+predicted track reaches the next tile (today none do: Barnard's Star moves 0.28′ of a 5′ half-width). `--plan` shows the
+tile plan without downloading; `--tile 0.25 --plan` demonstrates the growth on Barnard's Star. Output:
+`backend/data/tracks/<slug>/` + `track.json`; then `python -m backend.observation_lab_core.motion_study <slug>`.
+The motion study joins the tiles of each exposure into one seamless fixed-sky mosaic with one shared sky level, draws
+the tile grid (dim where an exposure has no data), and, for stars with tracks, adds a third "Fixed sky · across tiles"
+tab. Extra tracked bodies appear in the target menu through `web/assets/motion-study/index.json`.
+
+**Your Sky.** New header button (also `/?sky`). A planetarium of the real sky for the user's location (browser
+geolocation, or manual latitude/longitude) and time: 25,723 Hipparcos/HYG stars to V 7.5 with B−V colours, constellation
+lines and names, Messier objects, the Milky Way, Sun, Moon (phase, size, maria) and planets from astronomy-engine
+(precession/nutation via Rotation_EQJ_HOR, refraction). Extinction and reddening with airmass, twinkling stronger near
+the horizon, a limiting magnitude set by twilight, moonlight, light pollution (Bortle selector) and zoom. Daylight from
+the Preetham model; a custom twilight layer adds sunset glow, the Earth's shadow and Belt of Venus, airglow and a city
+light dome. The six SPHEREx targets are marked with "above/below your horizon now". Data built by
+`scripts/build_sky_assets.py` from d3-celestial 0.7.35 (BSD-3-Clause) into `web/assets/sky/`; ephemeris
+`web/vendor/astronomy.browser.min.js` (astronomy-engine 2.1.19, MIT).
+
+**3D view.** Asteroids are dark (no self-glow, albedo-like colours); rocks smaller than a pixel are drawn as faint additive
+points of reflected light (1/r² from the Sun) instead of enlarged solid rocks, so they no longer look huge after "Trace back
+to Earth" (sizes now update during flights) or show as black specks against the Sun. Zodiacal dust is much fainter. The
+backdrop now has the same 25,723 stars and Milky Way as the planetarium, each star sized and coloured by magnitude and
+temperature (apparent magnitude recomputed from the viewpoint); the Nearby Stars view sizes stars the same way.
+Leaving the Solar System is one continuous zoom: the planets and orbits stay in the parsec view at true scale and fade
+only when a few pixels across; entering keeps the camera distance (exit at 70 AU, re-entry below 62 AU). The View scope
+panel collapses to one row (remembered).

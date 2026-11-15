@@ -7,6 +7,8 @@ web/assets/motion-study/<field>/, so the deployed site does no heavy work.
 Run (from the project root):
     python -m backend.observation_lab_core.motion_study            # all study targets
     python -m backend.observation_lab_core.motion_study barnard    # one target
+    python -m backend.observation_lab_core.motion_study vesta      # a tracked body (tiles from scripts/fetch_track.py)
+    python -m backend.observation_lab_core.motion_study barnard --sky-only   # just add/refresh the tiled sky view
 
 Method in brief
 - Frames are grouped into visits (SPHEREx passes over a spot about every six months; a gap of more than
@@ -498,10 +500,14 @@ def visits_of(frames):
 # ---------------------------------------------------------------------------------------------------------
 # main study
 
-def study(field, log=print):
+def catalog_for(field):
+    """Catalog astrometry and the display-field centre of a star target: (cat, (ra, dec))."""
     meta = TARGETS[field]
-    sx_frames, options = spherex_frames(field)
-    w_frames, series = wise_frames(field)
+    try:
+        _, options = spherex_frames(field)
+    except OSError:          # SPHEREx bundle not on this machine: fall back to the WISE series centre
+        options = None
+    _, series = wise_frames(field)
     cat = dict(meta.get('catalog') or {})
     if not cat and series:
         c = series['catalog']
@@ -511,8 +517,18 @@ def study(field, log=print):
         raise ValueError(f'No catalog astrometry for {field}.')
     if options:
         center = (options['ra'], options['dec'])
-    else:
+    elif series:
         center = (series['center']['ra'], series['center']['dec'])
+    else:
+        center = (cat['ra'], cat['dec'])
+    return cat, center
+
+
+def study(field, log=print):
+    meta = TARGETS[field]
+    sx_frames, options = spherex_frames(field)
+    w_frames, series = wise_frames(field)
+    cat, center = catalog_for(field)
     grid = display_grid(*center)
     out = OUT / field
     (out / 'img').mkdir(parents=True, exist_ok=True)
@@ -925,30 +941,49 @@ def limits_for(meta, cat, fits_, field_stars, sx_pts, wi_pts):
 # JPL Horizons position (observer SPHEREx) for the first bundled exposure, as recorded in ephemeris.py's self-test.
 VESTA_KNOWN = {60891.461818273: (222.866226866, -11.907544792)}
 VESTA_BUNDLED = ROOT / 'backend/data/vesta'
-VESTA_TRACK = ROOT / 'backend/data/vesta-track'
+VESTA_TRACK = ROOT / 'backend/data/vesta-track'          # older single-cutout downloads (fetch_vesta_track.py)
+TRACKS = ROOT / 'backend/data/tracks'                    # tiled downloads (scripts/fetch_track.py)
+
+
+def load_track(slug):
+    path = TRACKS / slug / 'track.json'
+    return json.loads(path.read_text(encoding='utf-8')) if path.is_file() else None
+
+
+def track_exposures(slug):
+    """Every exposure of a tracked target: [{mjd, date, id, detector, predicted, files: [(path, tile)], scene}].
+    Tiled downloads carry a scene index (one fixed box of tiles); older single cutouts have scene None."""
+    found = {}
+    if slug == 'vesta':
+        manifest = VESTA_BUNDLED / 'manifest.json'
+        if manifest.is_file():
+            for f in json.loads(manifest.read_text(encoding='utf-8'))['frames']:
+                path = VESTA_BUNDLED / f['file']
+                with fits.open(path, memmap=False) as hdus:
+                    h = hdus['IMAGE'].header
+                    mjd = float(h.get('MJD-AVG') or Time(f['date'].rstrip('Z')).mjd)
+                    found[(str(h['OBSID']), int(h['DETECTOR']))] = dict(
+                        path=path, files=[(path, None)], scene=None, mjd=mjd, date=Time(mjd, format='mjd').isot + 'Z',
+                        id=str(h['OBSID']), detector=int(h['DETECTOR']),
+                        predicted=next((v for k, v in VESTA_KNOWN.items() if abs(k - mjd) < 1e-6), None))
+        legacy = VESTA_TRACK / 'track.json'
+        if legacy.is_file():
+            for f in json.loads(legacy.read_text(encoding='utf-8'))['frames']:
+                path = VESTA_TRACK / f['file']
+                if path.is_file():
+                    found[(f['id'], f['detector'])] = dict(path=path, files=[(path, None)], scene=None, mjd=f['mjd'], date=f['date'],
+                                                           id=f['id'], detector=f['detector'], predicted=(f['vesta_ra'], f['vesta_dec']))
+    track = load_track(slug)
+    for e in (track or {}).get('exposures', []):
+        files = [(TRACKS / slug / name, key) for key, name in sorted(e['tiles'].items()) if (TRACKS / slug / name).is_file()]
+        if files:
+            found[(e['id'], e['detector'])] = dict(path=files[0][0], files=files, scene=e['scene'], mjd=e['mjd'], date=e['date'],
+                                                   id=e['id'], detector=e['detector'], predicted=(e['target_ra'], e['target_dec']))
+    return sorted(found.values(), key=lambda f: f['mjd']), track
 
 
 def vesta_frames():
-    """Bundled demo exposures plus any downloaded by scripts/fetch_vesta_track.py (with Horizons positions)."""
-    frames = {}
-    manifest = VESTA_BUNDLED / 'manifest.json'
-    if manifest.is_file():
-        for f in json.loads(manifest.read_text(encoding='utf-8'))['frames']:
-            path = VESTA_BUNDLED / f['file']
-            with fits.open(path, memmap=False) as hdus:
-                h = hdus['IMAGE'].header
-                mjd = float(h.get('MJD-AVG') or Time(f['date'].rstrip('Z')).mjd)
-                frames[(str(h['OBSID']), int(h['DETECTOR']))] = dict(path=path, mjd=mjd, date=Time(mjd, format='mjd').isot + 'Z',
-                                                                       id=str(h['OBSID']), detector=int(h['DETECTOR']),
-                                                                       predicted=next((v for k, v in VESTA_KNOWN.items() if abs(k - mjd) < 1e-6), None))
-    track = VESTA_TRACK / 'track.json'
-    if track.is_file():
-        for f in json.loads(track.read_text(encoding='utf-8'))['frames']:
-            path = VESTA_TRACK / f['file']
-            if path.is_file():
-                frames[(f['id'], f['detector'])] = dict(path=path, mjd=f['mjd'], date=f['date'], id=f['id'],
-                                                        detector=f['detector'], predicted=(f['vesta_ra'], f['vesta_dec']))
-    return sorted(frames.values(), key=lambda f: f['mjd'])
+    return track_exposures('vesta')[0]
 
 
 def grid_at(ra, dec, scale, size):
@@ -970,82 +1005,150 @@ def resample_to(data, wcs, grid, size):
     return np.where(weight > .6, value / np.maximum(weight, 1e-6), np.nan).reshape(size, size)
 
 
-def vesta_study(log=print):
-    frames = vesta_frames()
-    out = OUT / 'vesta'
-    (out / 'img').mkdir(parents=True, exist_ok=True)
-    for old in (out / 'img').glob('*.png'):
-        old.unlink()
-    measured = []
-    for f in frames:
-        with fits.open(f['path'], memmap=False) as hdus:
-            img = hdus['IMAGE'].data.astype(float)
+def load_parts(f):
+    """All tile cutouts of one exposure, with one shared sky level so the tiles join without seams."""
+    parts = []
+    for path, key in f['files']:
+        with fits.open(path, memmap=False) as hdus:
+            img = hdus['IMAGE'].data.astype(np.float32)
             flags = hdus['FLAGS'].data.astype(np.int64)
             wcs = WCS(hdus['IMAGE'].header).celestial
-            wave = hdus['WCS-WAVE'] if 'WCS-WAVE' in hdus else None
         sat = (flags & SAT_BITS) != 0
         img[((flags & BAD_BITS) != 0) & ~sat] = np.nan
-        work = img - np.nanmedian(img)
-        scale = abs(wcs.proj_plane_pixel_scales()[0].to_value('arcsec'))
-        if f['predicted']:
-            x0, y0 = (float(v) for v in wcs.world_to_pixel_values(*f['predicted']))
-            radius = 30 / scale
-        else:   # no ephemeris: Vesta is by far the brightest thing in its field
-            sm = gaussian_filter(np.nan_to_num(work), 1.0)
-            y0, x0 = (float(v) for v in np.unravel_index(np.argmax(np.where(np.isfinite(work), sm, -np.inf)), sm.shape))
-            radius = 4
-        target = saturated_core(sat, x0, y0, radius) or gaussian_fit(work, None, x0, y0)
-        if not target:
-            log(f'  Vesta not found in {f["id"]}')
-            continue
-        ra, dec = (float(v) for v in wcs.pixel_to_world_values(target['x'], target['y']))
-        f.update(ra=ra, dec=dec, err=max(target['ex'], target['ey']) * scale, saturated=bool(target.get('saturated')),
-                 work=work, wcs=wcs, scale=scale)
-        measured.append(f)
-    if not measured:
-        raise ValueError('No Vesta exposures could be measured.')
-    # visits: Vesta is seen on a few consecutive days each time SPHEREx scans past it
-    groups, current = [], []
+        parts.append(dict(img=img, sat=sat, wcs=wcs, tile=key, scale=abs(wcs.proj_plane_pixel_scales()[0].to_value('arcsec'))))
+    values = np.concatenate([p['img'][np.isfinite(p['img'])].ravel() for p in parts]) if parts else np.array([])
+    bg = float(np.median(values)) if values.size else 0.0
+    for p in parts:
+        p['work'] = p['img'] - bg
+    return parts
+
+
+def mosaic(parts, grid, size):
+    acc = np.zeros((size, size)); n = np.zeros((size, size))
+    for p in parts:
+        r = resample_to(p['work'], p['wcs'], grid, size)
+        ok = np.isfinite(r)
+        acc[ok] += r[ok]; n[ok] += 1
+    return np.where(n > 0, acc / np.maximum(n, 1), np.nan)
+
+
+def measure_parts(parts, predicted):
+    """Locate the target in the tile that holds its predicted position (or the brightest source, without one)."""
+    best = None
+    for p in parts:
+        h, w = p['work'].shape
+        if predicted:
+            x0, y0 = (float(v) for v in p['wcs'].world_to_pixel_values(*predicted))
+            if not (3 <= x0 < w - 3 and 3 <= y0 < h - 3):
+                continue
+            d = math.hypot(x0 - w / 2, y0 - h / 2)
+            if best is None or d < best[0]:
+                best = (d, p, x0, y0, 30 / p['scale'])
+        elif best is None:
+            sm = gaussian_filter(np.nan_to_num(p['work']), 1.0)
+            y0, x0 = (float(v) for v in np.unravel_index(np.argmax(np.where(np.isfinite(p['work']), sm, -np.inf)), sm.shape))
+            best = (0, p, x0, y0, 4)
+    if not best:
+        return None
+    _, p, x0, y0, radius = best
+    target = saturated_core(p['sat'], x0, y0, radius) or gaussian_fit(p['work'], None, x0, y0)
+    if not target:
+        return None
+    ra, dec = (float(v) for v in p['wcs'].pixel_to_world_values(target['x'], target['y']))
+    return dict(ra=ra, dec=dec, err=max(target['ex'], target['ey']) * p['scale'], saturated=bool(target.get('saturated')))
+
+
+def _sky_scenes(measured, track):
+    """Fixed-sky scenes: one per tiled scene (a box of tiles), plus visit groups for older single cutouts."""
+    from . import tiles as T
+    scenes = []
+    tiled = {}
     for f in measured:
+        if f['scene'] is not None and track:
+            tiled.setdefault(f['scene'], []).append(f)
+    for k, members in tiled.items():
+        sc = track['scenes'][k]
+        size_t = track['tile_arcmin']
+        tiling = T.Tiling(sc['anchor'][0], sc['anchor'][1], size_t)
+        box = sc['box']
+        nx, ny = T.box_dims(box)
+        cra, cdec = T.from_plane((box[0] + box[1]) / 2 * size_t, (box[2] + box[3]) / 2 * size_t, *sc['anchor'])
+        side = max(nx, ny) * size_t * 60
+        size = int(min(600, max(360, round(side / 3))))
+        grid = grid_at(cra, cdec, side / size, size)
+        outlines = []
+        for i, j in T.box_tiles(box):
+            xs, ys = zip(*(grid.world_to_pixel_values(*c) for c in tiling.corners(i, j)))
+            outlines.append(dict(key=T.tile_key(i, j), x0=round(float(min(xs)), 1), x1=round(float(max(xs)), 1),
+                                 y0=round(float(size - 1 - max(ys)), 1), y1=round(float(size - 1 - min(ys)), 1)))
+        scenes.append(dict(members=members, grid=grid, size=size, scale=side / size, tiles=outlines, layout=f'{nx}×{ny}'))
+    groups, current = [], []
+    for f in [f for f in measured if f['scene'] is None or not track]:
         if current and f['mjd'] - current[-1]['mjd'] > 5:
-            groups.append(current)
-            current = []
+            groups.append(current); current = []
         current.append(f)
-    groups.append(current)
-    # shared display stretch from all frames
-    noise = float(np.nanmedian([robust_sigma(f['work']) for f in measured]))
-    hi = float(np.nanmedian([np.nanpercentile(f['work'], 99.7) for f in measured]))
-    follow, sky, path = [], [], []
-    for vi, group in enumerate(groups):
+    if current:
+        groups.append(current)
+    for group in groups:
         ras = np.array([f['ra'] for f in group]); decs = np.array([f['dec'] for f in group])
         cra = float(np.degrees(np.arctan2(np.mean(np.sin(np.radians(ras))), np.mean(np.cos(np.radians(ras))))) % 360)
         cdec = float(decs.mean())
         extent = max(float(np.max(np.hypot((ras - cra) * math.cos(math.radians(cdec)), decs - cdec))) * 3600 * 2 + 900, 900)
-        sky_size = 360
-        sky_scale = extent / sky_size
-        sky_grid = grid_at(cra, cdec, sky_scale, sky_size)
-        for f in group:
-            i = len(follow)
-            g = grid_at(f['ra'], f['dec'], GRID_SCALE, GRID_SIZE)
-            name = f'follow-{i:03d}.png'
-            png(out / 'img' / name, resample_to(f['work'], f['wcs'], g, GRID_SIZE), -1.5 * noise, hi)
+        scenes.append(dict(members=group, grid=grid_at(cra, cdec, extent / 360, 360), size=360, scale=extent / 360, tiles=None, layout=None))
+    scenes.sort(key=lambda s: s['members'][0]['mjd'])
+    return scenes
+
+
+def build_track(slug, out, follow=True, log=print):
+    """Measure a tracked target in every exposure and draw the follow and fixed-sky (tile mosaic) images."""
+    frames, track = track_exposures(slug)
+    measured, noises, highs = [], [], []
+    for f in frames:
+        parts = load_parts(f)
+        m = measure_parts(parts, f['predicted'])
+        if not m:
+            log(f'  {slug}: target not found in {f["id"]} D{f["detector"]}')
+            continue
+        f.update(m)
+        work = np.concatenate([p['work'][np.isfinite(p['work'])].ravel() for p in parts])
+        noises.append(robust_sigma(work)); highs.append(float(np.percentile(work, 99.7)))
+        measured.append(f)
+    if not measured:
+        raise ValueError(f'No {slug} exposures could be measured.')
+    noise, hi = float(np.nanmedian(noises)), float(np.nanmedian(highs))
+    scenes = _sky_scenes(measured, track)
+    follow_frames, sky, path = [], [], []
+    for vi, sc in enumerate(scenes):
+        g_sky, size = sc['grid'], sc['size']
+        trail = [[round(float(x), 1), round(float(size - 1 - y), 1)] for x, y in
+                 (g_sky.world_to_pixel_values(o['ra'], o['dec']) for o in sc['members'])]
+        for f in sc['members']:
+            i = len(path)
+            parts = load_parts(f)
+            date = f['date'][:19].replace('T', ' ') + ' UTC'
+            if follow:
+                g = grid_at(f['ra'], f['dec'], GRID_SCALE, GRID_SIZE)
+                name = f'follow-{i:03d}.png'
+                png(out / 'img' / name, mosaic(parts, g, GRID_SIZE), -1.5 * noise, hi)
+                exp = None
+                if f['predicted']:
+                    ex, ey = g.world_to_pixel_values(*f['predicted'])
+                    exp = dict(x=round(float(ex), 2), y=round(float(GRID_SIZE - 1 - ey), 2))
+                c = (GRID_SIZE - 1) / 2
+                follow_frames.append(dict(png=name, mission='SPHEREx', date=date, mjd=round(f['mjd'], 5), frames=1,
+                                          detector=f['detector'], expected=exp, measured=dict(x=c, y=c, err_px=round(f['err'] / GRID_SCALE, 2))))
+            name = f'sky-{i:03d}.png'
+            png(out / 'img' / name, mosaic(parts, g_sky, size), -1.5 * noise, hi)
+            mx, my = g_sky.world_to_pixel_values(f['ra'], f['dec'])
             exp = None
             if f['predicted']:
-                ex, ey = g.world_to_pixel_values(*f['predicted'])
-                exp = dict(x=round(float(ex), 2), y=round(float(GRID_SIZE - 1 - ey), 2))
-            c = (GRID_SIZE - 1) / 2
-            follow.append(dict(png=name, mission='SPHEREx', date=f['date'][:19].replace('T', ' ') + ' UTC', mjd=round(f['mjd'], 5),
-                               frames=1, detector=f['detector'], expected=exp,
-                               measured=dict(x=c, y=c, err_px=round(f['err'] / GRID_SCALE, 2))))
-            name = f'sky-{i:03d}.png'
-            png(out / 'img' / name, resample_to(f['work'], f['wcs'], sky_grid, sky_size), -1.5 * noise, hi)
-            mx, my = sky_grid.world_to_pixel_values(f['ra'], f['dec'])
-            trail = []
-            for other in group:
-                ox, oy = sky_grid.world_to_pixel_values(other['ra'], other['dec'])
-                trail.append([round(float(ox), 1), round(float(sky_size - 1 - oy), 1)])
-            sky.append(dict(png=name, visit=vi, size=sky_size, scale_arcsec=round(sky_scale, 2), date=follow[-1]['date'],
-                            measured=dict(x=round(float(mx), 2), y=round(float(sky_size - 1 - my), 2)), trail=trail))
+                ex, ey = g_sky.world_to_pixel_values(*f['predicted'])
+                exp = dict(x=round(float(ex), 2), y=round(float(size - 1 - ey), 2))
+            sky.append(dict(png=name, visit=vi, size=size, scale_arcsec=round(sc['scale'], 2), date=date, mjd=round(f['mjd'], 5),
+                            detector=f['detector'], measured=dict(x=round(float(mx), 2), y=round(float(size - 1 - my), 2),
+                                                                  err_px=round(f['err'] / sc['scale'], 2)),
+                            expected=exp, trail=trail, tiles=sc['tiles'], layout=sc['layout'],
+                            have=[p['tile'] for p in parts if p['tile']]))
             residual = None
             if f['predicted']:
                 pra, pdec = f['predicted']
@@ -1054,7 +1157,23 @@ def vesta_study(log=print):
             path.append(dict(mjd=round(f['mjd'], 5), date=f['date'], ra=round(f['ra'], 6), dec=round(f['dec'], 6),
                              err=round(f['err'], 2), visit=vi, residual=residual,
                              predicted=[round(f['predicted'][0], 6), round(f['predicted'][1], 6)] if f['predicted'] else None))
-    # apparent speed between consecutive frames within a visit
+    return dict(follow=follow_frames, sky=sky, path=path, scenes=len(scenes), track=track,
+                tiles=dict(tile_arcmin=track['tile_arcmin'], layouts=sorted({s['layout'] for s in scenes if s['layout']})) if track else None)
+
+
+SOLAR_NAMES = {'vesta': ('4 Vesta', 'main-belt asteroid')}
+
+
+def track_study(slug, log=print):
+    out = OUT / slug
+    (out / 'img').mkdir(parents=True, exist_ok=True)
+    for old in (out / 'img').glob('*.png'):
+        old.unlink()
+    built = build_track(slug, out, follow=True, log=log)
+    track, path = built['track'], built['path']
+    name, kind = SOLAR_NAMES.get(slug, (slug, 'Solar System body'))
+    if track:
+        name, kind = track.get('object') or name, track.get('body') or kind
     speeds = []
     for a, b in zip(path, path[1:]):
         if a['visit'] == b['visit'] and b['mjd'] > a['mjd']:
@@ -1062,43 +1181,89 @@ def vesta_study(log=print):
             speeds.append(d / ((b['mjd'] - a['mjd']) * 24))
     res = [p['residual'] for p in path if p['residual']]
     rms = math.sqrt(np.mean([r[0] ** 2 + r[1] ** 2 for r in res])) if res else None
+    speed = round(float(np.median(speeds)), 1) if speeds else None
     if len(res) >= 3:
         good = rms < 12
         verdict = dict(code='as-predicted' if good else 'differs', title='Follows its JPL orbit' if good else 'Off its JPL orbit',
-                       summary=f'Across {len(res)} exposures Vesta sits {rms:.1f}″ (rms) from where JPL Horizons predicts, about {rms / 6.15:.1f} SPHEREx pixels.',
+                       summary=f'Across {len(res)} exposures {name} sits {rms:.1f}″ (rms) from where JPL Horizons predicts, about {rms / 6.15:.1f} SPHEREx pixels.'
+                               + (f' It crosses {built["scenes"]} fixed-sky scenes of up to {built["tiles"]["layouts"][-1]} tiles.' if built['tiles'] and built['tiles']['layouts'] else ''),
                        rule='Follows its orbit if the rms difference between the measured and JPL-predicted positions is under 12″ (two SPHEREx pixels).',
-                       numbers=dict(exposures=len(path), rms_arcsec=round(rms, 2), speed_arcsec_per_hr=round(float(np.median(speeds)), 1) if speeds else None))
+                       numbers=dict(exposures=len(path), rms_arcsec=round(rms, 2), speed_arcsec_per_hr=speed))
     else:
         verdict = dict(code='as-predicted', title='Moves across the sky',
-                       summary=((f'Measured directly in the images, Vesta moves about {np.median(speeds):.0f}″ per hour '
-                                 f'({np.median(speeds) * 24 / 60:.1f}′ per day) against the background stars.') if speeds else 'Too few exposures to measure its motion.')
+                       summary=((f'Measured directly in the images, {name} moves about {speed:.0f}″ per hour '
+                                 f'({speed * 24 / 60:.1f}′ per day) against the background stars.') if speeds else 'Too few exposures to measure its motion.')
                                 + (f' Where a JPL position is available it agrees to {rms:.1f}″ ({rms / 6.15:.1f} SPHEREx pixels).' if rms is not None else ''),
-                       rule='Speed from Vesta’s measured position in consecutive exposures of the same visit. Run scripts/fetch_vesta_track.py to add more exposures and JPL predictions.',
-                       numbers=dict(exposures=len(path), speed_arcsec_per_hr=round(float(np.median(speeds)), 1) if speeds else None,
-                                    rms_arcsec=round(rms, 2) if rms is not None else None))
-    result = dict(field='vesta', name='4 Vesta', kind='main-belt asteroid', expect='track', mode='track',
+                       rule='Speed from the measured position in consecutive exposures of the same visit. Run scripts/fetch_track.py to add more exposures and JPL predictions.',
+                       numbers=dict(exposures=len(path), speed_arcsec_per_hr=speed, rms_arcsec=round(rms, 2) if rms is not None else None))
+    tile_note = (f'The fixed-sky view is built from {built["tiles"]["tile_arcmin"]:g}′ sky tiles: one tile while the target is well inside it, '
+                 'the neighbour once it nears an edge (four at a corner), growing up to the scene limit before a new scene starts.') if built['tiles'] else \
+                'Run scripts/fetch_track.py to download tiled data so the fixed-sky view can follow it across neighbouring tiles.'
+    result = dict(field=slug, name=name, kind=kind, expect='track', mode='track',
                   generated_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
                   grid=dict(size=GRID_SIZE, scale_arcsec=GRID_SCALE, center=None, north='up', east='left'),
-                  counts=dict(spherex_frames=len(path), spherex_visits=len(groups), wise_frames=0, wise_visits=0),
-                  timelapse=follow, sky=sky, path=path, verdict=verdict, bands=[], visits=[], differences={},
-                  astrometry=dict(points=[], frames=[], track=[], fits={}), field_stars={}, brightness={'tested': False, 'reason': 'Not tested for the asteroid.'},
-                  limits=['Without a JPL position the asteroid is taken to be the brightest source in each exposure.',
-                          'Each “follow” image is centred on Vesta’s measured position, so the background stars stream past.',
+                  counts=dict(spherex_frames=len(path), spherex_visits=built['scenes'], wise_frames=0, wise_visits=0),
+                  timelapse=built['follow'], sky=built['sky'], tiles=built['tiles'], path=path, verdict=verdict, bands=[], visits=[],
+                  differences={}, astrometry=dict(points=[], frames=[], track=[], fits={}), field_stars={},
+                  brightness={'tested': False, 'reason': 'Not tested for a Solar System body.'},
+                  limits=['Without a JPL position the target is taken to be the brightest source in each exposure.',
+                          'Each “follow” image is centred on the measured position, so the background stars stream past.',
+                          tile_note,
                           'Different exposures are taken at different wavelengths (SPHEREx sees a different colour at each detector position).'],
                   credits=['SPHEREx spectral images: NASA/JPL-Caltech/IPAC, NASA/IPAC Infrared Science Archive (IRSA).',
                            'Ephemeris (where shown): JPL Horizons, Solar System Dynamics Group.'])
     (out / 'study.json').write_text(json.dumps(result, separators=(',', ':')), encoding='utf-8')
-    log(f'vesta: {len(path)} exposures in {len(groups)} visits · {verdict["title"]}')
+    log(f'{slug}: {len(path)} exposures in {built["scenes"]} scenes · {verdict["title"]}')
+    write_index()
     return result
 
 
+def vesta_study(log=print):
+    return track_study('vesta', log)
+
+
+def attach_sky(field, log=print):
+    """Add the tiled fixed-sky view to a star's existing study (only when scripts/fetch_track.py found it crossing tiles)."""
+    out = OUT / field
+    study_path = out / 'study.json'
+    if not load_track(field) or not study_path.is_file():
+        return None
+    for old in (out / 'img').glob('sky-*.png'):
+        old.unlink()
+    built = build_track(field, out, follow=False, log=log)
+    result = json.loads(study_path.read_text(encoding='utf-8'))
+    result['sky'], result['tiles'] = built['sky'], built['tiles']
+    study_path.write_text(json.dumps(result, separators=(',', ':')), encoding='utf-8')
+    log(f'{field}: fixed-sky tiles added · {len(built["sky"])} exposures in {built["scenes"]} scenes')
+    return result
+
+
+def write_index():
+    """List every generated study so the viewer can offer targets beyond the built-in ones."""
+    items = []
+    for p in sorted(OUT.glob('*/study.json')):
+        try:
+            d = json.loads(p.read_text(encoding='utf-8'))
+            items.append(dict(field=d['field'], name=d['name'], kind=d.get('kind'), mode=d.get('mode', 'motion'),
+                              tiled=bool(d.get('tiles'))))
+        except (OSError, ValueError, KeyError):
+            continue
+    (OUT / 'index.json').write_text(json.dumps(dict(studies=items), separators=(',', ':')), encoding='utf-8')
+
+
 def main(argv):
-    fields = argv or list(TARGETS) + ['vesta']
+    sky_only = '--sky-only' in argv
+    argv = [a for a in argv if a != '--sky-only']
+    fields = argv or list(TARGETS) + ['vesta'] + sorted(p.name for p in TRACKS.glob('*') if (p / 'track.json').is_file()
+                                                          and p.name not in TARGETS and p.name != 'vesta')
     for field in fields:
-        if field == 'vesta':
-            vesta_study()
+        if field in TARGETS:
+            if not sky_only:
+                study(field)
+            attach_sky(field)
         else:
-            study(field)
+            track_study(field)
+    write_index()
 
 
 if __name__ == '__main__':
