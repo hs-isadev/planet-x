@@ -38,7 +38,7 @@ function solarData(date) {
  }
  return initialSolar.promise;
 }
-const importScene=()=>import('./scene.js?v=free-orbit');
+const importScene=()=>import('./scene.js?v=upright');
 function solarControls(){
  $('star-filters').hidden=true;document.body.dataset.scene='solar';
  $('solar-tab').setAttribute('aria-pressed','true');$('stars-tab').setAttribute('aria-pressed','false');

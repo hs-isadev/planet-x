@@ -55,6 +55,34 @@
    * prior: {x, y} pixel coordinates to search around.   radius: search radius in pixels.
    * Returns {x, y, strength} or null when nothing star-like is there.
    */
+  // A saturated star has no usable pixels in its core, so the preview shows a hole ringed by bright pixels. Left as
+  // background, the brightest point would be one side of the ring and the lock would sit off-centre. Small enclosed
+  // holes whose rim is bright are filled as saturated (255) so the star is found at its middle.
+  function fillSaturatedHoles(grey, valid, width, height, background) {
+    const seen = new Uint8Array(width * height), bright = background + 0.5 * (255 - background);
+    for (let start = 0; start < width * height; start++) {
+      if (valid[start] || seen[start]) continue;
+      const stack = [start], part = [];
+      let edge = false, rimSum = 0, rimCount = 0;
+      seen[start] = 1;
+      while (stack.length) {
+        const k = stack.pop(), x = k % width, y = (k - x) / width;
+        part.push(k);
+        if (x === 0 || y === 0 || x === width - 1 || y === height - 1) edge = true;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+          const n = ny * width + nx;
+          if (valid[n]) { rimSum += grey[n]; rimCount++; }
+          else if (!seen[n]) { seen[n] = 1; stack.push(n); }
+        }
+      }
+      if (!edge && part.length <= 400 && rimCount && rimSum / rimCount > bright) {
+        for (const k of part) { grey[k] = 255; valid[k] = 1; }
+      }
+    }
+  }
+
   function detect(image, prior, radius) {
     const {width, height, data} = image;
     const grey = new Float32Array(width * height), valid = new Uint8Array(width * height);
@@ -66,6 +94,7 @@
     }
     if (samples.length < width * height * 0.25) return null;
     const background = median(samples);
+    fillSaturatedHoles(grey, valid, width, height, background);
     for (let i = 0; i < grey.length; i++) if (!valid[i]) grey[i] = background;
     const smoothed = smooth(grey, width, height, SIGMA);
     const range = Math.max(1, 255 - background);

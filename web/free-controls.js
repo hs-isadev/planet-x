@@ -10,6 +10,9 @@
 //  - Zoom is not done here. Wheel and pinch go through onZoom(factor), which the scene
 //    turns into a smooth, constant-ratio zoom (see navigation.js).
 //  - Q / E roll the view around the line of sight.
+//  - `upright = true` (set by the scene while an object is focused) switches to an upright orbit: yaw turns about
+//    world up, pitch stops just short of the poles, and any tilt eases back to level. With `upright = false` the
+//    free, tiltable orbit above applies.
 import {EventDispatcher, Quaternion, Vector2, Vector3} from 'three';
 
 const _offset = new Vector3(), _right = new Vector3(), _up = new Vector3(), _q = new Quaternion();
@@ -29,6 +32,8 @@ export class FreeOrbitControls extends EventDispatcher {
     this.zoomSpeed = 1;
     this.minDistance = 0;
     this.maxDistance = Infinity;
+    this.upright = false;
+    this.worldUp = new Vector3(0, 1, 0);
     this.onZoom = null;
     this._yaw = 0; this._pitch = 0; this._roll = 0;
     this._pan = new Vector2();
@@ -133,8 +138,8 @@ export class FreeOrbitControls extends EventDispatcher {
     const camera = this.object, now = performance.now();
     if (dt == null) dt = this._last ? Math.min(.1, (now - this._last) / 1000) : 1 / 60;
     this._last = now;
-    if (this._keys.has('KeyQ')) this._roll += dt * 1.4;
-    if (this._keys.has('KeyE')) this._roll -= dt * 1.4;
+    if (!this.upright && this._keys.has('KeyQ')) this._roll += dt * 1.4;
+    if (!this.upright && this._keys.has('KeyE')) this._roll -= dt * 1.4;
     // Frame-rate independent damping: the same feel at 30, 60 or 144 fps.
     const share = this.enableDamping ? 1 - Math.pow(1 - this.dampingFactor, dt * 60) : 1;
     const yaw = this._yaw * share, pitch = this._pitch * share, roll = this._roll * share;
@@ -152,7 +157,27 @@ export class FreeOrbitControls extends EventDispatcher {
     _up.normalize();
     _right.crossVectors(_forward, _up).normalize();
 
-    if (yaw || pitch) {
+    if (this.upright) {
+      // Upright orbit: yaw about world up, pitch about the camera's right axis, clamped short of the poles.
+      const world = this.worldUp;
+      if (yaw) { _q.setFromAxisAngle(world, yaw); _offset.applyQuaternion(_q); _up.applyQuaternion(_q); _right.applyQuaternion(_q); }
+      if (pitch) {
+        const polar = Math.acos(Math.min(1, Math.max(-1, _offset.clone().normalize().dot(world))));
+        const limit = 0.035;
+        const next = Math.min(Math.PI - limit, Math.max(limit, polar - pitch));
+        _q.setFromAxisAngle(_right, polar - next);
+        _offset.applyQuaternion(_q); _up.applyQuaternion(_q);
+      }
+      // Ease the horizon back to level: the up vector moves toward world up (kept perpendicular to the view).
+      _forward.copy(_offset).negate().normalize();
+      const level = world.clone().addScaledVector(_forward, -world.dot(_forward));
+      if (level.lengthSq() > 1e-6) {
+        level.normalize();
+        const blend = 1 - Math.exp(-dt * 5);
+        _up.lerp(level, blend).addScaledVector(_forward, -_up.dot(_forward)).normalize();
+      }
+      _right.crossVectors(_forward, _up).normalize();
+    } else if (yaw || pitch) {
       _q.setFromAxisAngle(_up, yaw);
       _offset.applyQuaternion(_q); _right.applyQuaternion(_q);
       _q.setFromAxisAngle(_right, pitch);
