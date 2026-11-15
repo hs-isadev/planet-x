@@ -96,3 +96,34 @@ Not fixable in code: Render's free plan sleeps after 15 minutes without traffic 
 - **Stop / Continue:** a "Stop loading" button appears while batches chain. Stopping keeps everything loaded so far; "Continue loading" resumes from the same offset. Busy-worker and network errors are retried with backoff instead of ending the run.
 - **Fixed:** live requests ignored the All exposures toggle (the server still read the old `sampling` option). It now honours `all_exposures`.
 - **Bundle:** the dates downloaded with `scripts/download_more_dates.py` are included (354 new FITS cutouts plus previews). Barnard's Star 356→358 frames (40 dates, all IRSA lists), Epsilon Indi B 60→65 dates, Proxima Centauri 7→47 dates, R Dra 222→225 dates, RW Aur 80→103 frames. The previous sessions stay in the bundle; the index files point at the newer sessions, which contain every frame of the old ones.
+
+## Update: Motion study (visit stacks, measured vs expected, verdicts, 2010–2026 time-lapse, Vesta track)
+
+A **Motion study** panel now sits above the Spectrum section of the SPHEREx View (`web/observation-lab/motion-study.js`, `css/motion-study.css`). It reads precomputed results from `web/assets/motion-study/<field>/study.json` + PNGs, written by `backend/observation_lab_core/motion_study.py`. Render does no heavy work.
+
+- **2010–2026 time-lapse at 4.6 µm:** WISE/NEOWISE W2 visit stacks and SPHEREx 4.6 µm visit stacks on one north-up 3″/px grid, with the measured position (blue ring), the catalog prediction (violet cross) and the catalog path drawn on each frame.
+- **SPHEREx visits at one wavelength:** for 4.6, 3.4, 2.2 and 1.25 µm, only exposures whose wavelength at the field centre is in that window are median-stacked per visit, so blinking compares like with like.
+- **Flipbook, Blink A/B (choose A and B) and Difference views.** The view state is shared in the URL (`?ms=field.tab.band.frame.mode`).
+- **Astrometry:** the target is fitted in every exposure (saturated targets from the centroid of the saturated core). Each exposure is aligned on its own field stars, positions are averaged per visit, and straight-line + catalog-parallax fits are made for SPHEREx only, WISE/NEOWISE only and combined. Charts show measured vs expected, or residuals, with error bars.
+- **Field-star null test:** the same pipeline run on field stars must show no motion (e.g. Barnard: 47/47 SPHEREx field stars static).
+- **Brightness test:** ensemble differential photometry in 0.1 µm windows and 10-day bins, calibrated on the field stars. Saturated targets fall back to PSF-wing photometry with a stricter threshold.
+- **Verdicts** (rule and numbers shown): Moves as predicted / Moves, but not as predicted / Expected motion too small / Expected motion not detected / Stays put / Changes in brightness, not position / Too bright for a reliable brightness test / Not measurable.
+
+Current results: Barnard 10,407 ± 15 mas/yr (catalog 10,393), Epsilon Indi B 4,700 ± 17 (4,684), WISE 0855 8,313 ± 277 (8,152), Proxima 3,231 ± 593 (3,859, SPHEREx only): all **Moves as predicted**. RW Aur: **Changes in brightness, not position** (≈1.4 mag between dates at matching wavelengths, 34σ). R Dra: **Too bright for a reliable brightness test** (saturated almost everywhere).
+
+Rebuild after adding data (minutes per target; `MOTION_STUDY_CACHE=<dir>` makes re-runs instant):
+
+    python -m backend.observation_lab_core.motion_study            # all targets incl. vesta
+    python -m backend.observation_lab_core.motion_study barnard
+
+**More WISE/NEOWISE epochs** for RW Aur, R Dra and Proxima (needs IRSA access):
+
+    python -X utf8 scripts/fetch_wise_epochs.py --field rw-aur --field r-dra --field proxima-centauri
+
+**Vesta:** the study follows Vesta in two views: centred on it, or on a fixed patch of sky where the data window moves with it, so it keeps going after leaving the original field. Only the two bundled exposures are included so far; the first agrees with JPL Horizons to 3.7″. To add every SPHEREx exposure of Vesta, each cut out around its JPL position (needs IRSA and JPL Horizons access):
+
+    python scripts/fetch_vesta_track.py --check
+    python scripts/fetch_vesta_track.py            # whole mission, up to 240 exposures (--max to change)
+    python -m backend.observation_lab_core.motion_study vesta
+
+**Loader:** a soft spectral accent (blue → violet → amber) on the minimal loader.

@@ -39,7 +39,7 @@ TABLES = [('allsky', 'WISE', 'wise/allsky/4band_p1bm_frm'),
           ('postcryo', 'WISE', 'wise/postcryo/2band_p1bm_frm'),
           ('neowiser', 'NEOWISE-R', 'wise/neowiser/p1bm_frm')]
 SIMBAD = {'wise-0855': 'WISE J085510.83-071442.5', 'barnard': 'Barnard star', 'epsilon-indi': 'eps Ind B',
-          'rw-aur': 'RW Aur', 'r-dra': 'R Dra'}
+          'rw-aur': 'RW Aur', 'r-dra': 'R Dra', 'proxima-centauri': 'Proxima Cen'}
 BANDS = {1: (3.4, 6.1), 2: (4.6, 6.4)}  # wavelength um, PSF FWHM arcsec
 SCALE = 2.75  # arcsec/pixel, WISE L1b
 SATURATED_BITS = sum(1 << b for b in range(10, 19))  # msk bits 10-18: saturated in sample read 1-9 (Expl. Suppl. IV.4.a)
@@ -49,7 +49,11 @@ AP, ANN = 2.0, (5.0, 9.0)  # aperture / sky annulus radii in native pixels
 
 def preset(key):
     fields = json.loads((ROOT / 'backend/observation_lab_core/data/collection.json').read_text(encoding='utf-8'))['fields']
-    field = next(f for f in fields if f['key'] == key)
+    field = next((f for f in fields if f['key'] == key), None)
+    if field is None:  # catalog-star fields (e.g. Proxima Centauri) are defined by their saved SPHEREx view
+        index = ROOT / 'backend/data/spherex-seed/featured-views' / f'{key}.json'
+        session = json.loads(index.read_text(encoding='utf-8'))['session']
+        field = json.loads((ROOT / 'backend/data/spherex-seed' / session / 'manifest.json').read_text(encoding='utf-8'))['options']
     return SkyCoord(field['ra'] * u.deg, field['dec'] * u.deg)
 
 

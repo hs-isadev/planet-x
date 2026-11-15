@@ -1,0 +1,69 @@
+/* Motion study panel (motion-study.js). Uses the lab tokens from tokens.css. */
+.motion-study { margin-top: var(--s7, 40px); padding-top: var(--s5, 24px); border-top: 1px solid var(--line); }
+.ms-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.ms-head .section-title { font-size: 20px; line-height: 28px; font-weight: 700; letter-spacing: -.02em; margin: 0; }
+.ms-head-actions { display: flex; gap: 10px; align-items: center; }
+.ms-head-actions select { min-width: 170px; }
+.ms-badge { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--line-strong); }
+[data-tone="good"].ms-badge, .ms-verdict[data-tone="good"] { border-color: rgba(104, 211, 145, .45); }
+[data-tone="good"].ms-badge { color: var(--positive); background: var(--positive-soft); }
+[data-tone="warn"].ms-badge { color: var(--warning); background: var(--warning-soft); border-color: rgba(229, 178, 93, .45); }
+[data-tone="info"].ms-badge { color: var(--sky); background: rgba(108, 184, 255, .12); border-color: rgba(108, 184, 255, .45); }
+[data-tone="neutral"].ms-badge { color: var(--muted); }
+.ms-status { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+.ms-status:empty { display: none; }
+.ms-grid { display: grid; grid-template-columns: minmax(0, 600px) minmax(260px, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 1000px) { .ms-grid { grid-template-columns: 1fr; } }
+.ms-tabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.ms-tabs button, .ms-bands button, .ms-modes button {
+  border: 1px solid var(--line-strong); background: transparent; color: var(--text); border-radius: 8px;
+  padding: 6px 10px; font: 500 12px/1.2 inherit; cursor: pointer; transition: background .2s, border-color .2s; }
+.ms-tabs button[aria-selected="true"], .ms-bands button[aria-pressed="true"], .ms-modes button[aria-pressed="true"] {
+  background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.ms-tabs button:disabled { opacity: .4; cursor: not-allowed; }
+.ms-toolbar { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.ms-bands, .ms-modes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.ms-note { color: var(--muted); font-size: 12px; }
+.ms-stage { position: relative; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #000; }
+.ms-canvas { display: block; width: 100%; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+.ms-frame-label { position: absolute; left: 0; right: 0; top: 0; padding: 8px 10px; font-size: 12px; color: #f5f5f7;
+  background: linear-gradient(rgba(0,0,0,.7), transparent); pointer-events: none; }
+.ms-overlay-legend { position: absolute; left: 10px; bottom: 44px; display: flex; gap: 10px; font-size: 11px; color: #d6d6db; pointer-events: none; }
+.ms-key::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: -1px; }
+.ms-key-exp::before { border-top: 2px solid #b9a3f5; border-left: 2px solid #b9a3f5; transform: rotate(45deg) scale(.7); }
+.ms-key-meas::before { border: 2px solid #6cb8ff; border-radius: 50%; width: 7px; height: 7px; }
+.ms-key-trail::before { border-top: 2px dashed rgba(185,163,245,.8); height: 0; margin-bottom: 3px; }
+.ms-controls { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.ms-slider { flex: 1 1 200px; accent-color: var(--accent); }
+.ms-play { min-width: 70px; }
+.ms-verdict { border: 1px solid var(--line-strong); border-radius: 10px; padding: 14px 16px; background: var(--panel); }
+.ms-verdict[data-tone="good"] { box-shadow: inset 3px 0 0 var(--positive); }
+.ms-verdict[data-tone="warn"] { box-shadow: inset 3px 0 0 var(--warning); }
+.ms-verdict[data-tone="info"] { box-shadow: inset 3px 0 0 var(--sky); }
+.ms-eyebrow { margin: 0 0 2px; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.ms-verdict h3 { margin: 0 0 6px; font-size: 18px; }
+.ms-summary { margin: 0 0 10px; font-size: 13px; line-height: 1.5; }
+.ms-verdict dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0 0 10px; font-size: 12px; }
+.ms-verdict dt { color: var(--muted); }
+.ms-verdict dd { margin: 0; font-variant-numeric: tabular-nums; }
+.ms-rule { margin: 0; font-size: 11.5px; color: var(--muted); line-height: 1.45; }
+.ms-checks { margin-top: 14px; font-size: 12.5px; line-height: 1.5; }
+.ms-checks h3 { font-size: 14px; margin: 0 0 6px; }
+.ms-checks ul { margin: 0; padding-left: 18px; color: var(--muted); }
+.ms-checks strong { color: var(--text); }
+.ms-chart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 22px 0 8px; }
+.ms-chart-head h3 { font-size: 15px; margin: 0; }
+.ms-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+.ms-chart { width: 100%; height: auto; background: #000; border: 1px solid var(--line); border-radius: 8px; }
+.ms-table { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.ms-table caption { text-align: left; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+.ms-table th, .ms-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+.ms-table thead th { color: var(--muted); font-weight: 500; }
+.ms-catalog-row th, .ms-catalog-row td { color: var(--predict); }
+.ms-limits { margin-top: 14px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.ms-limits summary { cursor: pointer; color: var(--text); }
+.ms-limits h4 { margin: 12px 0 4px; color: var(--text); font-size: 13px; }
+/* The lab styles viewer canvases as absolutely positioned layers; this one sits in normal flow. */
+.ms-stage { aspect-ratio: 1; }
+.ms-stage canvas.ms-canvas { position: relative !important; inset: auto !important; width: 100% !important; height: 100% !important; max-width: none; transform: none; }
+.ms-charts > :only-child { max-width: 680px; }
