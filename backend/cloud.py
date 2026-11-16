@@ -1,6 +1,8 @@
 """Browse the documented public IRSA S3 mirror; no guessed spatial index."""
 import re
 import time
+from contextlib import ExitStack
+from threading import BoundedSemaphore
 import xml.etree.ElementTree as ET
 from urllib.parse import quote, urlsplit
 import aiohttp
@@ -9,11 +11,12 @@ import requests
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
-from .archive import CONFIG,CACHE,key_for,atomic_json,align_cutout,output_grid,throttle
+from .archive import CONFIG,CACHE,LOW_MEMORY,key_for,atomic_json,align_cutout,output_grid,throttle
 from .analysis import aligned_products
 from .saved_archive import saved_original, preserve_cutout
 
 NS={'s':'http://s3.amazonaws.com/doc/2006-03-01/'}
+MIRROR_SLOTS = BoundedSemaphore(1 if LOW_MEMORY else 6)
 
 
 def validate_prefix(prefix):
@@ -73,9 +76,16 @@ def cutout_from_mirror(key, fov, center=None):
     local = saved_original(key)
     if local is None:
         throttle()
-    http = {"block_size": 1048576, "client_kwargs": {"timeout": aiohttp.ClientTimeout(total=20), "trust_env": True}}
-    source_file = fits.open(local, memmap=False) if local else fits.open(url, use_fsspec=True, fsspec_kwargs=http, memmap=False)
-    with source_file as remote:
+    with MIRROR_SLOTS, ExitStack() as stack:
+        source_file = local
+        if not local:
+            import fsspec
+            filesystem = fsspec.filesystem('https', client_kwargs={
+                'timeout': aiohttp.ClientTimeout(total=20), 'trust_env': True})
+            source_file = stack.enter_context(filesystem.open(url, 'rb', block_size=1024 * 1024,
+                                                              cache_type='blockcache',
+                                                              cache_options={'maxblocks': 4}))
+        remote = stack.enter_context(fits.open(source_file, memmap=False))
         header=remote['IMAGE'].header
         ra,dec=center if center else (float(header['CRVAL1']),float(header['CRVAL2']));source=WCS(header).celestial
         grid, n, _ = output_grid(ra, dec, fov)

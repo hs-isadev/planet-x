@@ -51,4 +51,8 @@ You can also use **New → Blueprint** and point Render at the repository and `f
 
 Free Render serves the bundled archive after every startup. Live searches still work while the service runs, and those downloads can be lost on restart or spin-down. Set `SPHEREX_PREWARM=0` to rely on the deploy bundle for defaults and avoid a background archive refresh on every cold start. Live searches still run on demand. Alternate detector, date or field-of-view selections are capped at 60 dated frames.
 
+The Docker image sets `SPHEREX_LOW_MEMORY=1` for Free Render. The Lab runs one heavy job at a time, limits the AWS range cache, and loads live observations in batches. Use **More live observations** to continue an archive search. Saved sequences open in full, with one frame per observing date in the default view. If TAP and SIA fail, the Lab uses bundled exposure receipts and the indexed footprints of public AWS originals to find candidate files. Opening a candidate still checks coverage against the actual FITS.
+
+**Motion pair** opens two well-separated observations from the same detector and reduction, within 0.05 µm at the field center. **Track point** measures a selected source using frames comparable to the reference exposure. A brightness change alone does not measure displacement.
+
 [Render persistent disks](https://render.com/docs/disks) · [Render free-instance limits](https://render.com/docs/free) · [IRSA archive access](https://irsa.ipac.caltech.edu/spherex-archive-documentation/spherex-data-access/)

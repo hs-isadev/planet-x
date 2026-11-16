@@ -12,6 +12,6 @@ USER observatory
 # The five preset snapshots and their original-pixel FITS cutouts are part of backend/data.
 # Vesta uses its two bundled reference exposures.
 RUN python -c "from backend.example_field import prepare_starter; prepare_starter('vesta')"
-ENV PYTHONUNBUFFERED=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 SPHEREX_PREWARM=0
+ENV PYTHONUNBUFFERED=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 SPHEREX_PREWARM=0 SPHEREX_LOW_MEMORY=1
 EXPOSE 8000
 CMD ["python", "start.py", "--host", "0.0.0.0"]

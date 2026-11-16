@@ -158,9 +158,10 @@
               <span>Load patch</span>
             </button>
             <button type="button" id="archive-search" class="btn-outline btn-trail">
-              <span>Search IRSA</span>
+              <span>Search archive</span>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11L11 5M6 5h5v5"/></svg>
             </button>
+            <button type="button" id="next-live-batch" class="btn-outline" hidden>More live observations</button>
           </div>
 
           <div class="query-meta">
@@ -277,6 +278,7 @@
           <div class="frames-block">
             <div class="timeline-heading">
               <span id="baseline">TIMELINE</span>
+              <button type="button" id="motion-pair" class="btn-outline btn-compact" hidden>Motion pair</button>
               <label>Compare <select id="reference-date"></select></label>
             </div>
             <div class="filmstrip" id="filmstrip" role="toolbar" aria-label="Observation frames. Arrow keys to move, Enter to open."></div>

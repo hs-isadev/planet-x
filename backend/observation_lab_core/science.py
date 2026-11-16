@@ -100,10 +100,10 @@ def fits_metadata(path):
         if 'WCS-WAVE' not in hdus and 'WAVELENGTH' not in hdus:
             raise ValueError('The FITS file is missing its WCS-WAVE extension.')
         header = hdus['IMAGE'].header
-        shape = hdus['IMAGE'].data.shape
+        shape = hdus['IMAGE'].shape
         if len(shape) != 2 or max(shape) > 2040:
             raise ValueError('Expected a SPHEREx image or cutout of at most 2040 × 2040 pixels.')
-        if any(hdus[name].data.shape != shape for name in ('FLAGS', 'VARIANCE')):
+        if any(hdus[name].shape != shape for name in ('FLAGS', 'VARIANCE')):
             raise ValueError('Image, flags and variance must have matching shapes.')
         detector = int(header['DETECTOR'])
         if detector not in range(1, 7):
@@ -113,6 +113,8 @@ def fits_metadata(path):
         corners = spatial.pixel_to_world(np.array([0,0,shape[1]-1,shape[1]-1]),
                                          np.array([0,shape[0]-1,0,shape[0]-1]))
         timestamp = Time(header['DATE-OBS'], scale='utc')
+        with Path(path).open('rb') as source:
+            digest = hashlib.file_digest(source, 'sha256').hexdigest()
         return {'id': str(header['OBSID']), 'detector': detector,
                 'timestamp': timestamp.isot + 'Z', 'mjd': float(timestamp.mjd),
                 'version': str(hdus[0].header.get('VERSION', 'unspecified')),
@@ -122,7 +124,7 @@ def fits_metadata(path):
                 'center': [float(sky.ra.deg), float(sky.dec.deg)],
                 'radius_deg': float(sky.separation(corners).deg.max()),
                 'processed_mjd': float(Time(header['DATE']).mjd) if header.get('DATE') else 0,
-                'sha256': hashlib.sha256(Path(path).read_bytes()).hexdigest()}
+                'sha256': digest}
 
 
 def wavelength(hdus, x, y):

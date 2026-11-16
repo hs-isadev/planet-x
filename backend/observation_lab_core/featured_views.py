@@ -18,6 +18,7 @@ NAMED_STARS = 50
 COLLECTION = ROOT / 'backend/observation_lab_core/data/collection.json'
 HISTORY = ROOT / 'backend/data/preset-archive-index.json'
 INVENTORIES = BUNDLE / 'inventories'
+MOTION_EXAMPLES = BUNDLE.parent / 'motion-examples.json'
 
 
 @lru_cache(maxsize=1)
@@ -36,6 +37,11 @@ def fields():
                                                 ra=row['ra'], dec=row['dec'], category=grouping,
                                                 distance_pc=row['distance_pc'],
                                                 description='HYG 4.1 catalog position', frames=[]))
+    if not any(entry['name'].casefold() == 'proxima centauri' for entry in distinct.values()):
+        distinct['proxima-centauri'] = dict(
+            key='proxima-centauri', name='Proxima Centauri',
+            ra=217.39232147200883, dec=-62.67607511676666, distance_pc=1.302,
+            category='Nearby star', description='Archived SPHEREx cutout field near Proxima Centauri', frames=[])
     return core + sorted(distinct.values(), key=lambda field: field['distance_pc'])
 
 
@@ -126,6 +132,11 @@ def observing_days(rows):
     for row in sorted(rows, key=lambda item: (item['mjd'], item['detector'], item['id'])):
         days.setdefault(math.floor(row['mjd']), []).append(row)
     return [sorted(day, key=date_rank, reverse=True) for day in days.values()]
+
+
+@lru_cache(maxsize=1)
+def motion_examples():
+    return json.loads(MOTION_EXAMPLES.read_bytes()) if MOTION_EXAMPLES.is_file() else {}
 
 
 def sample_frames(rows, count=ALTERNATE_FRAME_LIMIT):

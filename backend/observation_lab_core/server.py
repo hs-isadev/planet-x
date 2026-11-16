@@ -11,6 +11,7 @@ import re
 import shutil
 import sys
 import threading
+import time
 import traceback
 from urllib.parse import parse_qs, urlencode, urlparse
 import uuid
@@ -32,10 +33,10 @@ from PIL import Image
 from .science import (PIPELINE, FLAG_SOURCE, fits_metadata, grid_for, inspect_pixel,
                      prepare_frame, render_frames, request_options)
 from .archive import query as archive_query, download as archive_download, reduction_priority, write_json
-from backend.archive import CACHE as PLANET_CACHE, ROOT as PLANET_ROOT
+from backend.archive import CACHE as PLANET_CACHE, LOW_MEMORY, ROOT as PLANET_ROOT
 from backend.example_field import prepare_starter, prepared_starter
 from .featured_views import (ALTERNATE_FRAME_LIMIT, CACHE, INDEX, PRESET_FOV, cache_path, catalog_field,
-                             default_preset, fields, historical_rows, locate, observing_days,
+                             default_preset, fields, historical_rows, locate, motion_examples, observing_days,
                              sample_frames, view_entry)
 from .science import FrameBuffer
 
@@ -44,7 +45,10 @@ LOCAL = PLANET_ROOT / 'nasaSpace-main/outputs/spherex-viewer'
 CACHE.mkdir(parents=True, exist_ok=True)
 REGISTRY = CACHE / 'imports.json'
 LOCK = threading.RLock()
-POOL = ThreadPoolExecutor(max_workers=4)
+ACTIVE_JOBS = 1 if LOW_MEMORY else 3
+FINISHED_JOBS = 4 if LOW_MEMORY else 32
+LIVE_BATCH_SIZE = 12
+POOL = ThreadPoolExecutor(max_workers=ACTIVE_JOBS)
 JOBS = {}
 CONFIG = json.loads((ROOT / 'archive-config.json').read_text())
 LIBRARY = json.loads((DATA / 'data' / 'collection.json').read_text())
@@ -141,7 +145,7 @@ def imported_records(records):
         RECORDS.extend(new)
 
 
-def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_only=False):
+def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_only=False, page=None):
     progress('Querying IRSA for SPHEREx observations…')
     if archive_rows is not None:
         rows = archive_rows
@@ -168,8 +172,39 @@ def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_
         return [], 0, []
     failures = list(dict.fromkeys(row['discovery_warning'] for row in rows if row.get('discovery_warning')))
     total = len(rows)
-    if archive_rows is None and not default_preset(catalog_field(None, options), options):
+    daily = default_preset(catalog_field(None, options), options)
+    if archive_rows is None and not daily:
         rows = sample_frames(rows)
+    if LOW_MEMORY and archive_rows is None and page is not None:
+        if daily:
+            groups = observing_days(rows)
+            representatives = [group[0] for group in groups]
+            first = sample_frames(representatives, LIVE_BATCH_SIZE)
+            identities = {(row['id'], row['detector']) for row in first}
+            remainder = representatives + [row for group in groups for row in group[1:]]
+            rows = first + [row for row in remainder if (row['id'], row['detector']) not in identities]
+        offset = page['offset']
+        batch = rows[offset:offset + LIVE_BATCH_SIZE]
+        deadline = time.monotonic() + 75
+        records = []
+        preview_shown = False
+        attempted = 0
+        for row in batch:
+            if attempted and time.monotonic() >= deadline:
+                break
+            progress(f'Downloading observation {attempted + 1} of {len(batch)} from SPHEREx')
+            attempted += 1
+            try:
+                records.append(archive_download(row, options['ra'], options['dec'], options['fov'],
+                                                CACHE, prefer_mirror=True, mirror_only=mirror_only))
+            except Exception as error:
+                failures.append(f"{row['id']}: {error}")
+            if preview and not preview_shown and 2 <= len(records) <= 6:
+                preview_shown = preview(records, total)
+        next_offset = offset + attempted
+        page['next'] = next_offset if next_offset < len(rows) else None
+        # This batch's immutable files and manifest are sufficient for tracking and replay.
+        return records, total, failures
     if len(rows) > 4:
         first = [rows[round(i * (len(rows) - 1) / 3)] for i in range(4)]
         selected = {(row['id'], row['detector']) for row in first}
@@ -177,7 +212,8 @@ def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_
     records = []
     preview_shown = False
     progress(f'Downloading 0 of {len(rows)} observations from IRSA…')
-    with ThreadPoolExecutor(max_workers=min(3 if archive_rows is not None else 5, len(rows))) as pool:
+    workers = 1 if LOW_MEMORY else 3 if archive_rows is not None else 5
+    with ThreadPoolExecutor(max_workers=min(workers, len(rows))) as pool:
         pending = {pool.submit(archive_download, row, options['ra'], options['dec'], options['fov'],
                                 CACHE, prefer_mirror=True, mirror_only=mirror_only): row for row in rows}
         for done, future in enumerate(as_completed(pending), 1):
@@ -234,7 +270,7 @@ def fetch_cutouts(records, ra, dec, fov, progress, failures, start=None, end=Non
         except (requests.RequestException, RuntimeError, ValueError):
             failures.append('Live IRSA coverage search is unavailable. Checking saved observations against their native coverage.')
     done = {}
-    with ThreadPoolExecutor(max_workers=6) as pool:
+    with ThreadPoolExecutor(max_workers=1 if LOW_MEMORY else 6) as pool:
         futures = {pool.submit(archive_download, {k: v for k, v in r.items() if k != 'featured_cache'},
                                ra, dec, fov, CACHE): r for r in records}
         for count, future in enumerate(as_completed(futures), 1):
@@ -313,12 +349,18 @@ def run_job(work, job_id, payload):
     trim_cache()
 
 
+def trim_finished_jobs():
+    finished = [jid for jid, job in JOBS.items() if job.get('status') != 'running']
+    for jid in finished[:-FINISHED_JOBS]:
+        del JOBS[jid]
+
+
 def cutout_covers_field(record, grid, size):
     """Check the requested square against the actual saved FITS footprint."""
     corners = grid.pixel_to_world(np.array([0, 0, size-1, size-1]),
                                   np.array([0, size-1, 0, size-1]))
     with fits.open(record['path'], memmap=False) as hdus:
-        shape = hdus['IMAGE'].data.shape
+        shape = hdus['IMAGE'].shape
         x, y = WCS(hdus['IMAGE'].header).celestial.world_to_pixel(corners)
     return bool(np.all(np.isfinite(x)) and np.all(np.isfinite(y))
                 and np.all((x >= 0) & (x < shape[1]))
@@ -404,9 +446,12 @@ def cached_featured_session(field, options, job_id):
     daily = default_preset(field, options)
     available = len(frames)
     limited = not daily and available > ALTERNATE_FRAME_LIMIT
+    example = motion_examples().get(field['key'])
+    matched_example = {point['sha256'] for point in example['points']} if example else set()
     if daily:
-        frames = [day[0] for day in observing_days(frames)]
-        job_id = hashlib.sha256(f"daily-v1:{manifest['id']}".encode()).hexdigest()[:32]
+        frames = [next((frame for frame in day if frame['sha256'] in matched_example), day[0])
+                  for day in observing_days(frames)]
+        job_id = hashlib.sha256(f"daily-v2:{manifest['id']}".encode()).hexdigest()[:32]
     else:
         frames = sample_frames(frames)
     path = CACHE / job_id
@@ -414,6 +459,10 @@ def cached_featured_session(field, options, job_id):
     manifest.update(id=job_id, options=options, frames=[dict(frame, index=i) for i, frame in enumerate(frames)],
                     archive_matches=manifest['archive_matches'] if daily else None, matched_frames=available,
                     excluded_frames=[], limited=limited, daily_sequence=daily)
+    if example:
+        by_hash = {frame['sha256']: index for index, frame in enumerate(frames)}
+        if matched_example.issubset(by_hash):
+            manifest['motion_example'] = dict(example, indices=[by_hash[point['sha256']] for point in example['points']])
     if not (path / 'manifest.json').is_file():
         atomic_json(path / 'manifest.json', manifest)
     return manifest
@@ -431,6 +480,7 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
 
     archive_requested = payload.get('source') == 'archive'
     preparing_cache = archive_rows is not None or cached_records is not None
+    offline = cached_records is not None and archive_rows is None
     buffer = None
     try:
         options = request_options(payload)
@@ -445,11 +495,18 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
             refresh_featured()
         progress('Reading calibrated FITS data')
         archive_total = None
+        page = {'offset': int(payload.get('archive_offset', 0)), 'next': None}
         archive_error = None
         failures = []
         records = cached_records
         if archive_requested and (archive_rows is not None or cached_records is None):
             try:
+                if field and not preparing_cache:
+                    snapshot = cached_featured_session(field, options, job_id)
+                    if snapshot:
+                        with LOCK:
+                            JOBS[job_id]['preview'] = snapshot
+
                 def preview(available_records, total):
                     try:
                         return publish_live_preview(job_id, options, available_records, total)
@@ -458,9 +515,15 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
 
                 records, archive_total, failures = fetch_archive(
                     options, progress, archive_rows, preview if archive_rows is None else None,
-                    mirror_only=payload.get('mirror_only', False))
+                    mirror_only=payload.get('mirror_only', False), page=page)
                 if cached_records:
                     records.extend(cached_records)
+                if not records and failures and not preparing_cache and field:
+                    snapshot = cached_featured_session(field, options, job_id)
+                    if snapshot:
+                        snapshot.update(archive_error=failures[0], failures=failures,
+                                        next_archive_offset=page['next'])
+                        return finish(snapshot, 'Live observations unavailable; showing saved FITS')
             except Exception as error:
                 if archive_rows is not None:
                     raise
@@ -530,7 +593,7 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
             try:
                 padded = (record.get('download_center') == [options['ra'], options['dec']]
                           and record.get('requested_source_width_deg', 0) >= options['fov']/60*1.5 - 1e-8)
-                if not padded and not cutout_covers_field(record, grid, size) and record.get('source'):
+                if not offline and not padded and not cutout_covers_field(record, grid, size) and record.get('source'):
                     progress(f"Fetching a wider image for {record['timestamp'][:10]}")
                     record = wider_cutout(record, options)
                     dedup[(record['id'], record['detector'])] = record
@@ -579,6 +642,7 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
                                 'minimum_valid_pixels_percent': 80 if options['detector'] else 0},
             'mosaic': mosaic_used,
             'daily_sequence': daily,
+            'next_archive_offset': page['next'],
             'mosaic_note': ('DR1 mosaic channels stack many dates. Motion and time variability cannot be measured from them.'
                             if mosaic_used else ''),
             'empty_reason': ('' if frames else archive_error or (
@@ -663,6 +727,30 @@ def create_track(job_id, payload):
         sid=str(payload.get('session',''))
         if not re.fullmatch('[a-f0-9]{32}',sid): raise ValueError('Open a sky view first.')
         manifest=load_manifest(sid)
+        frames = manifest['frames']
+        reference_index = int(payload.get('frame', 0))
+        if not 0 <= reference_index < len(frames):
+            raise ValueError('Choose a valid reference frame.')
+        reference = frames[reference_index]
+        wave = reference.get('wavelength')
+        eligible = [
+            i for i, frame in enumerate(frames)
+            if frame['detector'] == reference['detector'] and (
+                i == reference_index or payload.get('object') or
+                (frame['release'] == reference['release']
+                 and wave is not None and frame.get('wavelength') is not None
+                 and abs(frame['wavelength'] - wave) <= .05))
+        ]
+        if len({int(frames[i]['mjd']) for i in eligible}) < 2 and not payload.get('object'):
+            raise ValueError('This source needs matching wavelengths on at least two observing dates. Try Motion pair or another reference frame.')
+        payload = dict(payload, frame=eligible.index(reference_index))
+        anchor = payload.get('anchor2')
+        if isinstance(anchor, dict):
+            anchor_index = int(anchor['frame'])
+            if anchor_index not in eligible:
+                raise ValueError('Choose a second anchor with a matching detector and wavelength.')
+            payload['anchor2'] = dict(anchor, frame=eligible.index(anchor_index))
+        manifest = dict(manifest, frames=[frames[i] for i in eligible])
         refresh_featured()
         with LOCK: lookup={r['sha256']:r for r in RECORDS}
         # Files the cache trim removed are fetched again from IRSA; say so, or the job looks frozen
@@ -688,8 +776,6 @@ def create_track(job_id, payload):
             with LOCK: JOBS[job_id].update(stage=message)
         # A cold cache can mean minutes of downloads, so count them through the same job stage
         frames=manifest['frames']
-        if not manifest['options']['detector']:
-            raise ValueError('Select one detector before running a motion track.')
         cold=lambda frame:(rec:=lookup.get(frame['sha256'])) is not None and not available(rec)
         missing=sum(map(cold,frames))
         progress(f'Downloading frames 0 / {missing} ({len(frames)-missing} already cached)' if missing
@@ -702,9 +788,15 @@ def create_track(job_id, payload):
                 with LOCK: fetched[0]+=1; done=fetched[0]
                 progress(f'Downloading frames {min(done,missing)} / {missing}')
             return path
-        with ThreadPoolExecutor(max_workers=6) as pool:
+        with ThreadPoolExecutor(max_workers=1 if LOW_MEMORY else 6) as pool:
             paths=list(pool.map(fetch,frames))
         result=track(manifest,paths,payload,CACHE,progress)
+        result['reference_index'] = reference_index
+        for point in result['points']:
+            point['index'] = eligible[point['index']]
+        for segment in result['segments']:
+            segment['from_index'] = eligible[segment['from_index']]
+            segment['to_index'] = eligible[segment['to_index']]
         with LOCK: JOBS[job_id].update(status='complete',stage='Track ready',result=result)
     except Exception as error:
         from .ephemeris import EphemerisError
@@ -833,18 +925,20 @@ class Handler(SimpleHTTPRequestHandler):
             if self.path == '/api/jobs':
                 options = json.loads(payload)
                 normalized = request_options(options)
+                offset = int(options.get('archive_offset', 0))
+                if not 0 <= offset <= 20000:
+                    raise ValueError('Invalid archive batch offset.')
                 job_key = json.dumps({'source': options.get('source', 'saved'),
-                                      'mosaic': options.get('mosaic', 'auto'), **normalized}, sort_keys=True)
+                                      'mosaic': options.get('mosaic', 'auto'), 'archive_offset': offset,
+                                      **normalized}, sort_keys=True)
                 with LOCK:
-                    finished = [jid for jid, job in JOBS.items() if job.get('status') != 'running']
-                    for jid in finished[:-32]:
-                        del JOBS[jid]
+                    trim_finished_jobs()
                     existing = next((jid for jid, job in JOBS.items()
                                      if job.get('status') == 'running' and job.get('job_key') == job_key), None)
                     if existing:
                         return self.json_response({'id': existing}, 202)
-                    if sum(job['status'] == 'running' and not job.get('warmup') for job in JOBS.values()) >= 3:
-                        return self.json_response({'error': 'Three requests are running. Wait for one to finish.'}, 429)
+                    if sum(job['status'] == 'running' and not job.get('warmup') for job in JOBS.values()) >= ACTIVE_JOBS:
+                        return self.json_response({'error': 'The archive worker is busy. Try again shortly.'}, 429)
                     job_id = uuid.uuid4().hex
                     JOBS[job_id] = {'status': 'running', 'stage': 'Preparing request', 'id': job_id, 'job_key': job_key}
                 POOL.submit(run_job, create_session, job_id, options)
@@ -852,14 +946,15 @@ class Handler(SimpleHTTPRequestHandler):
             if self.path in ('/api/spectrum','/api/track'):
                 options=json.loads(payload)
                 with LOCK:
-                    if sum(job['status']=='running' and not job.get('warmup') for job in JOBS.values())>=3:
-                        return self.json_response({'error':'Three jobs are running. Try again when a job finishes.'},429)
+                    trim_finished_jobs()
+                    if sum(job['status']=='running' and not job.get('warmup') for job in JOBS.values())>=ACTIVE_JOBS:
+                        return self.json_response({'error':'The archive worker is busy. Try again shortly.'},429)
                     job_id=uuid.uuid4().hex
                     JOBS[job_id]={'status':'running','stage':'Preparing star tracking' if self.path=='/api/track' else 'Preparing light measurements','id':job_id}
                 POOL.submit(run_job,create_track if self.path=='/api/track' else create_spectrum,job_id,options)
                 return self.json_response({'id':job_id},202)
             return self.json_response({'error': 'Unknown endpoint'}, 404)
-        except (ValueError, KeyError) as error:
+        except (ValueError, TypeError, KeyError) as error:
             return self.json_response({'error': str(error)}, 400)
 
 

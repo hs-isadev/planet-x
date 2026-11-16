@@ -192,6 +192,18 @@ async function paint(canvas, frame, version) {
     }
   }
   if (state.point) drawClick(ctx,left+state.point.x*side,top+state.point.y*side);
+  if (state.showMotionExample && state.mode === "split") {
+    const point = state.session.motion_example?.points.find(item => item.sha256 === frame.sha256);
+    if (point) {
+      const x = left + point.xy[0] * side, y = top + point.xy[1] * side;
+      ctx.strokeStyle = "#f0806e";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.stroke();
+      markLabel(ctx, "Measured centroid", x + 13, y - 12, "#f0806e");
+    }
+  }
   if (state.cursor?.id === canvas.id) drawCursor(ctx,left+state.cursor.x*side,top+state.cursor.y*side);
   if (typeof StarTracker !== "undefined") StarTracker.paint(ctx, frame, {side,left,top});
 }
@@ -232,8 +244,15 @@ function renderComparison() {
   $("comparison-note").textContent = state.mode === "split"
     ? first.detector !== second.detector
       ? "Different detectors · compare matching wavelengths to assess motion"
-      : `${frameLabel(first)} vs ${frameLabel(second)}`
+      : first.wavelength != null && second.wavelength != null && Math.abs(first.wavelength - second.wavelength) <= .05
+        ? `${Math.abs(first.mjd - second.mjd).toFixed(1)} days apart · D${first.detector} · Δλ ${Math.abs(first.wavelength-second.wavelength).toFixed(3)} µm`
+        : `${frameLabel(first)} vs ${frameLabel(second)}`
     : (waves.length ? `${Math.min(...waves).toFixed(2)}–${Math.max(...waves).toFixed(2)} µm · ${releases}` : `Outside center · ${releases}`);
+  const example = state.session.motion_example;
+  if (state.showMotionExample && state.mode === "split" && example &&
+      example.indices[0] === state.reference && example.indices[1] === state.index) {
+    $("comparison-note").textContent = `Measured centroid shift ${example.separation_arcsec.toFixed(2)}″ over ${example.baseline_days.toFixed(1)} days · D${first.detector}`;
+  }
   $("frame-caption").textContent = `${frameLabel(first)} · D${first.detector}`;
   $("reference-caption").textContent = `${frameLabel(second)} · D${second.detector}`;
   $("frame-caption").style.setProperty("--swatch", `var(--d${first.detector})`);
@@ -326,6 +345,7 @@ function resetView() {
 function sessionReady(session, request) {
   const previousTime = state.session?.frames[state.index]?.timestamp, prev = state.session?.options;  // read before the new session replaces them
   state.session = session;
+  state.showMotionExample = false;
   state.title = request.title;
   state.field = request.field;
   // Vesta is in only a few frames of its patch: a newly opened patch starts on one that shows it
@@ -416,6 +436,18 @@ function sessionReady(session, request) {
   $("view-message").textContent = session.empty_reason || "";
   if (!session.frames.length) emptyActions(session);
   $("archive-search").classList.toggle("primary-hint", !session.frames.length && !excluded.length);
+  $("next-live-batch").hidden = session.next_archive_offset == null;
+  $("next-live-batch").onclick = () => search("archive", session.next_archive_offset);
+  const pair = session.motion_example?.indices ?? motionPair(session.frames);
+  $("motion-pair").hidden = !pair;
+  $("motion-pair").onclick = () => {
+    stop();
+    state.showMotionExample = Boolean(session.motion_example);
+    state.reference = pair[0];
+    $("reference-date").value = state.reference;
+    setFrame(pair[1]);
+    $("mode-split").click();
+  };
   for (const id of ["play","previous","next","timeline","reference-date","export"]) $(id).disabled = !session.frames.length || (id === "play" && session.frames.length < 2);
   if (session.frames.length) {
     resetView();
@@ -459,6 +491,20 @@ function requestIdentity(request) {
   return JSON.stringify(request.options);
 }
 
+function motionPair(frames) {
+  let best = null, longest = 0;
+  for (let i = 0; i < frames.length; i++) for (let j = i + 1; j < frames.length; j++) {
+    const a = frames[i], b = frames[j], span = b.mjd - a.mjd;
+    if (span >= 1 && span > longest && a.detector === b.detector && a.release === b.release &&
+        !a.mosaic && !b.mosaic && a.coverage >= 80 && b.coverage >= 80 &&
+        a.wavelength != null && b.wavelength != null && Math.abs(a.wavelength - b.wavelength) <= .05) {
+      best = [i, j];
+      longest = span;
+    }
+  }
+  return best;
+}
+
 function loadingMessage(label) {
   const box = $("view-message");
   let text = box.querySelector("span"), bar = box.querySelector(".load-progress");
@@ -481,10 +527,12 @@ function loadingMessage(label) {
   bar.firstChild.style.width = `${(now/total*100).toFixed(1)}%`;
 }
 
-async function search(source="saved") {
-  const request = {options: inputs(), source, mosaic: false, field: state.field, title: state.title, version: ++state.requestVersion};
+async function search(source="saved", archiveOffset=0) {
+  const request = {options: inputs(), source, archiveOffset, mosaic: false, field: state.field, title: state.title, version: ++state.requestVersion};
   state.lastSource = source;
   state.pending = request;
+  $("next-live-batch").hidden = true;
+  $("motion-pair").hidden = true;
   stop();
   ++state.drawVersion;
   $("metadata").replaceChildren(); $("quality-card").replaceChildren();  // the old frame's band must not show beside the new choice
@@ -507,7 +555,7 @@ async function search(source="saved") {
           title: `Loading ${where}`, detail: current.source === "saved" ? "Opening saved SPHEREx exposures for this sky patch." : "Searching IRSA for SPHEREx exposures covering this sky patch."});
         const task = window.SpaceLoader?.begin(current.source === "saved" ? `Loading ${where}` : `Searching IRSA · ${where}`);
         try {
-          const job = await api("/observation-lab/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...current.options,source:current.source,field:current.field,mosaic:current.mosaic ?? "auto"})});
+          const job = await api("/observation-lab/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...current.options,source:current.source,field:current.field,archive_offset:current.archiveOffset,mosaic:current.mosaic ?? "auto"})});
           result = job.result;
           let previewShown = false;
           while (!result && current.version === state.requestVersion) {
@@ -529,7 +577,7 @@ async function search(source="saved") {
               task?.set(label);
               cover?.update({detail: label, progress: m && +m[2] > 0 ? +m[1] / +m[2] : null});
             }
-            await new Promise(resolve => setTimeout(resolve,350));
+            await new Promise(resolve => setTimeout(resolve,850));
           }
         } finally { task?.end(); cover?.done(); }
         if (!result) continue;
@@ -597,7 +645,8 @@ function bandOrder(origin) {
   return order;
 }
 function nextAutoStep(current, result) {
-  if (result.frames?.length || (current.source === 'archive' && result.archive_error)) return null;
+  if (result.frames?.length || result.next_archive_offset != null ||
+      (current.source === 'archive' && result.archive_error)) return null;
   const o = current.options;
   const auto = current.auto || {origin: {fov: Number(o.fov), detector: Number(o.detector)}, tried: new Set([`${Number(o.fov)}|${Number(o.detector)}`]),
     archived: current.source === "archive", irsaDown: false, partial: false, finalDone: false, trail: []};
@@ -1011,10 +1060,6 @@ window.addEventListener?.("universe-open-object", event => {
 // Editing RA/Dec already turns the view into a custom patch (input listener below); an unedited saved target keeps its name and box
 $("search-form").onsubmit = event => { event.preventDefault(); search(state.field === "custom" ? "archive" : "saved"); };
 $("archive-search").onclick = () => {
-  if (!state.objectContext) {
-    state.title = "IRSA patch";
-    state.field = "custom";
-  }
   search("archive");
 };
 $("vesta-example").onclick = () => {

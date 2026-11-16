@@ -1,6 +1,7 @@
 """Documented IRSA TAP join + IBE cutouts; no invented image service."""
 import hashlib
 import json
+import os
 import re
 import threading
 import uuid
@@ -21,6 +22,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG = json.loads((ROOT / "backend/config.json").read_text())
 CACHE = STORAGE_ROOT / CONFIG["cache_directory"]
 CACHE.mkdir(parents=True, exist_ok=True)
+LOW_MEMORY = os.environ.get('SPHEREX_LOW_MEMORY') == '1'
+if LOW_MEMORY:
+    CONFIG.update(concurrent_downloads=1, max_active_jobs=1)
 _lock = threading.Lock()
 _last_request = 0.0
 _ibe_busy_until = 0.0

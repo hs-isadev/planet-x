@@ -3,7 +3,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
 import hashlib
 import json
+import math
 import re
+from functools import lru_cache
 from pathlib import Path
 import shutil
 import threading
@@ -16,9 +18,37 @@ from requests.adapters import HTTPAdapter
 from astropy.io.votable import parse_single_table
 from .science import fits_metadata
 
-DOWNLOAD_LOCKS = {}
-LOCK = threading.Lock()
+DOWNLOAD_LOCKS = tuple(threading.Lock() for _ in range(64))
 _HTTP_LOCAL = threading.local()
+MIRROR_FOOTPRINTS = Path(__file__).resolve().parents[1] / 'data/mirror-footprints.json'
+
+
+@lru_cache(maxsize=1)
+def mirror_footprints():
+    if not MIRROR_FOOTPRINTS.is_file():
+        return []
+    return json.loads(MIRROR_FOOTPRINTS.read_bytes())
+
+
+def mirror_rows(ra, dec, start=None, end=None):
+    """Find candidate detector footprints without any request to IPAC."""
+    ra, dec = math.radians(ra), math.radians(dec)
+    candidates = []
+    for key, mjd, center_ra, center_dec, radius in mirror_footprints():
+        if (start is not None and mjd < start) or (end is not None and mjd >= end):
+            continue
+        center_dec = math.radians(center_dec)
+        cosine = (math.sin(dec) * math.sin(center_dec) +
+                  math.cos(dec) * math.cos(center_dec) * math.cos(ra - math.radians(center_ra)))
+        if cosine < math.cos(math.radians(radius)):
+            continue
+        identity = re.search(r'level2_(.+)D([1-6])_spx_', key)
+        if identity:
+            release = key.split('/', 1)[0]
+            candidates.append(dict(id=identity[1], detector=int(identity[2]), mjd=mjd,
+                                   source='https://irsa.ipac.caltech.edu/ibe/data/spherex/' + key,
+                                   release=release.upper(), discovery_api='AWS mirror footprint index'))
+    return candidates
 
 
 def _http():
@@ -191,12 +221,16 @@ def query(config, ra, dec, radius=.001, start=None, end=None, *, latest=False):
               and (end is None or row['mjd'] < end)]
     saved = read_discovery_snapshot(ra, dec, radius, start, end)
     previous = saved or saved_discovery(ra, dec, start, end)
+    footprints = mirror_rows(ra, dec, start, end)
+    if footprints:
+        cached = combined_rows(cached, footprints)
     records = combined_rows(cached, previous) if cached else previous
     if partial or records:
         warning = (partial[0]['discovery_warning'] if partial else
                    'Live IRSA search unavailable. Showing a saved subset from the AWS SPHEREx mirror.')
         if records:
-            records = [dict(row, discovery_api='Saved exposure index' if cached else 'Saved IRSA observation index')
+            records = [dict(row, discovery_api=row.get('discovery_api', 'Saved exposure index')
+                            if cached else 'Saved IRSA observation index')
                        for row in records]
         return [dict(row, discovery_warning=warning)
                 for row in (combined_rows(records, partial) if records and partial else records or partial)]
@@ -243,7 +277,8 @@ def query_public_sia(config, ra, dec, radius, start, end):
             raise
     records = {}
     failed = []
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    from backend.archive import LOW_MEMORY
+    with ThreadPoolExecutor(max_workers=1 if LOW_MEMORY else 4) as pool:
         requests_by_collection = {pool.submit(query_sia, dict(config, collections=[collection]),
                                                ra, dec, radius, start, end, (6, 14)): collection
                                   for collection in config['collections']}
@@ -309,8 +344,7 @@ def download(record, ra, dec, fov, cache, *, prefer_mirror=False, mirror_only=Fa
     key = hashlib.sha256(url.encode()).hexdigest()
     path = cache / f'{key}.fits'
     sidecar = cache / f'{key}.record.json'
-    with LOCK:
-        download_lock = DOWNLOAD_LOCKS.setdefault(key, threading.Lock())
+    download_lock = DOWNLOAD_LOCKS[int(key[:4], 16) % len(DOWNLOAD_LOCKS)]
     with download_lock:
         from .featured_views import BUNDLE
         bundled, bundled_info = BUNDLE / path.name, BUNDLE / sidecar.name

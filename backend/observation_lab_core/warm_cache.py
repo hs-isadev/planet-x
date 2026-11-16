@@ -10,9 +10,10 @@ import time
 import uuid
 
 from filelock import FileLock, Timeout
+from backend.archive import LOW_MEMORY
 
 from . import server
-from .archive import query, write_json
+from .archive import mirror_rows, query, write_json
 from .featured_views import (BUNDLE, CACHE, INVENTORIES, PRESET_FOV, bundle_view, combined_rows,
                              field_inventory, fields, observing_days, sample_frames, save_entry,
                              view_entry)
@@ -39,7 +40,7 @@ def cached_cutouts(roots):
                         CLOUD_CONFIG['cloud_origin'])
                 if (not origin.startswith('https://irsa.ipac.caltech.edu/ibe/data/spherex/')
                         or not origin.endswith('.fits')
-                        or row['requested_source_width_deg'] != default_width
+                        or row['requested_source_width_deg'] < default_width * .8
                         or path.stat().st_size != row['file_bytes']):
                     continue
                 release = origin.split('/spherex/', 1)[1].split('/', 1)[0]
@@ -94,7 +95,7 @@ def refresh(fields_to_warm=None, force=False, bundle=False, offline=False, reuse
                         continue
                     rows = combined_rows(known, local)
                 elif mirror_only:
-                    rows = known
+                    rows = combined_rows(known, mirror_rows(field['ra'], field['dec']))
                 elif not force and inventory.is_file() and time.time() - inventory.stat().st_mtime < 86400:
                     rows = json.loads(inventory.read_text(encoding='utf-8'))
                 else:
@@ -175,7 +176,7 @@ def refresh(fields_to_warm=None, force=False, bundle=False, offline=False, reuse
             # fields warm independently.
             core = [f for f in targets if f['frames']]
             stars = [f for f in targets if not f['frames']]
-            with ThreadPoolExecutor(max_workers=5 if bundle else 3) as pool:
+            with ThreadPoolExecutor(max_workers=1 if LOW_MEMORY else 5 if bundle else 3) as pool:
                 list(pool.map(field_views, ([field] for field in core)))
             # Finish the presets before starting other fields in distance order.
             field_views(stars)
