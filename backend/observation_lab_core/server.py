@@ -35,7 +35,8 @@ from .archive import query as archive_query, download as archive_download, reduc
 from backend.archive import CACHE as PLANET_CACHE, ROOT as PLANET_ROOT
 from backend.example_field import prepare_starter, prepared_starter
 from .featured_views import (ALTERNATE_FRAME_LIMIT, CACHE, INDEX, PRESET_FOV, cache_path, catalog_field,
-                             default_preset, fields, historical_rows, locate, sample_frames, view_entry)
+                             default_preset, fields, historical_rows, locate, observing_days,
+                             sample_frames, view_entry)
 from .science import FrameBuffer
 
 DATA = ROOT
@@ -140,8 +141,8 @@ def imported_records(records):
         RECORDS.extend(new)
 
 
-def fetch_archive(options, progress, archive_rows=None, preview=None):
-    progress('Querying IRSA for SPHEREx observations…')
+def fetch_archive(options, progress, archive_rows=None, preview=None, *, mirror_only=False):
+    progress('Querying IRSA for SPHEREx observations.')
     if archive_rows is not None:
         rows = archive_rows
     else:
@@ -175,10 +176,10 @@ def fetch_archive(options, progress, archive_rows=None, preview=None):
         rows = first + [row for row in rows if (row['id'], row['detector']) not in selected]
     records = []
     preview_shown = False
-    progress(f'Downloading 0 of {len(rows)} observations from IRSA…')
+    progress(f'Downloading 0 of {len(rows)} observations from IRSA.')
     with ThreadPoolExecutor(max_workers=min(3 if archive_rows is not None else 5, len(rows))) as pool:
         pending = {pool.submit(archive_download, row, options['ra'], options['dec'], options['fov'],
-                               CACHE, prefer_mirror=True): row for row in rows}
+                                CACHE, prefer_mirror=True, mirror_only=mirror_only): row for row in rows}
         for done, future in enumerate(as_completed(pending), 1):
             try:
                 records.append(future.result())
@@ -370,13 +371,18 @@ def publish_live_preview(job_id, options, records, total):
         if frame and frame[2]['center_inside'] and frame[2]['coverage'] > 0:
             prepared.append(frame)
     metadata = [frame[2] for frame in prepared]
+    daily = default_preset(catalog_field(None, options), options)
+    if daily:
+        chosen = {(day[0]['id'], day[0]['detector']) for day in observing_days(metadata)}
+        prepared = [frame for frame in prepared if (frame[2]['id'], frame[2]['detector']) in chosen]
+        metadata = [frame[2] for frame in prepared]
     if not metadata or len({frame['unit'] for frame in metadata}) > 1:
         return False
     identity = uuid.uuid4().hex
     directory, stretch = write_previews(identity, prepared, metadata)
     manifest = dict(id=identity, options=options, size=size, frames=metadata, stretch=stretch,
                     created_utc=Time.now().isot+'Z', archive_matches=total, failures=[],
-                    mosaic=False, partial=True)
+                    mosaic=False, partial=True, daily_sequence=daily)
     atomic_json(directory / 'manifest.json', manifest)
     with LOCK:
         JOBS[job_id]['preview'] = manifest
@@ -389,25 +395,31 @@ def cached_featured_session(field, options, job_id):
         return None
     manifest = load_manifest(entry['session'])
     manifest.update(snapshot_complete=entry['complete'], snapshot=True)
-    if not options['detector'] and not options['start'] and not options['end']:
-        return manifest
     frames = [f for f in manifest['frames'] if
               (not options['detector'] or f['detector'] == options['detector']) and
               (options['start_mjd'] is None or f['mjd'] >= options['start_mjd']) and
               (options['end_mjd'] is None or f['mjd'] < options['end_mjd'])]
     if not frames:
         return None
-    limited = len(frames) > ALTERNATE_FRAME_LIMIT
-    frames = sample_frames(frames)
+    daily = default_preset(field, options)
+    available = len(frames)
+    limited = not daily and available > ALTERNATE_FRAME_LIMIT
+    if daily:
+        frames = [day[0] for day in observing_days(frames)]
+        job_id = hashlib.sha256(f"daily-v1:{manifest['id']}".encode()).hexdigest()[:32]
+    else:
+        frames = sample_frames(frames)
     path = CACHE / job_id
     path.mkdir(exist_ok=True)
     manifest.update(id=job_id, options=options, frames=[dict(frame, index=i) for i, frame in enumerate(frames)],
-                    archive_matches=None, matched_frames=len(frames), excluded_frames=[], limited=limited)
-    atomic_json(path / 'manifest.json', manifest)
+                    archive_matches=manifest['archive_matches'] if daily else None, matched_frames=available,
+                    excluded_frames=[], limited=limited, daily_sequence=daily)
+    if not (path / 'manifest.json').is_file():
+        atomic_json(path / 'manifest.json', manifest)
     return manifest
 
 
-def create_session(job_id, payload, *, archive_rows=None):
+def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
     def progress(message):
         with LOCK:
             JOBS[job_id]['stage'] = message
@@ -418,24 +430,25 @@ def create_session(job_id, payload, *, archive_rows=None):
             JOBS[job_id].update(status='complete', stage=stage, result=manifest)
 
     archive_requested = payload.get('source') == 'archive'
+    preparing_cache = archive_rows is not None or cached_records is not None
     buffer = None
     try:
         options = request_options(payload)
         field_key = payload.get('field')
         field = locate(None if field_key == 'custom' else field_key, options)
-        if archive_rows is None and not archive_requested and field:
+        if not preparing_cache and not archive_requested and field:
             snapshot = cached_featured_session(field, options, job_id)
             if snapshot:
                 return finish(snapshot, 'Ready from cache')
             archive_requested = True
-        if archive_rows is None:
+        if not preparing_cache:
             refresh_featured()
         progress('Reading calibrated FITS data')
         archive_total = None
         archive_error = None
         failures = []
-        records = None
-        if archive_requested:
+        records = cached_records
+        if archive_requested and (archive_rows is not None or cached_records is None):
             try:
                 def preview(available_records, total):
                     try:
@@ -444,7 +457,10 @@ def create_session(job_id, payload, *, archive_rows=None):
                         return False
 
                 records, archive_total, failures = fetch_archive(
-                    options, progress, archive_rows, preview if archive_rows is None else None)
+                    options, progress, archive_rows, preview if archive_rows is None else None,
+                    mirror_only=payload.get('mirror_only', False))
+                if cached_records:
+                    records.extend(cached_records)
             except Exception as error:
                 if archive_rows is not None:
                     raise
@@ -453,7 +469,7 @@ def create_session(job_id, payload, *, archive_rows=None):
                 snapshot = cached_featured_session(field, options, job_id) if field else None
                 if snapshot:
                     snapshot.update(archive_error=archive_error, failures=failures)
-                    return finish(snapshot, 'IRSA unavailable · showing cached observations')
+                    return finish(snapshot, 'IRSA unavailable � showing cached observations')
         if records is None:
             with LOCK:
                 records = list(RECORDS)
@@ -470,7 +486,8 @@ def create_session(job_id, payload, *, archive_rows=None):
             dedup.setdefault((record['id'], record['detector']), record)
         matched = len(dedup)
         limited = False
-        if archive_rows is None and not default_preset(catalog_field(None, options), options):
+        daily = not preparing_cache and default_preset(catalog_field(None, options), options)
+        if not preparing_cache and not daily:
             limited = max(matched, archive_total or 0) > ALTERNATE_FRAME_LIMIT
             ordered = sorted(dedup.values(), key=lambda r: (r['mjd'], r['detector'], r['id']))
             dedup = {(r['id'], r['detector']): r for r in sample_frames(ordered)}
@@ -561,6 +578,7 @@ def create_session(job_id, payload, *, archive_rows=None):
             'coverage_policy': {'minimum_footprint_percent': 99 if options['detector'] else 0,
                                 'minimum_valid_pixels_percent': 80 if options['detector'] else 0},
             'mosaic': mosaic_used,
+            'daily_sequence': daily,
             'mosaic_note': ('DR1 mosaic channels stack many dates. Motion and time variability cannot be measured from them.'
                             if mosaic_used else ''),
             'empty_reason': ('' if frames else archive_error or (
@@ -571,8 +589,11 @@ def create_session(job_id, payload, *, archive_rows=None):
                       'Wavelengths are approximate WCS-WAVE values at the requested center.',
                       'Source movement and brightness fits require further calibration and validation.'],
         }
+        if daily:
+            selected = [day[0] for day in observing_days(frames)]
+            manifest['frames'] = [dict(frame, index=i) for i, frame in enumerate(selected)]
         atomic_json(directory / 'manifest.json', manifest)
-        if archive_rows is None and frames and not (fetch_failures or archive_error or mosaic_used):
+        if not preparing_cache and frames and not (fetch_failures or archive_error or mosaic_used):
             with LOCK:
                 for view_key in {key, session_key(options, list(dedup.values()))}:
                     SESSIONS[view_key] = job_id
@@ -701,7 +722,8 @@ def library_payload():
             common = {key: value for key, value in field.items() if key != 'frames'}
             common.update(detector=3 if identity == 'vesta' else 0, fov=PRESET_FOV)
             if snapshot:
-                result.append(dict(common, frames=snapshot['loaded'], detectors=snapshot['detectors'],
+                result.append(dict(common, frames=snapshot['loaded'], dates=snapshot.get('dates'),
+                                   detectors=snapshot['detectors'],
                                    thumbnail=snapshot['thumbnail'], complete=snapshot['complete'],
                                    discovered=snapshot['discovered']))
                 continue

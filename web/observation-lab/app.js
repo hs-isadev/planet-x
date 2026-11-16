@@ -9,8 +9,8 @@ const hues = ["#b798f4", "#84b3ef", "#a5edcc", "#ebdf82", "#eec083", "#efac99"];
 const dateText = timestamp => new Date(timestamp).toISOString().slice(0, 10);
 const timeText = timestamp => new Date(timestamp).toISOString().slice(11, 16);
 // DR1 mosaic frames are wavelength channels stacked over many dates: label them by wavelength, never by a date.
-const frameLabel = frame => frame.mosaic ? `${Number(frame.mosaic_wavelength).toFixed(3)} µm` : dateText(frame.timestamp);
-const frameSub = frame => frame.mosaic ? `DR1 mosaic · ${frame.mosaic_hits} stacked` : `${timeText(frame.timestamp)} UTC · ${frame.release}`;
+const frameLabel = frame => frame.mosaic ? `${Number(frame.mosaic_wavelength).toFixed(3)} �m` : dateText(frame.timestamp);
+const frameSub = frame => frame.mosaic ? `DR1 mosaic � ${frame.mosaic_hits} stacked` : `${timeText(frame.timestamp)} UTC � ${frame.release}`;
 const numberText = (value, digits=3) => value == null ? "Unavailable" : Number(value).toFixed(digits);
 
 async function api(path, options={}) {
@@ -140,7 +140,7 @@ function updateLegend() {
   const items = [];
   if (frame && $("markers").checked) {
     items.push(["center","Field center"]);
-    if (targetAt(frame)) items.push(["guide",`${state.title} · expected position, not measured`]);
+    if (targetAt(frame)) items.push(["guide",`${state.title} � expected position, not measured`]);
   }
   if (frame && state.point) items.push(["click","Clicked pixel"]);
   const kinds = frame && typeof StarTracker !== "undefined" ? StarTracker.kinds() : {};
@@ -226,16 +226,16 @@ function renderComparison() {
   const first = frames[state.index];
   const second = frames[state.reference];
   const span = (new Date(frames.at(-1).timestamp)-new Date(frames[0].timestamp))/86400000;
-  $("baseline").textContent = `${frames.length} obs · ${span.toFixed(1)}d`;
+  $("baseline").textContent = `${frames.length} obs � ${span.toFixed(1)}d`;
   const waves = frames.map(frame => frame.wavelength).filter(value => value != null);
   const releases = [...new Set(frames.map(frame => frame.release))].join("/");
   $("comparison-note").textContent = state.mode === "split"
     ? first.detector !== second.detector
-      ? "Different detectors · compare matching wavelengths to assess motion"
+      ? "Different detectors � compare matching wavelengths to assess motion"
       : `${frameLabel(first)} vs ${frameLabel(second)}`
-    : (waves.length ? `${Math.min(...waves).toFixed(2)}–${Math.max(...waves).toFixed(2)} µm · ${releases}` : `Outside center · ${releases}`);
-  $("frame-caption").textContent = `${frameLabel(first)} · D${first.detector}`;
-  $("reference-caption").textContent = `${frameLabel(second)} · D${second.detector}`;
+    : (waves.length ? `${Math.min(...waves).toFixed(2)}-${Math.max(...waves).toFixed(2)} �m � ${releases}` : `Outside center � ${releases}`);
+  $("frame-caption").textContent = `${frameLabel(first)} � D${first.detector}`;
+  $("reference-caption").textContent = `${frameLabel(second)} � D${second.detector}`;
   $("frame-caption").style.setProperty("--swatch", `var(--d${first.detector})`);
   $("reference-caption").style.setProperty("--swatch", `var(--d${second.detector})`);
 }
@@ -247,13 +247,13 @@ function setFrame(index) {
   $("timeline").value = index;
   $("timeline").setAttribute("aria-valuetext", frameLabel(frame));
   if ($("frame-counter")) $("frame-counter").textContent = `Frame ${index+1} / ${state.session.frames.length}`;
-  $("observation-date").textContent = frame.mosaic ? `DR1 mosaic · ${frameLabel(frame)}`
+  $("observation-date").textContent = frame.mosaic ? `DR1 mosaic � ${frameLabel(frame)}`
     : new Date(frame.timestamp).toLocaleDateString("en",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"});
-  $("observation-time").textContent = frame.mosaic ? `Stacked over many dates · ${frame.mosaic_hits} exposures per pixel` : `${frame.timestamp.slice(11,19)} UTC`;
+  $("observation-time").textContent = frame.mosaic ? `Stacked over many dates � ${frame.mosaic_hits} exposures per pixel` : `${frame.timestamp.slice(11,19)} UTC`;
   entryList($("metadata"), [
     ["Obs ID",frame.id],
-    ["Band",`D${frame.detector} · ${frame.release}`],
-    ["Wavelength", frame.wavelength == null ? "Out of bounds" : `${frame.wavelength.toFixed(3)} µm`],
+    ["Band",`D${frame.detector} � ${frame.release}`],
+    ["Wavelength", frame.wavelength == null ? "Out of bounds" : `${frame.wavelength.toFixed(3)} �m`],
     ["Valid data",`${frame.coverage}%`],
     ["Exposure",`${frame.exposure.toFixed(1)} s`],
     ["Pipeline",frame.version],
@@ -261,13 +261,13 @@ function setFrame(index) {
   const headline = document.createElement("strong");
   headline.textContent = `${frame.caution_fraction}% flagged`;
   const detail = document.createElement("span");
-  detail.textContent = $("quality").checked ? "Overlay on · click to hide" : "Click to preview mask";
+  detail.textContent = $("quality").checked ? "Overlay on � click to hide" : "Click to preview mask";
   const chips = document.createElement("span");  // span: the card is a <button>, which allows phrasing content only
   chips.className = "flag-chip-list";
   for (const item of (frame.flag_summary || []).slice(0, 4)) {
     const chip = document.createElement("span");
     chip.className = "flag-chip";
-    chip.textContent = `${item.name} · ${item.fraction}%`;
+    chip.textContent = `${item.name} � ${item.fraction}%`;
     chips.append(chip);
   }
   $("quality-card").replaceChildren(headline, detail, chips);
@@ -284,10 +284,10 @@ function setFrame(index) {
     const marked = state.session.frames.map((item,i)=>item.marker?i:-1).filter(i=>i>=0);
     $("vesta-guide-text").textContent = frame.marker
       ? `Frame ${index+1}: the gold box is a suggested Vesta location on ${dateText(frame.timestamp)}. Switch to the other marked frame to see it shift. This is a guide, not a measured detection.`
-      : `Frame ${index+1} has no Vesta guide. The ivory cross is only the field center. Use “Show other marked frame” for the two-frame example.`;
+      : `Frame ${index+1} has no Vesta guide. The ivory cross is only the field center. Use "Show other marked frame" for the two-frame example.`;
     $("vesta-next-guide").disabled = marked.length < 2;
   }
-  $("scale-label").textContent = `${state.session.options.fov}′ FOV`;
+  $("scale-label").textContent = `${state.session.options.fov}' FOV`;
   for (const button of $("filmstrip").children) {
     const current = Number(button.dataset.index)===index;
     button.setAttribute("aria-current",String(current));
@@ -319,7 +319,7 @@ function closeTargets() {
 function resetView() {
   state.zoom = 1; state.panX = 0; state.panY = 0;
   $("zoom").value = 1;
-  $("zoom-value").textContent = "1.0×";
+  $("zoom-value").textContent = "1.0x";
   draw();
 }
 
@@ -351,7 +351,7 @@ function sessionReady(session, request) {
   }
   $("field-title").textContent = state.title;
   const category = state.library?.fields?.find(item => item.key === state.field)?.category;
-  $("field-type").textContent = `${category ? `${category} · ` : ""}${session.options.ra.toFixed(4)}°, ${session.options.dec.toFixed(4)}°`;
+  $("field-type").textContent = `${category ? `${category} � ` : ""}${session.options.ra.toFixed(4)}�, ${session.options.dec.toFixed(4)}�`;
   syncSwitcher();
   $("timeline").max = Math.max(0, session.frames.length-1);
   $("filmstrip").replaceChildren();
@@ -369,7 +369,7 @@ function sessionReady(session, request) {
     }
     button.append(img,caption); button.onclick = () => { stop(); setFrame(index); };
     $("filmstrip").append(button);
-    const option = new Option(frame.mosaic ? `${frameLabel(frame)} · DR1 mosaic` : `${dateText(frame.timestamp)} ${timeText(frame.timestamp)} · ${frame.release}`,index);
+    const option = new Option(frame.mosaic ? `${frameLabel(frame)} � DR1 mosaic` : `${dateText(frame.timestamp)} ${timeText(frame.timestamp)} � ${frame.release}`,index);
     $("reference-date").append(option);
   });
   $("reference-date").value = state.reference;
@@ -379,9 +379,9 @@ function sessionReady(session, request) {
   $("excluded-list").replaceChildren();
   for (const frame of excluded) {
     const line = document.createElement("p");
-    line.textContent = `${dateText(frame.timestamp)} · D${frame.detector} · ${frame.coverage}% · ${frame.reason}`;
+    line.textContent = `${dateText(frame.timestamp)} � D${frame.detector} � ${frame.coverage}% � ${frame.reason}`;
     if (frame.fits_url) {
-      const link = document.createElement("a"); link.href = frame.fits_url; link.textContent = "FITS ↓"; link.download = "";
+      const link = document.createElement("a"); link.href = frame.fits_url; link.textContent = "FITS "; link.download = "";
       line.append(link);
     }
     $("excluded-list").append(line);
@@ -392,13 +392,13 @@ function sessionReady(session, request) {
   $("vesta-guide").hidden = state.field !== "vesta" || vestaMarked.length < 2;
   if (state.field === "vesta") {
     $("target-note").hidden = false;
-    $("target-note").textContent = "Vesta asteroid · ivory cross = center · press Track point to compare with JPL Horizons";
+    $("target-note").textContent = "Vesta asteroid � ivory cross = center � press Track point to compare with JPL Horizons";
   } else if (state.objectContext) {
     const obj = state.objectContext;
     $("target-note").hidden = false;
     $("target-note").textContent = obj.kind === "stars"
-      ? `Gaia DR3 · ${Number(obj.distance).toFixed(1)} ${obj.unit}`
-      : `DESI DR1 · z=${Number(obj.redshift).toFixed(4)}`;
+      ? `Gaia DR3 � ${Number(obj.distance).toFixed(1)} ${obj.unit}`
+      : `DESI DR1 � z=${Number(obj.redshift).toFixed(4)}`;
   } else {
     $("target-note").hidden = true;
     $("target-note").textContent = "";
@@ -434,9 +434,10 @@ function sessionReady(session, request) {
     $("fits-link").removeAttribute("href"); $("source-link").hidden = true; $("context-button").hidden = true;
     $("provenance").textContent = ""; $("checksum").textContent = "";
   }
-  const countText = session.archive_matches == null ? `${session.frames.length} frames` : `${session.frames.length} / ${session.archive_matches} frames`;
-  const capText = session.snapshot && !session.snapshot_complete ? " · cached selection" : "";
-  status(`${countText}${session.mosaic ? " · DR1 mosaic channels" : ""}${capText}${session.failures.length ? ` · ${session.failures.length} errors` : ""}`);
+  const countText = session.daily_sequence ? `${session.frames.length} observation dates` :
+    session.archive_matches == null ? `${session.frames.length} frames` : `${session.frames.length} / ${session.archive_matches} frames`;
+  const capText = session.snapshot && !session.snapshot_complete ? " � saved observations" : "";
+  status(`${countText}${session.mosaic ? " � DR1 mosaic channels" : ""}${capText}${session.failures.length ? ` � ${session.failures.length} errors` : ""}`);
   $("source-state").textContent = `Synced ${new Date(session.created_utc).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`;
   const url = new URL(location.href);
   for (const key of ["ra","dec","fov","detector","start","end"]) {
@@ -489,8 +490,8 @@ async function search(source="saved") {
   $("metadata").replaceChildren(); $("quality-card").replaceChildren();  // the old frame's band must not show beside the new choice
   $("viewers").setAttribute("aria-busy","true");
   $("view-message").hidden = false;
-  $("view-message").textContent = `Loading ${request.options.fov}′ ${bandLabel(request.options.detector)}`;
-  status(`Loading ${bandLabel(request.options.detector)} · ${request.options.fov}′`,"busy");
+  $("view-message").textContent = `Loading ${request.options.fov}' ${bandLabel(request.options.detector)}`;
+  status(`Loading ${bandLabel(request.options.detector)} � ${request.options.fov}'`,"busy");
   if (state.loading) return; // The loop always takes the latest choice next.
   state.loading = true;
   while (state.pending) {
@@ -501,10 +502,10 @@ async function search(source="saved") {
       let result = current.source === "saved" && current.field === "vesta" ? state.views.get(key) : null;
       let fetched = false;
       if (!result) {
-        const where = `${current.options.fov}′ patch · ${bandLabel(current.options.detector)}`;
-        const cover = window.SpaceLoader?.cover($("viewers"), {eyebrow: current.source === "saved" ? "SPHEREX ARCHIVE · LOADING PATCH" : "IRSA ARCHIVE · PULLING DATA",
+        const where = `${current.options.fov}' patch � ${bandLabel(current.options.detector)}`;
+        const cover = window.SpaceLoader?.cover($("viewers"), {eyebrow: current.source === "saved" ? "SPHEREX ARCHIVE � LOADING PATCH" : "IRSA ARCHIVE � PULLING DATA",
           title: `Loading ${where}`, detail: current.source === "saved" ? "Opening saved SPHEREx exposures for this sky patch." : "Searching IRSA for SPHEREx exposures covering this sky patch."});
-        const task = window.SpaceLoader?.begin(current.source === "saved" ? `Loading ${where}` : `Searching IRSA · ${where}`);
+        const task = window.SpaceLoader?.begin(current.source === "saved" ? `Loading ${where}` : `Searching IRSA � ${where}`);
         try {
           const job = await api("/observation-lab/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...current.options,source:current.source,field:current.field,mosaic:current.mosaic ?? "auto"})});
           result = job.result;
@@ -521,7 +522,7 @@ async function search(source="saved") {
                 sessionReady(progress.preview, current);
                 state.loading = true;
               }
-              const label = progress.stage || `Loading ${current.options.fov}′ ${bandLabel(current.options.detector)}`;
+              const label = progress.stage || `Loading ${current.options.fov}' ${bandLabel(current.options.detector)}`;
               status(label, "busy");
               if (!previewShown) loadingMessage(label);
               const m = /(\d+)\s+of\s+(\d+)/.exec(label);
@@ -605,7 +606,7 @@ function nextAutoStep(current, result) {
   const source = auto.irsaDown ? "saved" : "archive";
   const steps = [];
   if (!auto.archived) steps.push({fov: auto.origin.fov, detector: auto.origin.detector, source: "archive", kind: "archive", why: "searched IRSA"});
-  if (auto.partial) for (const w of smallerWidths(auto.origin.fov)) steps.push({fov: w, detector: auto.origin.detector, source, why: `narrowed the field to ${w}′`});
+  if (auto.partial) for (const w of smallerWidths(auto.origin.fov)) steps.push({fov: w, detector: auto.origin.detector, source, why: `narrowed the field to ${w}'`});
   for (const d of auto.origin.detector ? bandOrder(auto.origin.detector) : []) steps.push({fov: auto.origin.fov, detector: d, source, why: `tried band D${d}`});
   steps.push({fov: auto.origin.fov, detector: auto.origin.detector || 3, source: "archive", kind: "mosaic", why: "used the DR1 all-sky mosaic"});
   const step = steps.find(s => s.kind === "archive" ? !auto.archived : s.kind === "mosaic" ? !auto.finalDone : !auto.tried.has(`${s.fov}|${s.detector}`));
@@ -617,7 +618,7 @@ function nextAutoStep(current, result) {
   setWidth(step.fov); setBand(step.detector);
   const request = {options: inputs(), source: step.source, mosaic: step.kind === "mosaic" ? "force" : false,
     field: current.field, title: current.title, version: ++state.requestVersion, auto};
-  status(`Nothing at ${bandLabel(o.detector)} · ${o.fov}′ · auto search: ${step.why}`, "busy");
+  status(`Nothing at ${bandLabel(o.detector)} � ${o.fov}' � auto search: ${step.why}`, "busy");
   return request;
 }
 function showAutoNote(current, result) {
@@ -630,9 +631,9 @@ function showAutoNote(current, result) {
   const auto = current.auto;
   note.hidden = !auto;
   if (!auto) return;
-  const origin = `${bandLabel(auto.origin.detector)} · ${auto.origin.fov}′`;
+  const origin = `${bandLabel(auto.origin.detector)} � ${auto.origin.fov}'`;
   note.textContent = result.frames?.length
-    ? `Nothing was found at ${origin}, so the lab automatically ${auto.trail.join(", then ")}. Now showing ${bandLabel(current.options.detector)} · ${current.options.fov}′.`
+    ? `Nothing was found at ${origin}, so the lab automatically ${auto.trail.join(", then ")}. Now showing ${bandLabel(current.options.detector)} � ${current.options.fov}'.`
     : `Nothing was found at ${origin}. The lab automatically ${auto.trail.join(", then ")}, without finding complete frames.`;
   if (!result.frames?.length) { setWidth(auto.origin.fov); setBand(auto.origin.detector); }
 }
@@ -675,7 +676,7 @@ function emptyActions(session) {
     for (const field of fields) {
       const button = document.createElement("button");
       button.type = "button"; button.className = "btn-outline btn-compact";
-      button.textContent = `${field.name} · ${field.frames} obs`;
+      button.textContent = `${field.name} � ${field.frames} obs`;
       button.onclick = () => chooseField(field);
       list.append(button);
     }
@@ -735,19 +736,19 @@ function selectTab(name) {
 async function inspect(point, frameIndex) {
   const version = ++state.inspectVersion;
   const sessionId = state.session.id;
-  $("pixel-result").textContent = "Reading…";
+  $("pixel-result").textContent = "Reading.";
   try {
     const query = new URLSearchParams({session:sessionId,frame:frameIndex,x:point.x,y:point.y});
     const pixel = await api(`/observation-lab/api/pixel?${query}`);
     if (version !== state.inspectVersion || sessionId !== state.session.id) return;
     const list = document.createElement("dl");
     entryList(list, [["Date",dateText(state.session.frames[frameIndex].timestamp)],
-      ["Coords",`${pixel.ra.toFixed(5)}°, ${pixel.dec.toFixed(5)}°`],
+      ["Coords",`${pixel.ra.toFixed(5)}�, ${pixel.dec.toFixed(5)}�`],
       ["Brightness",pixel.covered ? `${numberText(pixel.value,4)} ${pixel.unit}` : "No data"],
-      ["Error",pixel.covered ? `±${numberText(pixel.uncertainty,4)}` : "—"],
-      ["Wavelength",pixel.wavelength == null ? "—" : `${pixel.wavelength.toFixed(4)} µm`],
+      ["Error",pixel.covered ? `�${numberText(pixel.uncertainty,4)}` : "-"],
+      ["Wavelength",pixel.wavelength == null ? "-" : `${pixel.wavelength.toFixed(4)} �m`],
       ["Pixel XY",pixel.native_pixel ? pixel.native_pixel.join(", ") : "Outside"],
-      ["Flag bits",pixel.flags == null ? "—" : String(pixel.flags)]]);
+      ["Flag bits",pixel.flags == null ? "-" : String(pixel.flags)]]);
     const flags = document.createElement("div");
     for (const flag of pixel.flag_details || []) {
       const label = document.createElement("span");
@@ -758,7 +759,7 @@ async function inspect(point, frameIndex) {
     if (!flags.children.length && pixel.nearby_flags?.length) {
       const near = document.createElement("span");
       near.className = "flag near";
-      near.textContent = `Near (±1 px): ${pixel.nearby_flags.map(f => f.name).join(", ")}`;
+      near.textContent = `Near (�1 px): ${pixel.nearby_flags.map(f => f.name).join(", ")}`;
       flags.append(near);
     }
     $("pixel-result").replaceChildren(list,flags);
@@ -809,7 +810,7 @@ async function updateHoverFlag(id, x, y) {
       return;
     }
     const topName = frame.flag_summary?.[0]?.name || "Artifact mask";
-    badge.textContent = `${topName} · checking`;
+    badge.textContent = `${topName} � checking`;
     badge.hidden = false;
     clearTimeout(hoverTimer);
     const seq = ++hoverSeq;
@@ -818,7 +819,7 @@ async function updateHoverFlag(id, x, y) {
         const res = await api(`/observation-lab/api/pixel?${new URLSearchParams({ session: state.session.id, frame: fIdx, x, y })}`);
         if (seq !== hoverSeq) return;
         const hits = [...(res.flag_details || []).filter(f => f.kind !== "info" || f.caution), ...(res.nearby_flags || [])];
-        const msg = hits.length ? hits.slice(0, 2).map(f => f.name).join(" · ") : topName;
+        const msg = hits.length ? hits.slice(0, 2).map(f => f.name).join(" � ") : topName;
         state.hoverCache.set(qKey, msg);
         if (!badge.hidden) badge.textContent = msg;
       } catch {}
@@ -874,7 +875,7 @@ for (const id of ["sky","reference"]) {
   canvas.addEventListener("touchstart", event => { if (state.zoom > 1) event.preventDefault(); }, {passive: false});
   canvas.addEventListener("keydown", event => {
     if (!state.session?.frames.length) return;
-    const step = (event.shiftKey ? 10 : 1) / Math.ceil(state.session.options.fov*60/6.15);  // 1 native 6.15″ pixel, as science.py grids it
+    const step = (event.shiftKey ? 10 : 1) / Math.ceil(state.session.options.fov*60/6.15);  // 1 native 6.15? pixel, as science.py grids it
     const move = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[event.key];
     const from = state.cursor?.id === id ? state.cursor : (state.point || {x:.5,y:.5});
     if (move) {
@@ -908,7 +909,7 @@ function contextView() {
   function choose(view) {
     $("context-image").src = view.jpeg;
     $("context-source").href = view.source;
-    $("context-note").textContent = `D${view.detector} · ${view.range} µm · ${view.containsFieldCenter ? "Target inside" : "Offset sky"}`;
+    $("context-note").textContent = `D${view.detector} � ${view.range} �m � ${view.containsFieldCenter ? "Target inside" : "Offset sky"}`;
     for (const button of $("context-bands").children) button.setAttribute("aria-pressed",String(Number(button.dataset.detector)===view.detector));
   }
   $("context-bands").replaceChildren();
@@ -945,13 +946,13 @@ async function library() {
   if (state.library?.sync?.completed !== data.sync?.completed) state.views.clear();
   state.library = data;
   $("inventory").textContent = `${data.fields.reduce((n,f)=>n+f.frames,0).toLocaleString("en")} obs`;
-  $("collections").textContent = data.config.collections.join(" · ");
+  $("collections").textContent = data.config.collections.join(" � ");
   $("fields").replaceChildren();
   for (const field of data.fields) {
     const button = document.createElement("button"); button.className = "field"; button.dataset.key = field.key;
     button.setAttribute("aria-current",String(field.key===state.field));
     const available = field.frames ? `${field.frames} obs` : "Live IRSA";
-    button.title = `${field.category} · ${available}`;
+    button.title = `${field.category} � ${available}`;
     const img = document.createElement("img");
     if (field.thumbnail) {
       img.loading = "lazy";
@@ -969,11 +970,11 @@ async function library() {
   }
   syncSwitcher();
   const sync = data.sync;
-  $("sync-status").textContent = sync ? `${sync.status} · ${sync.completed}/${sync.total} synced` : "Local cache";
+  $("sync-status").textContent = sync ? `${sync.status} � ${sync.completed}/${sync.total} synced` : "Local cache";
   $("imported-list").replaceChildren();
   for (const item of data.imports) {
     const row = document.createElement("div"); row.className = "imported-row";
-    const title = document.createElement("span"); title.textContent = `${item.id} · D${item.detector} · ${item.release}`;
+    const title = document.createElement("span"); title.textContent = `${item.id} � D${item.detector} � ${item.release}`;
     const open = document.createElement("button"); open.className = "btn-outline btn-compact"; open.textContent = "Open";
     open.onclick = () => {
       $("updates").close();
@@ -1055,11 +1056,11 @@ for (const id of ["markers","quality","tint"]) $(id).onchange = () => {
   if ($("hover-flag-badge") && !$("quality").checked) $("hover-flag-badge").hidden = true;
   if (id === "quality") {
     const label = $("quality-card")?.querySelector?.("span");
-    if (label) label.textContent = $("quality").checked ? "Overlay on · click to hide" : "Click to preview mask";
+    if (label) label.textContent = $("quality").checked ? "Overlay on � click to hide" : "Click to preview mask";
   }
   draw();
 };
-$("zoom").oninput = () => { state.zoom = Number($("zoom").value); $("zoom-value").textContent = state.zoom.toFixed(1)+"×"; draw(); };
+$("zoom").oninput = () => { state.zoom = Number($("zoom").value); $("zoom-value").textContent = state.zoom.toFixed(1)+"x"; draw(); };
 $("reset-view").onclick = resetView;
 for (const tab of ["observation","pixel"]) $("tab-"+tab).onclick = () => selectTab(tab);
 $("tab-observation").parentElement.addEventListener("keydown", event => {
@@ -1103,12 +1104,12 @@ $("fits-files").onchange = async event => {
   $("fits-files").disabled = true;
   try {
     for (const file of files) {
-      $("import-status").textContent = `Checking ${file.name}…`;
+      $("import-status").textContent = `Checking ${file.name}.`;
       await api("/observation-lab/api/import",{method:"POST",headers:{"Content-Type":"application/octet-stream","X-Release":$("release-label").value},body:file});
       imported++;
     }
     $("import-status").textContent = `${imported} FITS imported`;
-  } catch(error) { $("import-status").textContent = `${imported} imported · ${error.message}`; }
+  } catch(error) { $("import-status").textContent = `${imported} imported � ${error.message}`; }
   finally { $("fits-files").disabled = false; $("fits-files").value = ""; await library(); }
 };
 document.addEventListener("keydown", event => {

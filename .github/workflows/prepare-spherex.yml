@@ -1,0 +1,49 @@
+name: Prepare verified SPHEREx FITS
+on:
+  push:
+    branches: [parallax-fits-prep]
+    paths: [".github/workflows/prepare-spherex.yml"]
+permissions:
+  contents: write
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 260
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - name: Download preset FITS from AWS
+        run: |
+          python -m scripts.prefetch_lab --bundle --mirror-only --force --field barnard --field epsilon-indi --field wise-0855 --field rw-aur --field r-dra || test "$?" = 1
+      - name: Download known nearby fields from AWS
+        run: python -m scripts.prefetch_lab --bundle --mirror-only --force || test "$?" = 1
+      - name: Verify and report FITS
+        run: |
+          python - <<'PY' > "$GITHUB_STEP_SUMMARY"
+          import hashlib, json
+          from pathlib import Path
+          from backend.observation_lab_core.featured_views import observing_days
+          root = Path("backend/data/spherex-seed")
+          for index in sorted((root / "featured-views").glob("*.json")):
+              entry = json.loads(index.read_bytes())
+              frames = json.loads((root / entry["session"] / "manifest.json").read_bytes())["frames"]
+              for frame in frames:
+                  path = root / frame["fits_url"].removeprefix("/cache/")
+                  assert hashlib.sha256(path.read_bytes()).hexdigest() == frame["sha256"], path
+              print(f"- {index.stem}: {len(observing_days(frames))} UTC dates, {len(frames)} FITS")
+          PY
+      - name: Preserve verified files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add backend/data/spherex-seed
+          git diff --cached --quiet && exit 0
+          git commit -m "Save verified AWS SPHEREx cutouts"
+          git push origin HEAD:parallax-fits-prep

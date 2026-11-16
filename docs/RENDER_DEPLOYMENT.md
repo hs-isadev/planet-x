@@ -5,7 +5,7 @@ Planet X is a FastAPI web service with a Dockerfile. Render provides the listeni
 ## 1. Connect GitHub
 
 1. Open the [Render Dashboard](https://dashboard.render.com/) and sign in.
-2. Choose **New → Web Service**. Choose GitHub as the source and connect your account if prompted. Grant Render access to `hs-isadev/planet-x` if it asks which repositories to access.
+2. Choose **New  Web Service**. Choose GitHub as the source and connect your account if prompted. Grant Render access to `hs-isadev/planet-x` if it asks which repositories to access.
 3. Select [hs-isadev/planet-x](https://github.com/hs-isadev/planet-x) and choose **Connect**. If it doesn't appear, check the linked GitHub account and the Render GitHub app's repository access in GitHub settings. Refresh the repository picker after granting access.
 
 ## 2. Configure the service
@@ -37,18 +37,18 @@ If the build cannot find the Dockerfile, confirm the branch and leave Root Direc
 
 ## 4. Add the optional Groq guide key
 
-In the Render service, open **Environment → Add Environment Variable**. Set the key name to `GROQ_API_KEY` and enter your value there. Choose **Save and deploy** to apply it to the running service. To choose a model, set optional `GROQ_MODEL`. The app defaults to `openai/gpt-oss-20b` and falls back to `openai/gpt-oss-120b` when the preferred model is unavailable or rate-limited. An optional comma-separated `GROQ_FALLBACK_MODELS` adds alternatives. Locally, copy `.env.example` to `.env` and add the value after `GROQ_API_KEY=`. Git and Docker exclude the local secret file.
+In the Render service, open **Environment  Add Environment Variable**. Set the key name to `GROQ_API_KEY` and enter your value there. Choose **Save and deploy** to apply it to the running service. To choose a model, set optional `GROQ_MODEL`. The app defaults to `openai/gpt-oss-20b` and falls back to `openai/gpt-oss-120b` when the preferred model is unavailable or rate-limited. An optional comma-separated `GROQ_FALLBACK_MODELS` adds alternatives. Locally, copy `.env.example` to `.env` and add the value after `GROQ_API_KEY=`. Git and Docker exclude the local secret file.
 
-You can also use **New → Blueprint** and point Render at the repository and `final-parallex-preview` branch. Render reads `render.yaml` and prompts you for the Groq key. Use the manual Web Service setup if you want to deploy without supplying a key.
+You can also use **New  Blueprint** and point Render at the repository and `final-parallex-preview` branch. Render reads `render.yaml` and prompts you for the Groq key. Use the manual Web Service setup if you want to deploy without supplying a key.
 
 ## Warm and retain the SPHEREx cache
 
-1. Run `python -m scripts.prefetch_lab --bundle` locally to update the five default 10′ sequences. It checks IRSA, resumes from saved data, and writes larger verified snapshots to `backend/data/spherex-seed/`. Its output reports failed downloads and incomplete discovery. Commit the source and the entire seed directory to your deploy branch. Docker includes the FITS, manifests, and PNGs in the image on both Free and paid Render.
+1. Run `python -m scripts.prefetch_lab --bundle --daily-only` locally to prioritize one exposure per UTC date for the five presets and the listed nearby and bright stars. Omit `--daily-only` to also fetch additional same-day exposures. To recover previously downloaded FITS without requesting archive services, run `python -m scripts.prefetch_lab --bundle --offline` and pass each additional cache directory with `--reuse-cache`. Commit the source and updated `backend/data/spherex-seed/` to your deploy branch. Docker includes the FITS, manifests, and PNGs in the image on both Free and paid Render.
 2. For the full preset archive and nearby-star cache across restarts, attach a persistent disk to the running **paid** Render web service at `/var/data`. Set `SPHEREX_STORAGE_ROOT=/var/data` and `SPHEREX_PREWARM=1` in **Environment** and deploy. Existing web services need these environment variables added in the dashboard. Both the Dockerfile and the Blueprint enable warmup by default.
-3. Open `/observation-lab/api/library` on the deployed site. Each field reports its ready frame count and whether the archive snapshot is complete. The `sync` object reports discovery and failures as the worker progresses. The worker retries incomplete IRSA searches, reuses verified FITS on disk, and eventually replaces the bundled subset. It prepares four starter exposures per nearby/bright field and every discovered exposure across all six detectors for the five challenge presets. Footprint or download failures are reported separately.
+3. Open `/observation-lab/api/library` on the deployed site. Each prepared field reports stored FITS frames and distinct observing dates separately. The default 10' view shows one usable exposure per UTC date. Detector and date filters can still display other stored exposures. The `sync` object reports archive discovery and download failures.
 4. To force rediscovery from a paid Render service shell, run `python -m scripts.prefetch_lab --force`. Add `--field barnard` to refresh one field. An active automatic warmup already serves this purpose and keeps the disk locked while it writes. Render build and pre-deploy commands cannot write to the attached disk.
 5. In SPHEREx View, **Search IRSA** queries the archive even when the field has a snapshot. It can show a preview while the rest downloads. For a previously indexed field the app can fetch verified native pixels from the AWS-hosted SPHEREx public mirror if IPAC is unavailable. A completely new field still needs an archive search or an already indexed detector footprint.
 
 Free Render serves the bundled archive after every startup. Live searches still work while the service runs, and those downloads can be lost on restart or spin-down. Set `SPHEREX_PREWARM=0` to rely on the deploy bundle for defaults and avoid a background archive refresh on every cold start. Live searches still run on demand. Alternate detector, date or field-of-view selections are capped at 60 dated frames.
 
-[Render persistent disks](https://render.com/docs/disks) · [Render free-instance limits](https://render.com/docs/free) · [IRSA archive access](https://irsa.ipac.caltech.edu/spherex-archive-documentation/spherex-data-access/)
+[Render persistent disks](https://render.com/docs/disks) � [Render free-instance limits](https://render.com/docs/free) � [IRSA archive access](https://irsa.ipac.caltech.edu/spherex-archive-documentation/spherex-data-access/)

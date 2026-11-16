@@ -2,6 +2,7 @@
 from functools import lru_cache
 import hashlib
 import json
+import math
 import shutil
 import uuid
 
@@ -16,6 +17,7 @@ ALTERNATE_FRAME_LIMIT = 60
 NAMED_STARS = 50
 COLLECTION = ROOT / 'backend/observation_lab_core/data/collection.json'
 HISTORY = ROOT / 'backend/data/preset-archive-index.json'
+INVENTORIES = BUNDLE / 'inventories'
 
 
 @lru_cache(maxsize=1)
@@ -32,8 +34,9 @@ def fields():
                 continue
             distinct.setdefault(row['id'], dict(key=row['id'].replace(':', '-'), name=' '.join(row['name'].split()),
                                                 ra=row['ra'], dec=row['dec'], category=grouping,
+                                                distance_pc=row['distance_pc'],
                                                 description='HYG 4.1 catalog position', frames=[]))
-    return core + list(distinct.values())
+    return core + sorted(distinct.values(), key=lambda field: field['distance_pc'])
 
 
 def view_entry(key, bases=None):
@@ -61,6 +64,7 @@ def save_entry(base, field, manifest, complete):
     for frame in frames:
         counts[str(frame['detector'])] += 1
     info = dict(session=manifest['id'], loaded=len(frames), detectors=counts,
+                dates=len(observing_days(frames)),
                 discovered=manifest['archive_matches'], failures=len(manifest['failures']),
                 excluded=len(manifest.get('excluded_frames', [])),
                 complete=complete, updated=manifest['created_utc'],
@@ -68,11 +72,12 @@ def save_entry(base, field, manifest, complete):
     write_json(base / INDEX / f"{field['key']}.json", info)
 
 
-def bundle_view(field, entry):
+def bundle_view(field, entry, *, cutout_sources=None):
     """Publish a verified view to the deploy image after copying its dependencies."""
     _, previous = view_entry(field['key'], (BUNDLE,))
     if previous and (previous['loaded'] > entry['loaded'] or
-                     previous['loaded'] == entry['loaded'] and not entry['complete']):
+                     previous['loaded'] == entry['loaded'] and previous.get('dates') is not None
+                     and not entry['complete']):
         return
     session = entry['session']
     source = CACHE / session
@@ -83,7 +88,7 @@ def bundle_view(field, entry):
         destination = BUNDLE / name
         if destination.is_file():
             continue
-        origin = CACHE / name
+        origin = (cutout_sources or {}).get(frame['fits_url'], CACHE / name)
         sidecar = origin.with_suffix('.record.json')
         metadata = json.loads(sidecar.read_text(encoding='utf-8'))
         with origin.open('rb') as stream:
@@ -108,8 +113,21 @@ def bundle_view(field, entry):
 
 
 def default_preset(field, options):
-    return (bool(field and field['frames']) and options['fov'] == PRESET_FOV
+    return (field is not None and options['fov'] == PRESET_FOV
             and not (options['detector'] or options['start'] or options['end']))
+
+
+def date_rank(frame):
+    return (frame.get('footprint_coverage', 0), frame.get('coverage', 0),
+            reduction_priority(frame), -frame.get('caution_fraction', 0))
+
+
+def observing_days(rows):
+    """Group UTC observation dates and prefer the best available coverage per day."""
+    days = {}
+    for row in sorted(rows, key=lambda item: (item['mjd'], item['detector'], item['id'])):
+        days.setdefault(math.floor(row['mjd']), []).append(row)
+    return [sorted(day, key=date_rank, reverse=True) for day in days.values()]
 
 
 def sample_frames(rows, count=ALTERNATE_FRAME_LIMIT):
@@ -156,6 +174,23 @@ def historical_rows(key):
                          field_key=key, field_name='Saved IRSA discovery', context=[],
                          discovery_api='Saved IRSA observation index'))
     return rows
+
+
+def field_inventory(field):
+    """Archive receipts for this exact coordinate can be used with AWS directly."""
+    key = field['key']
+    known = historical_rows(key)
+    for folder in (INVENTORIES, CACHE):
+        path = folder / f'{key}-inventory.json'
+        if path.is_file():
+            known = combined_rows(known, json.loads(path.read_text(encoding='utf-8')))
+    base, entry = view_entry(key)
+    if entry:
+        manifest = json.loads((base / entry['session'] / 'manifest.json').read_text(encoding='utf-8'))
+        receipts = [{name: frame[name] for name in ('id', 'detector', 'mjd', 'source', 'release')}
+                    for frame in manifest['frames'] if frame.get('source')]
+        known = combined_rows(known, receipts)
+    return known
 
 
 def combined_rows(known, current):
