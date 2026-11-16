@@ -62,12 +62,15 @@ export function createSmallBodies(jupiter) {
     new THREE.Color('#c4af90'), new THREE.Color('#a4becb')
   ];
   orbits.forEach((orbit, i) => mesh.setColorAt(i, palette[orbit.group === 'kuiper' ? 4 : i % 4]));
-  let lastDay = NaN, lastTick = -Infinity;
+  let lastDay = NaN, lastTick = -Infinity, previousScale = 1;
 
-  function update(days, now) {
-    if (!mesh.visible || days === lastDay || now - lastTick < 90) return;
+  function update(days, now, overviewDistance = 0) {
+    const displayScale = Math.max(1, Math.min(4, overviewDistance / 12));
+    if (!mesh.visible || now - lastTick < 90 ||
+        (days === lastDay && Math.abs(displayScale - previousScale) < .025)) return;
     lastDay = days;
     lastTick = now;
+    previousScale = displayScale;
     orbits.forEach((orbit, i) => {
       // First-order eccentric orbit. Locations and sizes here are illustrative.
       const m = orbit.phase - orbit.node + days * orbit.rate;
@@ -77,7 +80,7 @@ export function createSmallBodies(jupiter) {
       dummy.position.set(x * orbit.cosNode - y * orbit.cosI * orbit.sinNode,
         y * orbit.sinI, -(x * orbit.sinNode + y * orbit.cosI * orbit.cosNode));
       dummy.rotation.set(orbit.spin, orbit.spin * 1.7 + days * .045, orbit.spin * .7);
-      dummy.scale.setScalar(orbit.size);
+      dummy.scale.setScalar(orbit.size * (orbit.group === 'kuiper' ? 1 : displayScale));
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     });
