@@ -184,21 +184,24 @@ def query(config, ra, dec, radius=.001, start=None, end=None, *, latest=False):
         except OSError:
             pass  # A successful search still works on a read-only cache.
         return complete
-    if not partial and len(errors) < len(futures):
-        return []
+    from .featured_views import catalog_field, combined_rows, field_inventory
+    field = catalog_field(None, dict(ra=ra, dec=dec))
+    cached = field_inventory(field) if field else []
+    cached = [row for row in cached if (start is None or row['mjd'] >= start)
+              and (end is None or row['mjd'] < end)]
     saved = read_discovery_snapshot(ra, dec, radius, start, end)
-    if partial:
-        if saved:
-            from .featured_views import combined_rows
-            warning = partial[0]['discovery_warning']
-            return [dict(row, discovery_warning=warning) for row in combined_rows(saved, partial)]
-        return partial
-    records = saved or saved_discovery(ra, dec, start, end)
-    if records:
-        for record in records:
-            record.update(discovery_api='Saved IRSA observation index',
-                          discovery_warning='Live IRSA search unavailable. Showing a saved subset.')
-        return records
+    previous = saved or saved_discovery(ra, dec, start, end)
+    records = combined_rows(cached, previous) if cached else previous
+    if partial or records:
+        warning = (partial[0]['discovery_warning'] if partial else
+                   'Live IRSA search unavailable. Showing a saved subset from the AWS SPHEREx mirror.')
+        if records:
+            records = [dict(row, discovery_api='Saved exposure index' if cached else 'Saved IRSA observation index')
+                       for row in records]
+        return [dict(row, discovery_warning=warning)
+                for row in (combined_rows(records, partial) if records and partial else records or partial)]
+    if len(errors) < len(futures):
+        return []
     reason = next((reason for error in errors if (reason := irsa_outage(error))), None)
     raise RuntimeError('Live IRSA search is unavailable'
                        + (f' ({reason}).' if reason else '.')
@@ -293,7 +296,7 @@ def query_sia(config, ra, dec, radius=.001, start=None, end=None, timeout=(6,20)
     return sorted([value[1] for value in unique.values()], key=lambda r: (r['mjd'], r['detector']))
 
 
-def download(record, ra, dec, fov, cache, *, prefer_mirror=False):
+def download(record, ra, dec, fov, cache, *, prefer_mirror=False, mirror_only=False):
     source = record.get('source', '')
     parsed = urlparse(source)
     if (parsed.scheme != 'https' or parsed.netloc != 'irsa.ipac.caltech.edu'
@@ -309,22 +312,27 @@ def download(record, ra, dec, fov, cache, *, prefer_mirror=False):
     with LOCK:
         download_lock = DOWNLOAD_LOCKS.setdefault(key, threading.Lock())
     with download_lock:
+        from .featured_views import BUNDLE
+        bundled, bundled_info = BUNDLE / path.name, BUNDLE / sidecar.name
+        if cache != BUNDLE and bundled.is_file() and bundled_info.is_file():
+            meta = json.loads(bundled_info.read_text(encoding='utf-8'))
+            if bundled.stat().st_size == meta.get('file_bytes') and meta['id'] == record['id'] and meta['detector'] == record['detector']:
+                return dict(record, **meta, path=str(bundled), fits_url=f'/cache/{bundled.name}')
         if path.exists() and sidecar.exists():
             meta = json.loads(sidecar.read_text())
             if path.stat().st_size == meta.get('file_bytes') and meta['id'] == record['id'] and meta['detector'] == record['detector']:
                 return dict(record, **meta, path=str(path), fits_url=f'/cache/{path.name}')
         if not path.exists():
-            from .featured_views import BUNDLE
-            bundled, bundled_info = BUNDLE / path.name, BUNDLE / sidecar.name
-            if cache != BUNDLE and bundled.is_file() and bundled_info.is_file():
-                meta = json.loads(bundled_info.read_text(encoding='utf-8'))
-                if bundled.stat().st_size == meta.get('file_bytes') and meta['id'] == record['id'] and meta['detector'] == record['detector']:
-                    return dict(record, **meta, path=str(bundled), fits_url=f'/cache/{bundled.name}')
             if shutil.disk_usage(cache).free < 256_000_000:
                 raise OSError('Less than 256 MB disk space remains; download paused. Existing data is safe.')
             # Share Parallax's bounded transfer and official S3 range-read
             # fallback. Retrying a failed IPAC proxy cannot repair an outage.
             from backend.archive import download_cutout
+            if mirror_only:
+                from backend.cloud import mirror_key
+                if mirror_key(source) is None:
+                    raise ValueError('This exposure has no public AWS mirror path.')
+                prefer_mirror = True
             try:
                 if prefer_mirror:
                     transport = download_cutout(source, url, path, float(ra), float(dec), float(fov)*1.5,
@@ -332,7 +340,7 @@ def download(record, ra, dec, fov, cache, *, prefer_mirror=False):
                 else:
                     transport = download_cutout(source, url, path, float(ra), float(dec), float(fov)*1.5)
             except (requests.RequestException, OSError, ValueError):
-                if not prefer_mirror:
+                if mirror_only or not prefer_mirror:
                     raise
                 transport = download_cutout(source, url, path, float(ra), float(dec), float(fov)*1.5)
             try:

@@ -434,8 +434,9 @@ function sessionReady(session, request) {
     $("fits-link").removeAttribute("href"); $("source-link").hidden = true; $("context-button").hidden = true;
     $("provenance").textContent = ""; $("checksum").textContent = "";
   }
-  const countText = session.archive_matches == null ? `${session.frames.length} frames` : `${session.frames.length} / ${session.archive_matches} frames`;
-  const capText = session.snapshot && !session.snapshot_complete ? " · cached selection" : "";
+  const countText = session.daily_sequence ? `${session.frames.length} observation dates` :
+    session.archive_matches == null ? `${session.frames.length} frames` : `${session.frames.length} / ${session.archive_matches} frames`;
+  const capText = session.snapshot && !session.snapshot_complete ? " · saved observations" : "";
   status(`${countText}${session.mosaic ? " · DR1 mosaic channels" : ""}${capText}${session.failures.length ? ` · ${session.failures.length} errors` : ""}`);
   $("source-state").textContent = `Synced ${new Date(session.created_utc).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`;
   const url = new URL(location.href);
