@@ -1,0 +1,203 @@
+{
+  "id": "d0827c35c232461984a104923a6345bb",
+  "pipeline": "prototype-1.2-full-field",
+  "created_utc": "2026-11-16T12:15:27.594Z",
+  "options": {
+    "ra": 233.05481999999998,
+    "dec": -41.275586,
+    "fov": 10.0,
+    "detector": 0,
+    "start": "",
+    "end": "",
+    "start_mjd": null,
+    "end_mjd": null
+  },
+  "size": 98,
+  "frames": [
+    {
+      "id": "2025W30_2B_0142_1",
+      "detector": 3,
+      "mjd": 60881.27388405093,
+      "source": "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/2025W30_2B/l2b-v27-2026-221/3/level2_2025W30_2B_0142_1D3_spx_l2b-v27-2026-221.fits",
+      "release": "DR1",
+      "timestamp": "2025-07-25T06:34:23.582Z",
+      "version": "7.0.5",
+      "unit": "MJy / sr",
+      "exposure": 113.5826,
+      "native_shape": [
+        185,
+        183
+      ],
+      "center": [
+        233.05462050008495,
+        -41.275637260513186
+      ],
+      "radius_deg": 0.2248243948656215,
+      "processed_mjd": 61261.66028748843,
+      "sha256": "54e32ed143d60857e6c141326571199fe1253a7525c1279db3dd6c79c9b7c7bc",
+      "file_bytes": 731520,
+      "requested_source_width_deg": 0.25,
+      "download_center": [
+        233.05481999999998,
+        -41.275586
+      ],
+      "download_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/dr1/level2/2025W30_2B/l2b-v27-2026-221/3/level2_2025W30_2B_0142_1D3_spx_l2b-v27-2026-221.fits",
+      "provenance": "IRSA public cloud mirror; native FITS pixels; observation and detector verified",
+      "transport": "IRSA public cloud mirror",
+      "fits_url": "/cache/8db55ec7985714f1c685e97e401156750432e80558baf4949e02bc66b559fae2.fits",
+      "coverage": 99.9,
+      "footprint_coverage": 100.0,
+      "caution_fraction": 2.3,
+      "flag_summary": [
+        {
+          "bit": 28,
+          "name": "Halo",
+          "pixels": 136,
+          "fraction": 1.42
+        },
+        {
+          "bit": 2,
+          "name": "Readout error",
+          "pixels": 67,
+          "fraction": 0.7
+        },
+        {
+          "bit": 26,
+          "name": "Bloom",
+          "pixels": 39,
+          "fraction": 0.41
+        },
+        {
+          "bit": 6,
+          "name": "Nonfunctional pixel",
+          "pixels": 28,
+          "fraction": 0.29
+        },
+        {
+          "bit": 17,
+          "name": "Persistent charge",
+          "pixels": 22,
+          "fraction": 0.23
+        },
+        {
+          "bit": 11,
+          "name": "Dead pixel",
+          "pixels": 3,
+          "fraction": 0.03
+        }
+      ],
+      "wavelength": 1.9004085063934326,
+      "bandwidth": null,
+      "center_inside": true,
+      "wavelength_kind": "Approximate display wavelength from WCS-WAVE",
+      "marker": null,
+      "index": 0,
+      "preview": "/cache/d0827c35c232461984a104923a6345bb/0.png",
+      "quality_overlay": "/cache/d0827c35c232461984a104923a6345bb/0-quality.png"
+    },
+    {
+      "id": "2026W11_2A_0092_1",
+      "detector": 6,
+      "mjd": 61111.8538447338,
+      "source": "https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/2026W11_2A/l2b-v27-2026-234/6/level2_2026W11_2A_0092_1D6_spx_l2b-v27-2026-234.fits",
+      "release": "DR1",
+      "timestamp": "2026-03-12T20:29:32.185Z",
+      "version": "7.0.5",
+      "unit": "MJy / sr",
+      "exposure": 113.5826,
+      "native_shape": [
+        188,
+        169
+      ],
+      "center": [
+        233.03571834793567,
+        -41.271258907181675
+      ],
+      "radius_deg": 0.21701493248462883,
+      "processed_mjd": 61274.64922854167,
+      "sha256": "1d89ab6403fb19e3d6b674bbc1599a8f679d7b24106c762ed7376e82fa595a17",
+      "file_bytes": 688320,
+      "requested_source_width_deg": 0.25,
+      "download_center": [
+        233.05481999999998,
+        -41.275586
+      ],
+      "download_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/dr1/level2/2026W11_2A/l2b-v27-2026-234/6/level2_2026W11_2A_0092_1D6_spx_l2b-v27-2026-234.fits",
+      "provenance": "IRSA public cloud mirror; native FITS pixels; observation and detector verified",
+      "transport": "IRSA public cloud mirror",
+      "fits_url": "/cache/9a837bbd656d15b98c178a941c562e641de77cb4ae41b473519ae25c54f28832.fits",
+      "coverage": 99.8,
+      "footprint_coverage": 100.0,
+      "caution_fraction": 1.6,
+      "flag_summary": [
+        {
+          "bit": 28,
+          "name": "Halo",
+          "pixels": 120,
+          "fraction": 1.25
+        },
+        {
+          "bit": 2,
+          "name": "Readout error",
+          "pixels": 36,
+          "fraction": 0.38
+        },
+        {
+          "bit": 6,
+          "name": "Nonfunctional pixel",
+          "pixels": 32,
+          "fraction": 0.33
+        },
+        {
+          "bit": 11,
+          "name": "Dead pixel",
+          "pixels": 7,
+          "fraction": 0.07
+        },
+        {
+          "bit": 17,
+          "name": "Persistent charge",
+          "pixels": 6,
+          "fraction": 0.06
+        }
+      ],
+      "wavelength": 4.810358047485352,
+      "bandwidth": null,
+      "center_inside": true,
+      "wavelength_kind": "Approximate display wavelength from WCS-WAVE",
+      "marker": null,
+      "index": 1,
+      "preview": "/cache/d0827c35c232461984a104923a6345bb/1.png",
+      "quality_overlay": "/cache/d0827c35c232461984a104923a6345bb/1-quality.png"
+    }
+  ],
+  "stretch": {
+    "method": "asinh",
+    "lower": 0.45226663888215374,
+    "upper": 24.577243796486407,
+    "shared_across_frames": true,
+    "unit": "MJy / sr"
+  },
+  "archive_matches": 2,
+  "limited": false,
+  "matched_frames": 2,
+  "failures": [],
+  "wider_views": 0,
+  "excluded_frames": [],
+  "archive_error": null,
+  "coverage_policy": {
+    "minimum_footprint_percent": 0,
+    "minimum_valid_pixels_percent": 0
+  },
+  "mosaic": false,
+  "daily_sequence": false,
+  "mosaic_note": "",
+  "empty_reason": "",
+  "flag_source": "https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html",
+  "science_status": "Visual inspection; native pixel readouts",
+  "notes": [
+    "All dates use the same ICRS sky grid and display scale.",
+    "Wavelengths are approximate WCS-WAVE values at the requested center.",
+    "Source movement and brightness fits require further calibration and validation."
+  ]
+}
