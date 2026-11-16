@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {photosphere,halo} from './stellar.js';
+import {createSmallBodies} from './small-bodies.js';
 const $=id=>document.getElementById(id);
 export class ObservatoryScene {
  constructor(onSelect){
@@ -24,12 +25,17 @@ export class ObservatoryScene {
  }
  resize(){let r=$('stage').getBoundingClientRect();if(!r.width||!r.height)return;this.w=r.width;this.h=r.height;this.renderer.setSize(r.width,r.height);this.camera.aspect=r.width/r.height;this.camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(19))/Math.min(1,this.camera.aspect)));if(this.camera.aspect<1&&!this.sunSky)this.camera.setViewOffset(r.width,r.height,0,r.height*.17,r.width,r.height);else this.camera.clearViewOffset();this.camera.fov/=(this.viewFill||1);this.camera.updateProjectionMatrix();}
  stopFlight(){if(this.pan){this.pan.done(false);this.pan=null;}if(this.flight?.baseFov){this.camera.fov=this.flight.baseFov;this.camera.updateProjectionMatrix();}this.renderer.domElement.style.transform='';this.renderer.domElement.style.filter='';if(this.flight?.done)this.flight.done(false);this.flight=null;}
- clear(){this.leaveSunSky();this.beaconLabel?.remove();this.beaconLabel=null;this.earthBeacon=null;this.stopFlight();this.exitLocal();this.version=(this.version||0)+1;this.items.forEach(x=>x.label.remove());this.content.traverse(o=>{o.geometry?.dispose();if(o.material)for(let m of Array.isArray(o.material)?o.material:[o.material]){m.map?.dispose();m.dispose();}});this.content.clear();this.content.visible=true;this.orbits=new THREE.Group();this.content.add(this.orbits);this.items=[];}
+ clear(){this.smallBodies?.mesh.dispose();this.smallBodies=null;this.leaveSunSky();this.beaconLabel?.remove();this.beaconLabel=null;this.earthBeacon=null;this.stopFlight();this.exitLocal();this.version=(this.version||0)+1;this.items.forEach(x=>x.label.remove());this.content.traverse(o=>{o.geometry?.dispose();if(o.material)for(let m of Array.isArray(o.material)?o.material:[o.material]){m.map?.dispose();m.dispose();}});this.content.clear();this.content.visible=true;this.orbits=new THREE.Group();this.content.add(this.orbits);this.items=[];}
  label(data,pos,radius,mesh){let label=document.createElement('span');label.className='object-label';label.textContent=data.name;label.setAttribute('aria-hidden','true');$('labels').append(label);this.items.push({data,pos,radius,mesh,hit:mesh,label});}
  async solar(data,{focusAsset}={}){
   this.clear();this.solarData=data;
   if(!data.size_layout){this.physicalSolar=data;this.orbitDays=0;this.orbitEpoch=data.date;}
   this.mode='solar';this.ambient.intensity=.16;this.light.visible=true;
+  if(!data.size_layout){
+   this.smallBodies=createSmallBodies(data.objects.find(item=>item.id==='jupiter')?.xyz_au);
+   this.smallBodies.mesh.visible=this.showSmallBodies!==false;
+   this.content.add(this.smallBodies.mesh);
+  }
   this.controls.maxDistance=200;this.controls.minDistance=.000001;
   const version=this.version,tex=new THREE.TextureLoader(),gltf=new GLTFLoader(),assets=[],focused=[];
   const ordered=focusAsset?[...data.objects].sort((a,b)=>Number(b.id===focusAsset)-Number(a.id===focusAsset)):data.objects;
@@ -145,6 +151,7 @@ export class ObservatoryScene {
  theme(light){this.lightTheme=light;this.scene.background.set('#080b10');}
  animate(){requestAnimationFrame(()=>this.animate());let now=performance.now(),dt=Math.min(.05,(now-(this.lastTick||now))/1000);this.lastTick=now;if(this.sunSky){this.renderSunSky(dt);return;}if(this.activityEnabled&&!this.loading&&!this.journey)this.activityTime+=dt;this.navigationTick(dt);if(this.surface){const marker=$('sky-target-marker');if(marker)marker.hidden=true;this.surface.update();return;}const panning=!!this.pan,flying=!!this.flight;if(this.pan){const p=this.pan,k=Math.min(1,(now-p.start)/p.duration),t=k*k*k*(k*(k*6-15)+10);this.camera.quaternion.slerpQuaternions(p.fromQuaternion,p.toQuaternion,t);const direction=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);this.controls.target.copy(this.camera.position).addScaledVector(direction,p.distance);if(k===1){this.pan=null;p.done(true);}}if(this.flight){const f=this.flight;if(f.continuousEarth)f.elapsed=(f.elapsed||0)+Math.min(48,Math.max(0,now-(f.lastFrame||f.start)));f.lastFrame=now;const k=Math.min(1,(f.continuousEarth?f.elapsed:now-f.start)/f.duration),pose=f.sample?f.sample(k):f.heading?cruisePose(f.from,f.pos,f.heading,f.clearance,k):orbitPose(f.from,f.fromTarget,f.pos,f.target,k);this.camera.position.copy(pose.position);this.controls.target.copy(pose.target);this.camera.lookAt(pose.target);if(k===1){this.flight=null;f.done(true);}}if(!panning&&!flying)this.controls.update();if(this.localGroup)this.localGroup.traverse(o=>{if(o.material?.uniforms?.clock)o.material.uniforms.clock.value=this.activityTime;});let occupied=[];
   if(this.mode==='solar'&&!this.loading&&!this.journey&&!this.surface&&!this.flight&&!this.pan&&this.activityEnabled&&(this.orbitRate??1)>0){this.orbitDays=(this.orbitDays||0)+dt*(this.orbitRate??1);for(let i of this.items){let curve=i.data.orbit_au,period=i.data.orbital_period_days;if(!curve||!period)continue;let t=(128+this.orbitDays/period*256)%256,k=Math.floor(t),f=t-k,a=this.vector(curve[k]),b=this.vector(curve[(k+1)%256]),next=a.lerp(b,f),delta=next.clone().sub(i.pos),follow=i.data.id===this.selected&&this.controls.target.distanceTo(i.pos)<i.radius*.1;i.pos.copy(next);i.mesh.position.copy(next);if(i.model)i.model.position.copy(next);if(follow&&!this.flight){this.controls.target.add(delta);this.camera.position.add(delta);}}let el=document.getElementById('simulation-time');if(el)el.textContent='COMPUTED orbit time +'+this.orbitDays.toFixed(1)+' d · '+(this.orbitRate??1)+' d/s';if(this.orbitEpoch&&document.activeElement.id!=='date')document.getElementById('date').value=new Date(Date.parse(this.orbitEpoch)+this.orbitDays*86400000).toISOString().slice(0,10);}
+   if(this.mode==='solar'&&!this.loading&&!this.journey)this.smallBodies?.update(this.orbitDays||0,now);
    // Catalog sky positions and visibility are updated by addCatalogSky's callback.
    this.scene.traverse(o=>{o.userData.update?.(this.activityTime);});if(this.activityEnabled&&!this.loading&&this.mode==='solar'&&!this.journey){
     // Independent, deliberately accelerated display spin; these are not orbital periods.

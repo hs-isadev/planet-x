@@ -1166,6 +1166,28 @@ document.addEventListener("keydown", event => {
 });
 new ResizeObserver(draw).observe($("viewers"));
 
+$("lab-showcase-open")?.addEventListener("click", () => {
+  if (window.parent !== window) {
+    window.parent.postMessage({type: "parallax:open-field-guide", chapter: "exposures"}, location.origin);
+  } else {
+    location.assign("/?guide=exposures");
+  }
+});
+
+const guideChapter = new URLSearchParams(location.search).get("guide");
+if (guideChapter === "motion" || guideChapter === "spectrum") {
+  function openGuideControl(event) {
+    if (state.field !== "barnard" || !event.detail.frames.length || event.detail.partial) return;
+    window.removeEventListener("sky-session-ready", openGuideControl);
+    const motion = $("motion-pair");
+    const control = guideChapter === "spectrum" ? $("light-panel") : motion.hidden ? $("track-star") : motion;
+    if (guideChapter === "motion" && control === motion) motion.click();
+    control.scrollIntoView({block: "nearest"});
+    (guideChapter === "spectrum" ? $("light-center") : control).focus({preventScroll: true});
+  }
+  window.addEventListener("sky-session-ready", openGuideControl);
+}
+
 (async () => {
   if (location.protocol === "file:") {
     status("Start the local Python server with start.ps1, then open http://127.0.0.1:8765.","error");
