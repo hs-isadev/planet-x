@@ -37,7 +37,7 @@ const chapters = [
       ["Focus on the star", "Orbit or zoom to see it in its stellar neighborhood."],
       ["Trace back to Earth", "Press the control in the object inspector once it becomes available. The camera flies into the Solar System toward Earth."],
       ["Look back at the sky", "At Earth, read the target’s constellation and light travel time. Choose Return to object to fly back."],
-      ["Find the belts", "In Solar System view, use Overview to see the illustrative asteroid populations and the icy Kuiper Belt. Toggle them in Scale / orbit."]
+      ["Find small bodies", "Use Overview to see the asteroid populations and icy Kuiper Belt. Zoom in near Earth to see brief illustrative atmospheric meteors when Activity is on."]
     ],
     action: "Open Barnard’s 3D context"
   },

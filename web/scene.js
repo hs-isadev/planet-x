@@ -9,6 +9,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {photosphere,halo} from './stellar.js';
 import {createSmallBodies} from './small-bodies.js';
+import {createEarthMeteors} from './earth-meteors.js';
 const $=id=>document.getElementById(id);
 export class ObservatoryScene {
  constructor(onSelect){
@@ -25,7 +26,7 @@ export class ObservatoryScene {
  }
  resize(){let r=$('stage').getBoundingClientRect();if(!r.width||!r.height)return;this.w=r.width;this.h=r.height;this.renderer.setSize(r.width,r.height);this.camera.aspect=r.width/r.height;this.camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(19))/Math.min(1,this.camera.aspect)));if(this.camera.aspect<1&&!this.sunSky)this.camera.setViewOffset(r.width,r.height,0,r.height*.17,r.width,r.height);else this.camera.clearViewOffset();this.camera.fov/=(this.viewFill||1);this.camera.updateProjectionMatrix();}
  stopFlight(){if(this.pan){this.pan.done(false);this.pan=null;}if(this.flight?.baseFov){this.camera.fov=this.flight.baseFov;this.camera.updateProjectionMatrix();}this.renderer.domElement.style.transform='';this.renderer.domElement.style.filter='';if(this.flight?.done)this.flight.done(false);this.flight=null;}
- clear(){this.smallBodies?.mesh.dispose();this.smallBodies=null;this.leaveSunSky();this.beaconLabel?.remove();this.beaconLabel=null;this.earthBeacon=null;this.stopFlight();this.exitLocal();this.version=(this.version||0)+1;this.items.forEach(x=>x.label.remove());this.content.traverse(o=>{o.geometry?.dispose();if(o.material)for(let m of Array.isArray(o.material)?o.material:[o.material]){m.map?.dispose();m.dispose();}});this.content.clear();this.content.visible=true;this.orbits=new THREE.Group();this.content.add(this.orbits);this.items=[];}
+ clear(){this.smallBodies?.mesh.dispose();this.smallBodies=null;this.earthMeteors=null;this.leaveSunSky();this.beaconLabel?.remove();this.beaconLabel=null;this.earthBeacon=null;this.stopFlight();this.exitLocal();this.version=(this.version||0)+1;this.items.forEach(x=>x.label.remove());this.content.traverse(o=>{o.geometry?.dispose();if(o.material)for(let m of Array.isArray(o.material)?o.material:[o.material]){m.map?.dispose();m.dispose();}});this.content.clear();this.content.visible=true;this.orbits=new THREE.Group();this.content.add(this.orbits);this.items=[];}
  label(data,pos,radius,mesh){let label=document.createElement('span');label.className='object-label';label.textContent=data.name;label.setAttribute('aria-hidden','true');$('labels').append(label);this.items.push({data,pos,radius,mesh,hit:mesh,label});}
  async solar(data,{focusAsset}={}){
   this.clear();this.solarData=data;
@@ -47,6 +48,10 @@ export class ObservatoryScene {
    const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,128,80),material);
    mesh.position.copy(p);mesh.userData.id=d.id;this.content.add(mesh);this.label(d,p,r,mesh);
    if(d.id==='sun')mesh.add(flares(r));if(d.id==='mars')mesh.add(dust(r));
+   if(d.id==='earth'&&!data.size_layout){
+    this.earthMeteors=createEarthMeteors(p,r);
+    this.content.add(this.earthMeteors.points);
+   }
    if(d.id==='sun'){const glow=halo(d);glow.material.opacity=.15;glow.position.copy(p);glow.scale.setScalar(r*2.8);this.content.add(glow);}
    if(d.texture)assets.push(tex.loadAsync(d.texture).then(t=>{
     if(version!==this.version){t.dispose();return;}
@@ -153,6 +158,8 @@ export class ObservatoryScene {
   if(this.mode==='solar'&&!this.loading&&!this.journey&&!this.surface&&!this.flight&&!this.pan&&this.activityEnabled&&(this.orbitRate??1)>0){this.orbitDays=(this.orbitDays||0)+dt*(this.orbitRate??1);for(let i of this.items){let curve=i.data.orbit_au,period=i.data.orbital_period_days;if(!curve||!period)continue;let t=(128+this.orbitDays/period*256)%256,k=Math.floor(t),f=t-k,a=this.vector(curve[k]),b=this.vector(curve[(k+1)%256]),next=a.lerp(b,f),delta=next.clone().sub(i.pos),follow=i.data.id===this.selected&&this.controls.target.distanceTo(i.pos)<i.radius*.1;i.pos.copy(next);i.mesh.position.copy(next);if(i.model)i.model.position.copy(next);if(follow&&!this.flight){this.controls.target.add(delta);this.camera.position.add(delta);}}let el=document.getElementById('simulation-time');if(el)el.textContent='COMPUTED orbit time +'+this.orbitDays.toFixed(1)+' d · '+(this.orbitRate??1)+' d/s';if(this.orbitEpoch&&document.activeElement.id!=='date')document.getElementById('date').value=new Date(Date.parse(this.orbitEpoch)+this.orbitDays*86400000).toISOString().slice(0,10);}
    if(this.mode==='solar'&&!this.loading&&!this.journey)this.smallBodies?.update(
     this.orbitDays||0,now,this.camera.position.distanceTo(this.controls.target));
+   this.earthMeteors?.update(this.camera.position,dt,
+    this.mode==='solar'&&this.activityEnabled&&this.showSmallBodies!==false&&!this.loading&&!this.journey);
    // Catalog sky positions and visibility are updated by addCatalogSky's callback.
    this.scene.traverse(o=>{o.userData.update?.(this.activityTime);});if(this.activityEnabled&&!this.loading&&this.mode==='solar'&&!this.journey){
     // Independent, deliberately accelerated display spin; these are not orbital periods.
