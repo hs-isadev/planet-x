@@ -341,7 +341,11 @@ def load_manifest(session_id):
     path = cache_path(f'{session_id}/manifest.json')
     if not path:
         raise FileNotFoundError('This sky view is no longer cached. Open it again.')
-    return json.loads(path.read_text(encoding='utf-8'))
+    manifest = json.loads(path.read_text(encoding='utf-8'))
+    for frame in manifest['frames']:
+        if not isinstance(frame.get('context'), list):
+            frame['context'] = []
+    return manifest
 
 
 def run_job(work, job_id, payload):

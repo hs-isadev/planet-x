@@ -261,8 +261,9 @@ function renderComparison() {
 
 function setFrame(index) {
   if (!state.session?.frames.length || state.loading) return;
-  state.index = index;
   const frame = state.session.frames[index];
+  if (!frame) return;
+  state.index = index;
   $("timeline").value = index;
   $("timeline").setAttribute("aria-valuetext", frameLabel(frame));
   if ($("frame-counter")) $("frame-counter").textContent = `Frame ${index+1} / ${state.session.frames.length}`;
@@ -295,7 +296,7 @@ function setFrame(index) {
   $("fits-link").href = frame.fits_url;
   $("source-link").hidden = !frame.source;
   if (frame.source) $("source-link").href = frame.source;
-  $("context-button").hidden = !frame.context.length;
+  $("context-button").hidden = !Array.isArray(frame.context) || frame.context.length === 0;
   $("provenance").textContent = frame.provenance;
   $("checksum").textContent = `SHA-256 ${frame.sha256}`;
   updateLegend();
@@ -343,6 +344,10 @@ function resetView() {
 }
 
 function sessionReady(session, request) {
+  if (!Array.isArray(session?.frames) || !session.options) {
+    throw new Error("The archive returned an incomplete sky view. Try loading the field again.");
+  }
+  if (!Array.isArray(session.failures)) session = {...session, failures: []};
   const previousTime = state.session?.frames[state.index]?.timestamp, prev = state.session?.options;  // read before the new session replaces them
   state.session = session;
   state.showMotionExample = false;
@@ -954,7 +959,8 @@ function download(filename, text, type) {
 function contextView() {
   if (!state.session?.frames.length) return;
   const frame = state.session.frames[state.index];
-  const views = frame.context;
+  const views = frame?.context;
+  if (!Array.isArray(views) || !views.length) return;
   function choose(view) {
     $("context-image").src = view.jpeg;
     $("context-source").href = view.source;

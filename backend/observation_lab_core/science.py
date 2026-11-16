@@ -193,6 +193,8 @@ def prepare_frame(record, options, grid, size, grid_sky=None):
         inside = 0 <= cx < data.shape[1] and 0 <= cy < data.shape[0]
         wave, width = wavelength(hdus, cx, cy) if inside else (None, None)
         meta = {k: v for k, v in record.items() if k not in ('path', 'marker_sky')}
+        if not isinstance(meta.get('context'), list):
+            meta['context'] = []
         meta.update(coverage=round(100*covered.mean(), 1),
                     footprint_coverage=round(100*footprint.mean(), 2),
                     caution_fraction=round(100*flagged.sum()/cov_total, 1),
