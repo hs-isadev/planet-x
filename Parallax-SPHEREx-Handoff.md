@@ -1,6 +1,6 @@
 # Parallax SPHEREx coverage handoff
 
-**Goal:** Add as many verified, distinct observing dates as the archives support. Work on the five presets first: Barnard’s Star, Epsilon Indi B, WISE 0855, RW Aurigae, and R Draconis. Then extend coverage to the other stars in the app. Aim for more than 400 dates per target where coverage supports it, and keep adding verified dates beyond that. SPHEREx is the primary source. Real images from other observatories and wavelength bands are approved supplements.
+**Goal:** Find and add every usable SPHEREx observing date available for each target. Exhaust the released SPHEREx coverage for the five presets first: Barnard’s Star, Epsilon Indi B, WISE 0855, RW Aurigae, and R Draconis. Then apply the same search to the rest of the star catalog. Continue beyond 40, 400, or any other milestone whenever the archive has more usable dates. Real images from other observatories and wavelength bands can extend the baseline as supplemental data.
 
 ## Repository and working state
 
@@ -27,10 +27,12 @@ The default timeline uses one usable image per UTC date. Count exposures, detect
 
 ## Work order
 
-1. **Search all five presets first.** Query IRSA SIA and TAP for DR1 and QR3, including deep-field collections where applicable. Compare candidates against saved UTC dates before downloading. Search along the epoch-dependent positions of high-proper-motion targets, especially WISE 0855. Verify the expected position against the FITS WCS and check that it lands on usable pixels. Try the public AWS mirror when the exposure key is known.
+1. **Search all five presets first.** Query IRSA SIA and TAP for DR1 and QR3, including deep-field collections where applicable. Compare candidates against saved UTC dates before downloading. Search along the epoch-dependent positions of high-proper-motion targets, especially WISE 0855. Verify the expected position against the FITS WCS and check that it lands on usable pixels. Try the public AWS mirror when the exposure key is known. When a candidate fails coverage or quality checks, try another exposure from that date. Record which releases, footprint searches, and fallbacks were checked, along with any archive errors or unresolved dates.
 2. **Search other observatories for the same five targets.** Start with the leads below. Use observing logs and catalog rows to locate image products. Count a date as added after retrieving the science image and verifying usable coverage. Record saturation and nondetection where applicable.
 3. **Expand to the other stars.** Queue the rest of the app’s star catalog, starting with nearby stars and fields with strong repeat coverage, including the SPHEREx deep fields. Prioritize by distinct dates available and time baseline. Validate coverage per target, even when two stars share a field.
 4. **Bundle and verify.** Save validated FITS, provenance, observation timestamps, and previews. Verify playback in chronological order and check that each new date remains available after a restart. Report before-and-after date counts per star and mission, the deduplicated total, the first and last dates, and any gaps in retrieval or coverage. Use compatible detector and wavelength data when measuring motion.
+
+For the motion check, find the earliest and latest usable SPHEREx observations that share a detector and similar wavelengths. Register the frames on stable field stars, then blink the aligned pair and measure the target’s displacement with uncertainty where the data support it. Report the time span and whether the shift is resolved, including subpixel shifts if measured. Keep searching for dates that extend that comparable baseline even when many dates are already loaded.
 
 ## Supplemental archive leads
 
