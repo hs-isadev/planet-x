@@ -299,6 +299,44 @@ function updateLegend() {
   box.hidden = !items.length;
 }
 
+const imagePalettes={
+  infrared:[[0,0,0],[61,16,110],[175,42,115],[242,113,51],[255,242,170]],
+  thermal:[[0,0,0],[28,49,103],[35,125,142],[109,195,114],[253,231,104]],
+  amber:[[0,0,0],[64,27,12],[153,78,26],[232,156,60],[255,246,202]],
+};
+const paletteCache=new WeakMap();
+function paletteImage(image,palette){
+  const stops=imagePalettes[palette];
+  if(!stops||!image)return image;
+  const saved=paletteCache.get(image);
+  if(saved?.palette===palette)return saved.canvas;
+  const canvas=document.createElement("canvas");
+  canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+  const ctx=canvas.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(image,0,0);
+  const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const values=pixels.data;
+  for(let i=0;i<values.length;i+=4){
+    const tone=values[i]*(stops.length-1)/255;
+    const index=Math.min(stops.length-2,Math.floor(tone)),fraction=tone-index;
+    for(let c=0;c<3;c++)values[i+c]=stops[index][c]+(stops[index+1][c]-stops[index][c])*fraction;
+  }
+  ctx.putImageData(pixels,0,0);
+  paletteCache.set(image,{palette,canvas});
+  return canvas;
+}
+window.parallaxLab={
+  setPalette(value){
+    const select=$("image-palette");
+    if(![...select.options].some(option=>option.value===value))return false;
+    select.value=value;draw();return true;
+  },
+  openSpectrum(){
+    $("light-panel").scrollIntoView({block:"start",behavior:"smooth"});
+    $("light-center").focus({preventScroll:true});
+  }
+};
+
 async function paint(canvas, frame, version) {
   if (canvas.parentElement.hidden) return;
   const [image, mask] = await Promise.all([imageFor(frame.preview),
@@ -311,7 +349,7 @@ async function paint(canvas, frame, version) {
   const ctx = canvas.getContext("2d");
   ctx.scale(ratio, ratio);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(image,left,top,side,side);
+  ctx.drawImage(paletteImage(image,$("image-palette").value),left,top,side,side);
   if ($("tint").checked) {
     ctx.globalCompositeOperation = "source-atop";
     ctx.globalAlpha = .25;
@@ -1459,7 +1497,7 @@ for (const mode of ["single","split"]) $("mode-"+mode).onclick = () => {
   for (const name of ["single","split"]) $("mode-"+name).setAttribute("aria-pressed",String(mode===name));
   if (state.session) { renderComparison(); draw(); }
 };
-for (const id of ["markers","expected-position","quality","tint"]) $(id).onchange = () => {
+for (const id of ["markers","expected-position","quality","tint","image-palette"]) $(id).onchange = () => {
   if ($("flag-legend")) $("flag-legend").hidden = !$("quality").checked;
   if (id === "markers" || id === "expected-position") updateLegend();
   if ($("hover-flag-badge") && !$("quality").checked) $("hover-flag-badge").hidden = true;

@@ -61,3 +61,18 @@ body.sky-view-open{overflow:hidden}
 .sky-menu input[type=range]{width:100%;accent-color:#a9cfff}
 .sky-card .sky-jump{width:100%;margin-top:14px;border-color:#6b8da8}
 @media(max-width:700px){.sky-menu[open]{position:relative;z-index:4}.sky-card{max-height:40vh;overflow:auto}.sky-actions{gap:4px}}
+
+.sky-clock{display:grid;justify-items:center;gap:.55rem;padding:.6rem .75rem;border:1px solid #8f7145;border-radius:10px;background:#17140f;color:#f1e0bf}
+#sky-clock-dial{width:132px;padding:0;border:0;border-radius:50%;background:none;cursor:grab;touch-action:none}
+#sky-clock-dial:active{cursor:grabbing}
+#sky-clock-dial svg{display:block;filter:drop-shadow(0 3px 6px #000b)}
+.clock-case{fill:#a27c45;stroke:#e2c28d;stroke-width:2}
+.clock-face{fill:#f0ddba;stroke:#42301b;stroke-width:1.5}
+#sky-clock-dial .minor{stroke:#947c59;stroke-width:.8}
+#sky-clock-dial .major{stroke:#3d2b18;stroke-width:1.5}
+#sky-clock-dial text{fill:#463520;text-anchor:middle;font:11px Georgia,serif}
+#sky-clock-dial .hour,#sky-clock-dial .minute{stroke:#2b2118;stroke-width:4;stroke-linecap:round}
+#sky-clock-dial .minute{stroke-width:2.4}
+.clock-pin{fill:#bc8245;stroke:#4d3120}
+#sky-clock-readout{font:600 1.12rem Georgia,serif;letter-spacing:.05em}
+.sky-clock input{color-scheme:dark;border:1px solid #8f7145;border-radius:5px;background:#231b12;color:inherit;padding:.45rem}

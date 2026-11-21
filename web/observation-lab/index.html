@@ -20,9 +20,9 @@
   <link rel="stylesheet" href="/space-loader.css?v=2">
   <script src="/space-loader.js?v=1"></script>
   <script src="star-lock.js?v=2" defer></script>
-  <script src="app.js?v=lab-unlimited-1" defer></script>
+  <script src="app.js?v=lab-color-2" defer></script>
   <script src="spectrum-story.js?v=1" defer></script>
-  <script src="light.js?v=10" defer></script>
+  <script src="light.js?v=band-labels-2" defer></script>
   <script src="motion-study.js?v=target-2" defer></script>
   <script src="universe.js?v=3" defer></script>
   <script src="tracking.js?v=18" defer></script>
@@ -222,6 +222,14 @@
               <label class="toggle-chip"><input type="checkbox" id="quality">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2l5.5 2.5v3.8c0 3.3-2.3 5.5-5.5 6.2-3.2-.7-5.5-2.9-5.5-6.2V4.5L8 2z"/></svg>
                 <span>Flags</span>
+              </label>
+              <label class="toggle-chip">Image palette
+                <select id="image-palette" title="False color maps infrared image intensity.">
+                  <option value="grayscale">Grayscale</option>
+                  <option value="infrared">Infrared heat</option>
+                  <option value="thermal">Blue–green</option>
+                  <option value="amber">Amber</option>
+                </select>
               </label>
               <label class="toggle-chip"><input type="checkbox" id="tint">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="6.2" cy="8" r="3.5"/><circle cx="9.8" cy="8" r="3.5"/></svg>

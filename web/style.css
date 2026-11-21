@@ -230,3 +230,8 @@ body[data-workspace=context] #star-filters{position:static;flex:0 0 100%;box-siz
 #context-scopes .scope-chevron{margin-left:auto;opacity:.7;font-size:11px}
 #context-scopes[data-collapsed=true]{padding:8px 12px}
 #context-scopes[data-collapsed=true] .scope-buttons,#context-scopes[data-collapsed=true] #context-scope-note{display:none}
+
+#trace-earth-controls{display:grid;gap:.35rem}
+#trace-earth-controls[hidden]{display:none}
+#trace-earth-controls label{display:flex;align-items:center;justify-content:space-between;gap:.6rem;font-size:.75rem;color:var(--muted)}
+#trace-earth-controls select{border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--text);padding:.35rem .5rem}

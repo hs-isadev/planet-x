@@ -11,7 +11,7 @@ export function installNavigation(C){
    if(item.data.id==='origin'){window.dispatchEvent(new Event('cosmic-enter'));return;}
    if(!this.local)this.stellarCloseup(item);
    await this.companionsReady;
-   if(this.local?.item!==item)return false;
+   if(this.local?.item!==item||this.selected!==item.data.id)return false;
    if(this.local.planets?.length)return this.systemOverview();
    return this.fly(new THREE.Vector3(),new THREE.Vector3(0,.15,4.4),6500);
   }
@@ -29,7 +29,7 @@ export function installNavigation(C){
   // Focused on an object (camera target on a body, a followed asteroid, or a stellar close-up): keep the view upright.
   // Free-roaming the Solar System with nothing focused: free tilt.
   {const focus=this.items.find(i=>i.data.id===this.selected);
-   this.controls.upright=Boolean(this.smallFocus||this.local||(focus&&this.controls.target.distanceTo(focus.pos)<Math.max(focus.radius*2,1e-9)));}
+   this.controls.upright=Boolean(this.smallFocus||(this.local&&focus)||(focus&&this.controls.target.distanceTo(focus.pos)<Math.max(focus.radius*2,1e-9)));}
   if(this.loading||this.journey||this.surface||this.flight)return;if(this.smallFocus?.anim){this.zoomImpulse=0;return;}let body=this.items.find(i=>i.data.id===this.selected);let k=this.navKeys||new Set(),active=!document.body.classList.contains('observing')&&!document.body.classList.contains('searching');
   let pending=this.zoomImpulse||0;if(active){pending+=((k.has('KeyS')?1:0)-(k.has('KeyW')?1:0))*dt*1.6;let orbit=((k.has('KeyD')?1:0)-(k.has('KeyA')?1:0))*dt*.8;if(orbit){let v=this.camera.position.clone().sub(this.controls.target);v.applyAxisAngle(this.camera.up,orbit);this.camera.position.copy(this.controls.target).add(v);}}
   const step=pending*(1-Math.exp(-dt*(this.reduced?30:7.5)));

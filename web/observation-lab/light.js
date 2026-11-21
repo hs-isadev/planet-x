@@ -10,7 +10,8 @@ const LightLab = (() => {
     return element;
   }
   function note(message) { $("light-status").textContent=message; }
-  const subscript=s => String(s).replace(/\d/g,d=>"₀₁₂₃₄₅₆₇₈₉"[d]);
+  const subscript=value=>String(value).replace(/([A-Z]+)([0-9]+)/g,
+    (_,element,count)=>element+[...count].map(digit=>"₀₁₂₃₄₅₆₇₈₉"[Number(digit)]).join(""));
   // Round axis steps (1, 2, 2.5 or 5 × 10ⁿ) so tick labels read as plain numbers
   function ticks(min,max,count=5) {
     const raw=(max-min)/count, mag=10**Math.floor(Math.log10(raw));
@@ -159,7 +160,10 @@ const LightLab = (() => {
       explainChart(rows);
       return;
     }
-    const L=96,R=968,T=42,B=326;
+    const L=96,R=968,B=326;
+    const labelLanes=[];
+    const featureLabels=[];
+    const T=mode==="spectrum" ? 88 : 42;
     let xmin=.75,xmax=5;
     if(mode==="time") { xmin=Math.min(...rows.map(p=>p.mjd));xmax=Math.max(...rows.map(p=>p.mjd));if(xmax-xmin<1){xmin-=.5;xmax+=.5;} }
     let ymin=Math.min(0,...rows.map(p=>p.flux-p.flux_error)),ymax=Math.max(...rows.map(p=>p.flux+p.flux_error));
@@ -171,9 +175,22 @@ const LightLab = (() => {
       const z=1+result.redshift,start=feature.band[0]*z,end=feature.band[1]*z;
       if(start<xmax&&end>xmin) {
         chart.append(svg("rect",{x:x(Math.max(start,xmin)),y:T,width:x(Math.min(end,xmax))-x(Math.max(start,xmin)),height:B-T,fill:feature.color,opacity:.065}));
-        const labelX=Math.min(R-12,Math.max(L+12,x(feature.center*z)));
-        chart.append(svg("text",{x:labelX,y:24,"text-anchor":"middle",fill:feature.color,"font-size":11},subscript(feature.formula)));
+        const label=subscript(feature.formula);
+        const half=label.length*3.6+6;
+        const bandX=Math.max(L,Math.min(R,x(feature.center*z)));
+        const labelX=Math.max(L+half,Math.min(R-half,bandX));
+        const start=labelX-half,end=labelX+half;
+        let lane=labelLanes.findIndex(used=>used.every(([a,b])=>end<a||start>b));
+        if(lane<0){lane=labelLanes.length;labelLanes.push([]);}
+        labelLanes[lane].push([start,end]);
+        featureLabels.push({label,labelX,bandX,y:16+lane*14,color:feature.color});
       }
+    }
+    for(const feature of featureLabels){
+      chart.append(svg("line",{x1:feature.bandX,y1:T-4,x2:feature.labelX,y2:feature.y+4,stroke:feature.color,opacity:.35}));
+    }
+    for(const feature of featureLabels){
+      chart.append(svg("text",{x:feature.labelX,y:feature.y,"text-anchor":"middle",fill:feature.color,"font-size":11,stroke:"#000","stroke-width":4,"paint-order":"stroke"},feature.label));
     }
     chart.append(svg("line",{x1:L,y1:B,x2:R,y2:B,stroke:"#2c2c2e","stroke-width":1}));
     for(const v of ticks(ymin,ymax)) {

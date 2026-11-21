@@ -71,6 +71,7 @@ def install_companion_routes(app):
         return dict(planets=planets_for(ra,dec,name),note='No catalog match means no known planetary orbit is installed; it does not mean the star has no planets.')
 
     @app.get('/api/context-sky')
+    @lru_cache(maxsize=1)
     def context_sky():
         objects={}
         for r in planet_rows():
@@ -82,7 +83,27 @@ def install_companion_routes(app):
                 teff_gspphot=r.get('st_teff'),catalog='NASA Exoplanet Archive',provenance='catalog',phot_g_mean_mag=None)
         expansion = json.loads((ROOT/'web/assets/expanded-stars.json').read_text(encoding='utf-8'))
         gaia = teammate_gaia_stars()
-        return dict(objects=list(objects.values())+expansion['objects']+gaia, added_stars=expansion['count']+len(gaia), teammate_gaia_count=len(gaia),
+        from scipy.spatial import cKDTree
+        existing = list(objects.values()) + expansion['objects'] + gaia
+        bright = json.loads((ROOT/'web/assets/sky/bright-distances.json').read_text(encoding='utf-8'))
+        positions = np.array([row['xyz_pc'] for row in existing])
+        positions /= np.linalg.norm(positions, axis=1)[:, None]
+        tree = cKDTree(positions)
+        additions = []
+        for hr, name, ra, dec, distance, mag, constellation, designation in bright['rows']:
+            lon, lat = np.deg2rad([ra, dec])
+            unit = np.array([np.cos(lat)*np.cos(lon), np.cos(lat)*np.sin(lon), np.sin(lat)])
+            separation, index = tree.query(unit)
+            if separation < np.deg2rad(30/3600):
+                row = existing[index]
+                row['catalog_ids'] = {**row.get('catalog_ids', {}), 'HR': str(hr), 'BSC name': name}
+                continue
+            additions.append(dict(id=f'hr:{hr}', name=name, ra=ra, dec=dec, distance_pc=distance,
+                xyz_pc=(distance*unit).tolist(), v_mag=mag, constellation=constellation,
+                catalog='Yale Bright Star / BSC5P', catalog_ids={'HR':str(hr), 'designation':designation},
+                provenance='catalog', expanded_catalog=True, description=bright['attribution']))
+        return dict(objects=existing+additions, added_stars=expansion['count']+len(gaia)+len(additions),
+            bright_star_count=len(additions), bright_star_sources=bright['sources'], teammate_gaia_count=len(gaia),
             sources=['Gaia DR3 via NOIRLab Astro Data Lab','NASA Exoplanet Archive', 'Hipparcos / HYG 4.1', 'Yale Bright Star / HYG 4.1', 'Gliese / HYG 4.1'],
             attribution=expansion['attribution'], license=expansion['license'],
             note='Incomplete mixed catalog: exoplanet hosts, HYG stars, and the teammate Gaia DR3 sample. HYG epoch J2000.0; catalog memberships overlap. Display point sizes adapted for visibility; V magnitude is not Gaia G. Catalog distances have no new uncertainty estimate. Photos are flat; depth comes from catalog distances.')

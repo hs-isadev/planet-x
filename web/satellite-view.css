@@ -37,3 +37,7 @@
 @media(max-width:700px){#satellite-camera{inset:112px 0 0;height:calc(100dvh - 112px);padding:10px}.satellite-controls button{font-size:11px;padding:5px 8px}#satellite-detector{max-height:none}}
 
 .satellite-stage{width:min(100%,calc((100dvh - 400px)*1.7778));min-width:240px}#satellite-detector{max-height:none}.satellite-catalog{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.satellite-catalog label{margin:5px 0;min-width:150px}#satellite-star-query{max-width:290px}#satellite-star-results{display:flex;gap:5px;flex-wrap:wrap;width:100%}#satellite-star-results button{font-size:11px;padding:3px 10px;min-height:28px}@media(max-width:700px){.satellite-stage{width:100%}.satellite-catalog label{flex:1}}
+
+.satellite-dot-control{display:grid;grid-template-columns:1fr auto;gap:2px 8px;min-width:110px}
+.satellite-dot-control output{font-variant-numeric:tabular-nums}
+.satellite-dot-control input{grid-column:1/-1;width:100%;accent-color:#a9cfff}

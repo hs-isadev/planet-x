@@ -1,3 +1,5 @@
+import {clockMarkup,installSkyClock} from './sky-clock.js';
+import {stellarProfileGLSL} from './star-profile.js';
 // "Your sky": a planetarium view of the real sky from the user's location and time (Stellarium-style).
 //
 // Data: 25,700 Hipparcos/HYG stars to V 7.5 with B−V colours, IAU constellation lines, Messier objects and the
@@ -38,6 +40,7 @@ function loadAstronomy() {
 
 // B−V → linear RGB via temperature (Ballesteros 2012) and a black-body colour approximation.
 function bvColor(bv) {
+  if(!Number.isFinite(bv))return new THREE.Color(1,1,1);
   const t = 4600 * (1 / (.92 * bv + 1.7) + 1 / (.92 * bv + .62));
   const k = Math.min(400, Math.max(10, t / 100));
   const r = k <= 66 ? 1 : Math.min(1, 1.2929 * Math.pow(k - 60, -.1332));
@@ -61,6 +64,10 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     selected: null, drag: null};
   let renderer, scene, camera, skyGroup, sky, twilightMesh, starMat, mwMat, lineMat, gridGroup, ground, horizonMat, sunSprite, moonMesh, bodyPoints = [], labels = [], data;
   const root = buildDom();
+  const updateClock=installSkyClock(()=>view.time,time=>{
+    view.time=time;view.live=false;view.speed=0;$('sky-speed').value='0';
+    if(renderer)updateSky(true);
+  });
 
   function buildDom() {
     const el = document.createElement('section');
@@ -78,7 +85,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
           <details class="sky-menu"><summary>Place &amp; time</summary>
             <label>Latitude<input id="sky-lat" type="number" step="0.0001" min="-90" max="90"></label>
             <label>Longitude<input id="sky-lon" type="number" step="0.0001" min="-180" max="180"></label>
-            <label>Date &amp; time (local)<input id="sky-datetime" type="datetime-local" step="60"></label>
+            ${clockMarkup}
             <button type="button" id="sky-apply">Apply</button>
           </details>
           <details class="sky-menu"><summary>Show</summary>
@@ -88,7 +95,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
             <label class="sky-check"><input type="checkbox" data-layer="grid"> Alt/az grid</label>
             <label class="sky-check"><input type="checkbox" data-layer="atmosphere" checked> Atmosphere</label>
             <label class="sky-check"><input type="checkbox" data-layer="ground" checked> Ground</label>
-            <label>Star brightness <output id="sky-gain-value">100%</output><input id="sky-gain" type="range" min="50" max="300" step="5" value="100"></label><label>Sky brightness<select id="sky-pollution">${Object.entries(POLLUTION).map(([k, v]) => `<option value="${k}">${v[1]}</option>`).join('')}</select></label>
+            <label>Star brightness <output id="sky-gain-value">100%</output><input id="sky-gain" type="range" min="50" max="300" step="5" value="100"></label><label>Star flare <output id="sky-flare-value">100%</output><input id="sky-flare" type="range" min="0" max="250" step="5" value="100"></label><label>Sky brightness<select id="sky-pollution">${Object.entries(POLLUTION).map(([k, v]) => `<option value="${k}">${v[1]}</option>`).join('')}</select></label>
           </details>
           <button type="button" id="sky-context" class="quiet">3D Context</button>
           <button type="button" id="sky-close" class="quiet" aria-label="Close sky view">Close</button>
@@ -112,11 +119,30 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
   // ---------------------------------------------------------------------------------------------------------
   async function init() {
     await loadAstronomy();
-    const [json, bin] = await Promise.all([
+    const [json, bin, distances] = await Promise.all([
       fetch(ASSETS + 'sky.json').then(r => { if (!r.ok) throw Error('Sky catalog unavailable'); return r.json(); }),
       fetch(ASSETS + 'stars.bin').then(r => { if (!r.ok) throw Error('Star catalog unavailable'); return r.arrayBuffer(); }),
+      fetch(ASSETS+'bright-distances.json').then(r=>r.ok?r.json():null).catch(()=>null),
     ]);
     data = json;
+    let buffer=new Float32Array(bin);
+    if(distances){
+      const named=new Map(data.named.map(row=>[row[3].toLowerCase(),row]));
+      const extraIds=new Set(distances.additional_sky_points);
+      const extra=[];
+      for(const [hr,name,ra,dec,distance,mag,con] of distances.rows){
+        const existing=named.get(name.toLowerCase());
+        if(existing)existing[5]=distance;
+        else data.named.push([ra,dec,mag,name,con,distance,'V']);
+        if(extraIds.has(hr))extra.push(ra,dec,mag,NaN);
+      }
+      for(const [id,ra,dec,distance,g] of distances.faint_gaia){
+        extra.push(ra,dec,g,NaN);
+        data.named.push([ra,dec,g,'Gaia DR3 '+id,'',distance,'G']);
+      }
+      const combined=new Float32Array(buffer.length+extra.length);
+      combined.set(buffer);combined.set(extra,buffer.length);buffer=combined;
+    }
     const canvas = $('sky-canvas');
     renderer = new THREE.WebGLRenderer({canvas, antialias: true});
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -146,7 +172,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     skyGroup.matrixAutoUpdate = false;
     scene.add(skyGroup);
     skyGroup.add(milkyWay());
-    skyGroup.add(stars(new Float32Array(bin)));
+    skyGroup.add(stars(buffer));
     skyGroup.add(constellationLines());
     gridGroup = altAzGrid();
     scene.add(gridGroup);
@@ -206,14 +232,13 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
         gl_PointSize = visible > .001 ? size * pixel : 0.;
         gl_Position = projectionMatrix * viewMatrix * world;
       }`, `
+      ${stellarProfileGLSL}
       uniform float gain; varying vec3 vColor; varying float vGlow;
       void main(){
         vec2 q = gl_PointCoord - .5; float r = length(q) * 2.;
-        float core = exp(-r * r * 6.) + .25 * exp(-r * r * 2.2);
-        float halo = vGlow * (exp(-r * 3.2) * .55 + .08 * (exp(-abs(q.x) * 70.) + exp(-abs(q.y) * 70.)) * (1. - r));
-        float i = core + halo; if (i < .004) discard;
+        float i = stellarProfile(q * 2., vGlow); if (i < .004) discard;
         gl_FragColor = vec4(vColor * i * gain, 1.);
-      }`, {gain: {value: 1}, limit: {value: 6}, pixel: {value: 1}, zoom: {value: 1}, time: {value: 0}, twinkle: {value: 1}});
+      }`, {flare: {value: 1}, gain: {value: 1}, limit: {value: 6}, pixel: {value: 1}, zoom: {value: 1}, time: {value: 0}, twinkle: {value: 1}});
     const p = new THREE.Points(g, starMat);
     p.frustumCulled = false;
     p.renderOrder = 2;
@@ -566,7 +591,10 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     for (const b of bodyInfo) consider({kind: 'planet', ...b}, b.pos);
     if (moonInfo) consider({kind: 'moon', ...moonInfo}, moonInfo.pos);
     for (const t of TARGETS) consider({kind: 'target', name: t[0], ra: t[1], dec: t[2]}, eqVector(t[1], t[2], 1000));
-    for (const s of data.named) consider({kind: 'star', name: s[3], ra: s[0], dec: s[1], mag: s[2], con: s[4]}, eqVector(s[0], s[1], 1000));
+    for (const [ra,dec,mag,name,con,distance,band='V'] of data.named){
+      if(mag>starMat.uniforms.limit.value+.5)continue;
+      consider({kind:'star',name,ra,dec,mag,con,distance,band},eqVector(ra,dec,1000));
+    }
     return best;
   }
 
@@ -578,7 +606,8 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     const hor = o.alt != null ? o : A.Horizon(time, observer, o.ra / 15, o.dec, 'normal');
     const rows = [['Altitude', `${hor.altitude?.toFixed?.(1) ?? hor.alt.toFixed(1)}°`], ['Azimuth', `${(hor.azimuth ?? hor.az).toFixed(1)}° (${compass(hor.azimuth ?? hor.az)})`],
       ['RA / Dec', `${(o.ra / 15).toFixed(3)} h / ${o.dec.toFixed(2)}°`]];
-    if (o.mag != null) rows.push(['Magnitude', o.mag.toFixed(2)]);
+    if (o.mag != null) rows.push([o.band?'Magnitude ('+o.band+')':'Magnitude', o.mag.toFixed(2)]);
+    if(o.distance)rows.push(['Catalog distance',Math.round(o.distance*3.26156)+' ly']);
     if (o.kind === 'moon') rows.push(['Illuminated', `${(o.phase * 100).toFixed(0)}%`], ['Distance', `${Math.round(o.dist_km).toLocaleString()} km`]);
     if (o.kind === 'planet') rows.push(['Distance', `${o.dist_au.toFixed(3)} AU`], ['Illuminated', `${(o.phase * 100).toFixed(0)}%`]);
     if (o.kind === 'planet' || o.kind === 'moon') {
@@ -652,8 +681,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     $('sky-apply').onclick = () => {
       const lat = Number($('sky-lat').value), lon = Number($('sky-lon').value);
       if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) setPlace(lat, lon, `${fmtCoord(lat, 'N', 'S')}, ${fmtCoord(lon, 'E', 'W')}`);
-      const t = $('sky-datetime').value;
-      if (t) { view.time = new Date(t); view.live = false; }
+
       updateSky(true);
     };
   }
@@ -699,6 +727,8 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     camera.fov = view.fov; camera.updateProjectionMatrix();
     camera.rotation.set(view.pitch * DEG, -view.yaw * DEG, 0);
     updateSky(view.speed > 60);
+    updateClock(view.time);
+    starMat.uniforms.flare.value = Number($('sky-flare').value)/100;
     starMat.uniforms.gain.value = Number($('sky-gain').value)/100;
     starMat.uniforms.time.value = t / 1000;
     starMat.uniforms.zoom.value = zoomFactor();
@@ -723,7 +753,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem('parallax-sky-place') || 'null'); } catch { /* ignore */ }
     if (saved) setPlace(saved.lat, saved.lon, saved.name); else { setPlace(view.lat, view.lon, view.place); locate(); }
-    view.time = new Date(); view.live = true;
+    view.time = new Date(); view.live = true; view.speed=1; $('sky-speed').value='1';
     resize();
     // face the brightest part of the sky to start: south-ish in the north, north-ish in the south
     view.yaw = view.lat >= 0 ? 180 : 0;

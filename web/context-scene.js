@@ -1,3 +1,4 @@
+import {stellarProfileGLSL} from './star-profile.js';
 import * as THREE from 'three';
 import {corona} from './plasma.js';
 import {addMoons,addPlanets} from './companions.js?v=gaia-host';
@@ -23,12 +24,15 @@ export function installContext(C){
  const solar=C.prototype.solar,close=C.prototype.stellarCloseup,exit=C.prototype.exitLocal,stars=C.prototype.stars;
  C.prototype.solar=async function(data){
   data.objects=data.objects.filter(d=>!d.parent);
-  const expectedVersion=(this.version||0)+1;await solar.call(this,data);if(this.version!==expectedVersion)return;const version=this.version;
+  const assets=solar.call(this,data),version=this.version;
   this.camera.far=100000;this.camera.updateProjectionMatrix();
-  this.items.find(i=>i.data.id==='sun')?.mesh.add(corona(this.items[0].radius));
-  for(const i of this.items){i.mesh.visible=!i.model;if(i.model)i.model.visible=true;}
-  try{await addMoons(this,data,version);}catch(e){window.dispatchEvent(new CustomEvent('scene-error',{detail:'Moon catalog unavailable: '+e.message}));}
+  const sun=this.items.find(item=>item.data.id==='sun');
+  if(sun)sun.mesh.add(corona(sun.radius));
   this.installTravelDust();this.loadContextSky();
+  const moons=addMoons(this,data,version).catch(error=>{
+   if(this.version===version)window.dispatchEvent(new CustomEvent('scene-error',{detail:'Moon catalog unavailable: '+error.message}));
+  });
+  await Promise.all([assets,moons]);
  };
  C.prototype.stars=function(...args){stars.apply(this,args);this.installTravelDust();this.loadContextSky();};
  C.prototype.installTravelDust=function(){if(this.dustUpdate)return;this.dustUpdate=travelDust(this);const tick=new THREE.Group();tick.userData.update=()=>this.dustUpdate();this.scene.add(tick);};
@@ -51,10 +55,10 @@ export function installContext(C){
    if(!source.xyz_pc?.every(Number.isFinite)||!Number.isFinite(source.ra)||!Number.isFinite(source.dec))continue;
    const cell=Math.floor(source.ra/12)+':'+Math.floor((source.dec+90)/12);
    const count=counts.get(cell)||0;
-   if(count>=2)continue;
+   if(count>=4)continue;
    counts.set(cell,count+1);
    entries.push(source);
-   if(entries.length>=512)break;
+   if(entries.length>=1024)break;
   }
   entries.push(...data.objects.filter(source=>source.expanded_catalog&&source.xyz_pc?.every(Number.isFinite)));
   this.sky=new THREE.Group();
@@ -65,7 +69,7 @@ export function installContext(C){
   const positions=new Float32Array(entries.length*3), colors=new Float32Array(entries.length*3), flux=new Float32Array(entries.length);
   // Absolute magnitude from the catalog's apparent G magnitude and distance, so the apparent brightness can be
   // recomputed from wherever the camera is (Sun or another star).
-  const absolute=entries.map(source=>{const m=Number.isFinite(source.phot_g_mean_mag)?source.phot_g_mean_mag:9,d=Math.max(source.distance_pc||10,.01);return m-5*Math.log10(d/10);});
+  const absolute=entries.map(source=>{const m=Number.isFinite(source.phot_g_mean_mag)?source.phot_g_mean_mag:(source.v_mag??9),d=Math.max(source.distance_pc||10,.01);return m-5*Math.log10(d/10);});
   entries.forEach((source,index)=>starColor(source.teff_gspphot).toArray(colors,index*3));
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
@@ -85,6 +89,7 @@ export function installContext(C){
    this.sky.visible=!this.surface;
    this.sky.position.copy(this.camera.position);
    material.uniforms.gain.value=this.starGain||1;
+   material.uniforms.flare.value=this.starFlare??1;
    material.uniforms.boost.value=THREE.MathUtils.clamp((this.starSize||1)/2.5,.4,2);
    material.uniforms.pixel.value=this.renderer.getPixelRatio();
    const origin=this.local?.item?.pos||this.camera.position;
@@ -116,6 +121,7 @@ export function installContext(C){
   const projected=new THREE.Vector3();
   let best=null, radius=6;
   for(let i=0;i<entries.length;i++){
+   if(!points.geometry.attributes.flux.array[i])continue;
    projected.fromArray(positions,i*3).applyMatrix4(points.matrixWorld).project(this.camera);
    if(projected.z<0||projected.z>=1)continue;
    const distance=Math.hypot((projected.x-pointer.x)*this.w/2,(projected.y-pointer.y)*this.h/2);
@@ -179,7 +185,7 @@ function starColor(teff){
 function starMaterial(){
  return new THREE.ShaderMaterial({
   transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-  uniforms:{gain:{value:1},boost:{value:1},pixel:{value:1}},
+  uniforms:{flare:{value:1},gain:{value:1},boost:{value:1},pixel:{value:1}},
   vertexShader:`attribute float flux;attribute vec3 color;uniform float boost;uniform float pixel;varying vec3 vColor;varying float vGlow;
    void main(){
     float m=-2.5*log(max(flux,1e-12))/log(10.);          // apparent magnitude
@@ -188,11 +194,10 @@ function starMaterial(){
     vColor=color*a; vGlow=clamp((2.5-m)/4.,0.,1.);
     gl_PointSize=(flux>0.?s*boost:0.)*pixel;
     gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-  fragmentShader:`uniform float gain;varying vec3 vColor;varying float vGlow;
+  fragmentShader:`${stellarProfileGLSL}
+uniform float gain;varying vec3 vColor;varying float vGlow;
    void main(){vec2 q=gl_PointCoord-.5;float r=length(q)*2.;
-    float core=exp(-r*r*14.),halo=exp(-r*4.5)*.35*vGlow;
-    float spike=vGlow*.18*(exp(-abs(q.x)*60.)+exp(-abs(q.y)*60.))*(1.-r);
-    float i=core+halo+max(spike,0.);if(i<.01)discard;
+    float i=stellarProfile(q*2.,vGlow);if(i<.01)discard;
     gl_FragColor=vec4(vColor*i*gain,1.);}`,
  });
 }
@@ -212,7 +217,7 @@ function addDeepSky(scene){
  group.userData.update=()=>{
   const mode=scene.mode==='stars'?'stars':'solar';
   if(mode!==lastMode){group.matrix.copy(frames[mode]);group.matrixWorldNeedsUpdate=true;lastMode=mode;}
-  if(starMat){starMat.uniforms.gain.value=scene.starGain||1;starMat.uniforms.minMag.value=mode==='stars'?3.2:-9;starMat.uniforms.pixel.value=scene.renderer.getPixelRatio();starMat.uniforms.boost.value=THREE.MathUtils.clamp((scene.starSize||2.5)/2.5,.5,2);}
+  if(starMat){starMat.uniforms.flare.value=scene.starFlare??1;starMat.uniforms.gain.value=scene.starGain||1;starMat.uniforms.minMag.value=mode==='stars'?3.2:-9;starMat.uniforms.pixel.value=scene.renderer.getPixelRatio();starMat.uniforms.boost.value=THREE.MathUtils.clamp((scene.starSize||2.5)/2.5,.5,2);}
   if(mwMat)mwMat.uniforms.strength.value=scene.local?.4:1;
  };
  const tex=new THREE.TextureLoader().load('/assets/sky/milkyway.jpg');
@@ -229,12 +234,13 @@ function addDeepSky(scene){
    pos[i*3]=2900*Math.cos(dec)*Math.cos(ra);pos[i*3+1]=2900*Math.cos(dec)*Math.sin(ra);pos[i*3+2]=2900*Math.sin(dec);mag[i]=b[i*4+2];
    const bv=b[i*4+3],t=4600*(1/(.92*bv+1.7)+1/(.92*bv+.62));starColor(t).toArray(col,i*3);}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('mag',new THREE.BufferAttribute(mag,1));g.setAttribute('tint',new THREE.BufferAttribute(col,3));
-  starMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{pixel:{value:1},gain:{value:1},boost:{value:1},minMag:{value:-9}},
+  starMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{flare:{value:1},pixel:{value:1},gain:{value:1},boost:{value:1},minMag:{value:-9}},
    vertexShader:`attribute float mag;attribute vec3 tint;uniform float pixel;uniform float boost;uniform float minMag;varying vec3 vC;varying float vG;
     void main(){float b=pow(10.,-.4*(mag-7.));float on=step(minMag,mag);
      vC=tint*clamp(.085*pow(b,.45),.025,2.4)*on;vG=clamp(log(b)/4.-.6,0.,1.);
      gl_PointSize=on>0.?clamp(1.3+2.1*pow(b,.24),1.3,22.)*boost*pixel:0.;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-   fragmentShader:`uniform float gain;varying vec3 vC;varying float vG;void main(){vec2 q=gl_PointCoord-.5;float r=length(q)*2.;float i=exp(-r*r*6.)+.22*exp(-r*r*2.)+vG*(exp(-r*3.2)*.5+.07*(exp(-abs(q.x)*70.)+exp(-abs(q.y)*70.))*(1.-r));if(i<.004)discard;gl_FragColor=vec4(vC*i*gain,1.);}`});
+   fragmentShader:`${stellarProfileGLSL}
+uniform float gain;varying vec3 vC;varying float vG;void main(){vec2 q=gl_PointCoord-.5;float r=length(q)*2.;float i=stellarProfile(q*2.,vG);if(i<.004)discard;gl_FragColor=vec4(vC*i*gain,1.);}`});
   const p=new THREE.Points(g,starMat);p.frustumCulled=false;p.renderOrder=-2;group.add(p);
  }).catch(()=>{});
  group.userData.update();

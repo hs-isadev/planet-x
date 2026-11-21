@@ -1,7 +1,7 @@
-export function installGuide(getContext){
+export function installGuide(getContext,runAction){
  const button=document.createElement('button');button.id='guide-toggle';button.textContent='Ask the AI guide';button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls','guide-panel');document.body.append(button);
  const panel=document.createElement('aside');panel.id='guide-panel';panel.hidden=true;panel.setAttribute('aria-label','Parallax AI guide');
- panel.innerHTML='<div class="guide-heading"><div><small>GROQ / APP GUIDE</small><h2>Explore with a guide</h2></div><button id="guide-close" aria-label="Close guide">×</button></div><p class="micro">Questions and the current target, exposure and review status are sent to Groq. Attach a Laya report to share its summary and selected comparisons. Images stay local.</p><p id="guide-status" class="micro" role="status"></p><details id="guide-setup" hidden><summary>Enable the guide</summary><p id="guide-setup-note"></p><a href="https://console.groq.com/keys" target="_blank" rel="noreferrer">Create a Groq key ↗</a></details><div id="guide-log" role="log" aria-live="polite"></div><div class="guide-suggestions"><button type="button">What can I do in this view?</button><button type="button">Why is Laya not reviewing?</button><button type="button">How do I compare the same wavelength?</button></div><form id="guide-form"><label class="check" id="guide-report-control" hidden><input id="guide-include-report" type="checkbox">Attach Laya analysis report</label><label for="guide-question">Your question</label><textarea id="guide-question" rows="3" maxlength="4000" placeholder="Ask about this target or a feature…" required></textarea><div class="guide-actions"><button type="button" id="guide-clear">Clear chat</button><button type="submit" id="guide-send" class="primary">Send</button></div></form>';
+ panel.innerHTML='<div class="guide-heading"><div><small>GROQ / APP GUIDE</small><h2>Explore with a guide</h2></div><button id="guide-close" aria-label="Close guide">×</button></div><p class="micro">Questions and the current target, exposure and review status are sent to Groq. Attach a Laya report to share its summary and selected comparisons. Images stay local.</p><p id="guide-status" class="micro" role="status"></p><details id="guide-setup" hidden><summary>Enable the guide</summary><p id="guide-setup-note"></p><a href="https://console.groq.com/keys" target="_blank" rel="noreferrer">Create a Groq key ↗</a></details><div id="guide-log" role="log" aria-live="polite"></div><div class="guide-suggestions"><button type="button">What can I do in this view?</button><button type="button">Why is Laya not reviewing?</button><button type="button">How do I compare the same wavelength?</button></div><form id="guide-form"><label class="check" id="guide-report-control" hidden><input id="guide-include-report" type="checkbox">Attach Laya analysis report</label><label for="guide-question">Your question</label><textarea id="guide-question" rows="3" maxlength="4000" placeholder="Try Open Your Sky or Switch to infrared." required></textarea><div class="guide-actions"><button type="button" id="guide-clear">Clear chat</button><button type="submit" id="guide-send" class="primary">Send</button></div></form>';
  document.body.append(panel);const $=id=>document.getElementById(id);let history=[],controller,generation=0,selectedReview;
  function updateReportControl(){
   const context=getContext();
@@ -22,13 +22,40 @@ export function installGuide(getContext){
  $('guide-clear').onclick=()=>{generation++;controller?.abort();history=[];selectedReview=null;$('guide-include-report').checked=false;updateReportControl();$('guide-log').replaceChildren();$('guide-question').value='';$('guide-send').disabled=false;check();};
  $('guide-form').onsubmit=async event=>{
   event.preventDefault();if(controller)return;const question=$('guide-question').value.trim();if(!question)return;
-  const token=generation;append('user',question);$('guide-question').value='';$('guide-send').disabled=true;$('guide-status').textContent='Asking Groq…';controller=new AbortController();const timer=setTimeout(()=>controller?.abort(),45000);
+  const token=generation;append('user',question);
+  const command=question.toLowerCase().trim().replace(/[.!?]+$/,'');
+  const direct=Object.entries({
+   'your-sky':/^(open|show)( me)? (your sky|the planetarium)$/,
+   context:/^(open|show|switch to)( me)? (3d context|3d view)$/,
+   solar:/^(open|show|switch to)( me)? (the )?solar system$/,
+   satellite:/^(open|show|switch to)( me)? satellite( view)?$/,
+   spherex:/^(open|show|switch to)( me)? spherex( view)?$/,
+   spectrum:/^(open|show)( me)? (the )?spectrum$/,
+   unfocus:/^(unfocus|release focus|unfocus object)$/,
+   infrared:/^(switch to|show in|use) infrared( heat)?$/,
+   thermal:/^(switch to|show in|use) (thermal|blue.green)$/,
+   grayscale:/^(switch to|show in|use) gr[ae]yscale$/,
+   amber:/^(switch to|show in|use) amber$/,
+  }).find(([,pattern])=>pattern.test(command));
+  if(direct){
+   $('guide-question').value='';$('guide-send').disabled=true;
+   try{append('assistant',await runAction(direct[0]));}
+   catch(error){append('assistant',error.message);}
+   finally{$('guide-send').disabled=false;}
+   return;
+  }
+$('guide-question').value='';$('guide-send').disabled=true;$('guide-status').textContent='Asking Groq…';controller=new AbortController();const timer=setTimeout(()=>controller?.abort(),45000);
   const messages=[...history.slice(-10),{role:'user',content:question}];
   const {review_available,...context}=getContext();
   const include=$('guide-include-report').checked;
   if(include&&selectedReview)context.review_id=selectedReview;
   context.include_review_report=include;
-  try{const r=await fetch('/api/guide/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,context}),signal:controller.signal});const result=await r.json();if(!r.ok)throw Error(result.detail||'Guide request failed.');if(token!==generation)return;history=[...messages,{role:'assistant',content:result.reply}];append('assistant',result.reply);$('guide-status').textContent='Groq · '+result.model+(result.fallback_used?' · fallback':'');}
+  try{const r=await fetch('/api/guide/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,context}),signal:controller.signal});const result=await r.json();if(!r.ok)throw Error(result.detail||'Guide request failed.');if(token!==generation)return;history=[...messages,{role:'assistant',content:result.reply}];append('assistant',result.reply);
+  for(const action of (Array.isArray(result.actions)?result.actions.slice(0,3):[])){
+   if(token!==generation)break;
+   try{append('assistant',await runAction(action));}catch(error){append('assistant',error.message);}
+  }
+  $('guide-status').textContent='Groq · '+result.model+(result.fallback_used?' · fallback':'');}
   catch(e){if(token!==generation)return;$('guide-status').textContent=e.name==='AbortError'?'The guide request timed out. You can retry.':e.message;$('guide-question').value=question;}
   finally{clearTimeout(timer);controller=null;if(token===generation)$('guide-send').disabled=false;}
  };

@@ -41,7 +41,7 @@
     [/\/api\/jobs\/[^/?]+(\?|$)/, "Syncing archive cutouts"],
     [/\/api\/laya/, null],
     [/\/api\/space/, "Querying Gaia DR3"],
-    [/\/api\/solar/, "Computing planetary positions"],
+    [/\/api\/solar/, null],
     [/\/api\/resolve/, "Resolving target name"],
     [/\/api\/context-sky/, "Loading catalog sky"],
     [/\/api\/(journey|companions)/, "Plotting journey context"],

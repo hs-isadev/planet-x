@@ -7,12 +7,13 @@ const MAX_BANK=.28;
 function frame(v,outward){const e=23.439291111*Math.PI/180,x=v.x,y=-v.z,z=v.y;return outward?v.set(x,Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y-Math.sin(e)*z)):v.set(x,-Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y+Math.sin(e)*z));}
 function dispose(group){group?.traverse(o=>{o.geometry?.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material]){m?.map?.dispose();m?.dispose();}});}
 // Follow an offset corridor and turn the view into it before the AU scale change.
-export function solarEntry(from, earth, up){
+export function solarEntry(from, earth, up, approach=1){
  const radial=from.clone().sub(earth).normalize();
  const side=up.clone().cross(radial);
  if(side.lengthSq()<1e-8)side.set(Math.abs(radial.x)<.9?1:0,0,Math.abs(radial.x)<.9?0:1).cross(radial);
  side.normalize();
  const high=radial.clone().cross(side).normalize();
+ side.multiplyScalar(approach);
  const entry=radial.clone().addScaledVector(side,.38).addScaledVector(high,.23).normalize();
  return {radial,entry,side,rotation:new THREE.Quaternion().setFromUnitVectors(radial,entry)};
 }
@@ -26,13 +27,15 @@ function bankedTarget(position,earth,side,angle){
 
 // Descend from above the arrival plane and wrap toward Earth's lit hemisphere.
 // Positions are presentation geometry in AU, using the displayed Earth radius.
-export function earthArcPose(start,earth,radius,progress){
+export function earthArcPose(start,earth,radius,progress,approach=1){
  const t=clamp(progress),offset=start.clone().sub(earth),r0=offset.length();
  const lit=earth.clone().negate().normalize();if(!lit.lengthSq())lit.set(1,0,0);
  const endDirection=lit.clone().add(new THREE.Vector3(0,.18,0)).normalize();
  const from=offset.normalize(),rotation=new THREE.Quaternion().setFromUnitVectors(from,endDirection);
  const direction=from.clone().applyQuaternion(new THREE.Quaternion().slerp(rotation,ease(t)));
- direction.y+=Math.sin(Math.PI*t)**2*.65;direction.normalize();
+ const horizontal=new THREE.Vector3(0,1,0).cross(endDirection);
+ direction.y+=Math.sin(Math.PI*t)**2*.65;
+ direction.addScaledVector(horizontal, approach*.8*Math.sin(Math.PI*t)**2).normalize();
  const finalRadius=radius*6.5;
  const distance=finalRadius+(r0-finalRadius)*Math.pow(1-t,3);
  return {position:earth.clone().addScaledVector(direction,distance),target:earth.clone()};
@@ -52,7 +55,14 @@ export function surfacePose(from,center,radius,earth,progress){
 }
 export function installEarthFlight(C){
  const clear=C.prototype.clear,solar=C.prototype.solar;
- C.prototype.solar=async function(data){this.solarFlightReady=false;await solar.call(this,data);if(this.mode==='solar'&&this.items.some(i=>i.data.id==='earth')){await this.renderer.compileAsync?.(this.scene,this.camera).catch(()=>{});this.solarFlightReady=true;}};
+ C.prototype.solar=async function(data){
+  const ready=solar.call(this,data),version=this.version;
+  this.solarFlightReady=false;
+  await ready;
+  if(this.version!==version||this.mode!=='solar'||!this.items.some(i=>i.data.id==='earth'))return;
+  await this.renderer.compileAsync?.(this.scene,this.camera).catch(()=>{});
+  if(this.version===version)this.solarFlightReady=true;
+ };
  C.prototype.clear=function(){
   if(this.mode==='solar'&&this.solarFlightReady&&!this.solarData?.size_layout&&this.items.some(i=>i.data.id==='earth')){
    if(this.cachedFlightSolar){dispose(this.cachedFlightSolar.content);this.cachedFlightSolar.items.forEach(i=>i.label.remove());}
@@ -76,7 +86,7 @@ export function installEarthFlight(C){
   this.camera.near=.000001;this.camera.far=100000;this.camera.updateProjectionMatrix();
   this.cachedFlightSolar=null;this.solarFlightReady=true;
  };
- C.prototype.trace=async function(context,solarData,progress){
+ C.prototype.trace=async function(context,solarData,progress,approach=1){
   const item=this.items.find(i=>i.data.id===this.selected);if(!item||item.data.id==='earth')return false;
   const stellar=this.mode==='stars';
   if(stellar&&!this.cachedFlightSolar)throw Error('Earth scene is still preparing. Try again when Trace back to Earth is enabled.');
@@ -100,7 +110,7 @@ export function installEarthFlight(C){
   const start=this.camera.position.clone(),q0=this.camera.quaternion.clone();
   const surface=surfacePose(start,sourceCenter,sourceRadius,earth,1).position;
   const departurePc=stellar?surface.clone().multiplyScalar(physicalRadius).add(item.pos):null;
-  const corridor=stellar?solarEntry(departurePc,earthPc,original.up):null;
+  const corridor=stellar?solarEntry(departurePc,earthPc,original.up,approach):null;
   const boundaryPc=stellar?earthPc.clone().addScaledVector(corridor.entry,ENTRY_AU/AU_PER_PC):null;
   const arrivalStart=stellar?frame(boundaryPc.clone(),false).multiplyScalar(AU_PER_PC):surface.clone();
   const arrivalSide=stellar?frame(corridor.side.clone(),false):null;
@@ -140,7 +150,7 @@ export function installEarthFlight(C){
      phase='arrival';
     }
     const t=clamp((ms-departMs-cruiseMs)/arcMs);
-    pose=earthArcPose(arrivalStart,earthAu,solarEarth.radius,t);
+    pose=earthArcPose(arrivalStart,earthAu,solarEarth.radius,t,approach);
     if(stellar)pose.target=bankedTarget(pose.position,earthAu,arrivalSide,MAX_BANK*(1-ease(Math.min(1,t*1.6))));
    }
    const stage=ms<departMs?'surface':ms<departMs+cruiseMs?'cruise':'arrival';
