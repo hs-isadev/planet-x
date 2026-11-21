@@ -1,0 +1,55 @@
+name: Extend Vesta observations
+on:
+  workflow_dispatch:
+  push:
+    branches: [final-parallex-preview]
+    paths:
+      - scripts/fetch_track.py
+      - .github/workflows/vesta-track.yml
+concurrency:
+  group: vesta-track-preview
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /requirements.txt
+            /backend/
+            /scripts/
+            /web/assets/motion-study/
+            !backend/data/spherex-seed/
+            !backend/data/supplemental-epochs/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Follow the August survey pass through neighbouring fields
+        run: |
+          python scripts/fetch_track.py vesta --start 2025-07-26 --end 2025-08-17 --max 120 --workers 2
+          python -m backend.observation_lab_core.motion_study vesta
+      - name: Publish verified additions
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess
+          path = pathlib.Path("web/assets/motion-study/vesta/study.json")
+          old = json.loads(subprocess.check_output(["git", "show", f"HEAD:{path}"]))
+          new = json.loads(path.read_text())
+          old_epochs = {(f["mjd"], f["detector"]) for f in old["sky"]}
+          new_epochs = {(f["mjd"], f["detector"]) for f in new["sky"]}
+          assert old_epochs < new_epochs, "No verified increase in Vesta coverage"
+          assert all((path.parent / "img" / f["png"]).is_file() for f in new["sky"] + new["timelapse"])
+          print(f"Vesta: {len(old_epochs)} -> {len(new_epochs)} measured exposures")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f backend/data/tracks/vesta
+          git add web/assets/motion-study
+          git commit -m "Extend the measured Vesta trail with archived SPHEREx exposures"
+          git push origin HEAD:final-parallex-preview

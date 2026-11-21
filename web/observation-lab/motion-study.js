@@ -41,13 +41,13 @@
 
   const ui = {};
   const view = {field: null, data: null, tab: "timelapse", band: "4.6", index: 0, mode: "flip", a: 0, b: null,
-    playing: false, timer: 0, images: new Map(), residuals: true};
+    loadVersion: 0, playing: false, timer: 0, images: new Map(), residuals: true};
 
   function readUrl() {
     const p = new URLSearchParams(location.search).get("ms");
     if (!p) return;
     const [field, tab, band, index, mode] = p.split(".");
-    if (TARGETS.some(t => t[0] === field)) { view.field = field; view.fromUrl = true; }
+    if (field !== state.field) return;
     if (["visits", "timelapse", "sky"].includes(tab)) view.tab = tab;
     if (band) view.band = band.replace("_", ".");
     if (index) view.index = Number(index) || 0;
@@ -67,7 +67,7 @@
       for (const s of (await r.json()).studies || []) {
         if (TARGETS.some(t => t[0] === s.field)) continue;
         TARGETS.push([s.field, s.mode === "track" ? `${s.name} (tracked)` : s.name]);
-        ui.select?.append(el("option", {value: s.field, text: TARGETS.at(-1)[1]}));
+
       }
     } catch { /* optional */ }
   }
@@ -76,15 +76,12 @@
     const anchor = document.getElementById("light-panel");
     if (!anchor || document.getElementById("motion-study")) return false;
     ui.root = el("section", {id: "motion-study", class: "motion-study", "aria-labelledby": "ms-title"});
-    ui.select = el("select", {id: "ms-target", "aria-label": "Study target"},
-      ...TARGETS.map(([k, n]) => el("option", {value: k, text: n})));
-    ui.select.addEventListener("change", () => load(ui.select.value));
     ui.verdictBadge = el("span", {class: "ms-badge", id: "ms-badge"});
     const head = el("div", {class: "ms-head"},
       el("div", {},
         el("h2", {id: "ms-title", class: "section-title", text: "Motion study"}),
         el("p", {class: "coord-sub", id: "ms-sub", text: "Measured positions against the catalog track, 2010–2026."})),
-      el("div", {class: "ms-head-actions"}, ui.verdictBadge, ui.select));
+      el("div", {class: "ms-head-actions"}, ui.verdictBadge));
 
     ui.tabs = el("div", {class: "ms-tabs", role: "tablist"},
       el("button", {type: "button", role: "tab", "data-tab": "timelapse", text: "2010–2026 time-lapse · 4.6 µm"}),
@@ -145,17 +142,24 @@
     if (!field) return;
     stop();
     view.field = field;
-    ui.select.value = field;
+    const version = ++view.loadVersion;
+    view.data = null;
+    ui.root.hidden = true;
+    view.images.clear();
     ui.status.textContent = "Loading motion study…";
     try {
       const response = await fetch(BASE + field + "/study.json", {cache: "no-cache"});
       if (!response.ok) throw new Error(response.status === 404 ? "No precomputed study for this target yet." : `HTTP ${response.status}`);
-      view.data = await response.json();
-      if (view.field !== field) return;
+      const study = await response.json();
+      if (version !== view.loadVersion || state.field !== field || study.field !== field) return;
+      view.data = study;
+      document.getElementById("ms-title").textContent = study.name + " motion study";
       if (!view.data.timelapse.length) view.tab = "visits";
       ui.status.textContent = "";
       render();
+      ui.root.hidden = false;
     } catch (error) {
+      if (version !== view.loadVersion) return;
       view.data = null;
       ui.status.textContent = `Motion study unavailable: ${error.message}`;
     }
@@ -534,17 +538,26 @@
   }
 
   function follow(fieldKey) {
-    if (view.fromUrl) { view.fromUrl = false; return; }   // a shared link wins over the first field the page opens
-    if (TARGETS.some(t => t[0] === fieldKey) && fieldKey !== view.field) load(fieldKey);
+    if (fieldKey === view.field) return;
+    stop();
+    ui.root.hidden = true;
+    view.field = null;
+    view.data = null;
+    view.loadVersion++;
+    if (TARGETS.some(t => t[0] === fieldKey)) {
+      view.index = 0; view.a = 0; view.b = null;
+      readUrl();
+      load(fieldKey);
+    }
   }
 
   async function start() {
     if (!build()) return;
+    ui.root.hidden = true;
+    window.addEventListener("lab-field-selected", e => follow(e.detail));
+    window.addEventListener("sky-session-ready", () => follow(state.field));
     await extraTargets();
-    readUrl();
-    const initial = view.field || (typeof state !== "undefined" && TARGETS.some(t => t[0] === state.field) ? state.field : "barnard");
-    load(initial);
-    window.addEventListener("sky-session-ready", () => { if (typeof state !== "undefined") follow(state.field); });
+    if (state.session || state.requestVersion) follow(state.field);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();

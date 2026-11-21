@@ -67,3 +67,5 @@
 .ms-stage { aspect-ratio: 1; }
 .ms-stage canvas.ms-canvas { position: relative !important; inset: auto !important; width: 100% !important; height: 100% !important; max-width: none; transform: none; }
 .ms-charts > :only-child { max-width: 680px; }
+
+.motion-study[hidden]{display:none!important}

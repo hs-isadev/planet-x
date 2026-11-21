@@ -114,9 +114,11 @@ def reduction_priority(record):
             record.get('processed_mjd') or 0, record.get('file_bytes') or 0)
 
 
-def query_tap(config, ra, dec, start=None, end=None):
+def query_tap(config, ra, dec, start=None, end=None, *, radius_deg=0):
     """Find exposures in newly ingested archive metadata."""
     where = f"1 = CONTAINS(POINT('ICRS', {float(ra)}, {float(dec)}), p.poly)"
+    if radius_deg > 0:
+        where = f"1 = INTERSECTS(CIRCLE('ICRS', {float(ra)}, {float(dec)}, {float(radius_deg)}), p.poly)"
     if start is not None:
         where += f' AND p.time_bounds_lower >= {float(start)}'
     if end is not None:

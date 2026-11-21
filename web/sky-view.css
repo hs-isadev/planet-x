@@ -53,3 +53,11 @@ body.sky-view-open{overflow:hidden}
 
 .sky-menu{border:0!important;background:none!important;padding:0!important;box-shadow:none!important}
 #sky-view button,#sky-view select{white-space:nowrap}
+
+.sky-top{background:linear-gradient(180deg,rgba(4,10,20,.94),transparent);padding-bottom:42px}
+.sky-title{border-left:2px solid #89b9dc;padding-left:12px}
+.sky-time,.sky-card{background:rgba(10,19,32,.92);border:1px solid #344559;box-shadow:0 6px 26px #0005}
+.sky-time{padding:6px;border-radius:12px}
+.sky-menu input[type=range]{width:100%;accent-color:#a9cfff}
+.sky-card .sky-jump{width:100%;margin-top:14px;border-color:#6b8da8}
+@media(max-width:700px){.sky-menu[open]{position:relative;z-index:4}.sky-card{max-height:40vh;overflow:auto}.sky-actions{gap:4px}}

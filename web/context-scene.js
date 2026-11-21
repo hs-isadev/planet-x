@@ -84,6 +84,7 @@ export function installContext(C){
   this.sky.userData.update=()=>{
    this.sky.visible=!this.surface;
    this.sky.position.copy(this.camera.position);
+   material.uniforms.gain.value=this.starGain||1;
    material.uniforms.boost.value=THREE.MathUtils.clamp((this.starSize||1)/2.5,.4,2);
    material.uniforms.pixel.value=this.renderer.getPixelRatio();
    const origin=this.local?.item?.pos||this.camera.position;
@@ -178,7 +179,7 @@ function starColor(teff){
 function starMaterial(){
  return new THREE.ShaderMaterial({
   transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-  uniforms:{boost:{value:1},pixel:{value:1}},
+  uniforms:{gain:{value:1},boost:{value:1},pixel:{value:1}},
   vertexShader:`attribute float flux;attribute vec3 color;uniform float boost;uniform float pixel;varying vec3 vColor;varying float vGlow;
    void main(){
     float m=-2.5*log(max(flux,1e-12))/log(10.);          // apparent magnitude
@@ -187,12 +188,12 @@ function starMaterial(){
     vColor=color*a; vGlow=clamp((2.5-m)/4.,0.,1.);
     gl_PointSize=(flux>0.?s*boost:0.)*pixel;
     gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-  fragmentShader:`varying vec3 vColor;varying float vGlow;
+  fragmentShader:`uniform float gain;varying vec3 vColor;varying float vGlow;
    void main(){vec2 q=gl_PointCoord-.5;float r=length(q)*2.;
     float core=exp(-r*r*14.),halo=exp(-r*4.5)*.35*vGlow;
     float spike=vGlow*.18*(exp(-abs(q.x)*60.)+exp(-abs(q.y)*60.))*(1.-r);
     float i=core+halo+max(spike,0.);if(i<.01)discard;
-    gl_FragColor=vec4(vColor*i,1.);}`,
+    gl_FragColor=vec4(vColor*i*gain,1.);}`,
  });
 }
 
@@ -211,7 +212,7 @@ function addDeepSky(scene){
  group.userData.update=()=>{
   const mode=scene.mode==='stars'?'stars':'solar';
   if(mode!==lastMode){group.matrix.copy(frames[mode]);group.matrixWorldNeedsUpdate=true;lastMode=mode;}
-  if(starMat){starMat.uniforms.minMag.value=mode==='stars'?3.2:-9;starMat.uniforms.pixel.value=scene.renderer.getPixelRatio();starMat.uniforms.boost.value=THREE.MathUtils.clamp((scene.starSize||2.5)/2.5,.5,2);}
+  if(starMat){starMat.uniforms.gain.value=scene.starGain||1;starMat.uniforms.minMag.value=mode==='stars'?3.2:-9;starMat.uniforms.pixel.value=scene.renderer.getPixelRatio();starMat.uniforms.boost.value=THREE.MathUtils.clamp((scene.starSize||2.5)/2.5,.5,2);}
   if(mwMat)mwMat.uniforms.strength.value=scene.local?.4:1;
  };
  const tex=new THREE.TextureLoader().load('/assets/sky/milkyway.jpg');
@@ -228,12 +229,12 @@ function addDeepSky(scene){
    pos[i*3]=2900*Math.cos(dec)*Math.cos(ra);pos[i*3+1]=2900*Math.cos(dec)*Math.sin(ra);pos[i*3+2]=2900*Math.sin(dec);mag[i]=b[i*4+2];
    const bv=b[i*4+3],t=4600*(1/(.92*bv+1.7)+1/(.92*bv+.62));starColor(t).toArray(col,i*3);}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('mag',new THREE.BufferAttribute(mag,1));g.setAttribute('tint',new THREE.BufferAttribute(col,3));
-  starMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{pixel:{value:1},boost:{value:1},minMag:{value:-9}},
+  starMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{pixel:{value:1},gain:{value:1},boost:{value:1},minMag:{value:-9}},
    vertexShader:`attribute float mag;attribute vec3 tint;uniform float pixel;uniform float boost;uniform float minMag;varying vec3 vC;varying float vG;
     void main(){float b=pow(10.,-.4*(mag-7.));float on=step(minMag,mag);
      vC=tint*clamp(.085*pow(b,.45),.025,2.4)*on;vG=clamp(log(b)/4.-.6,0.,1.);
      gl_PointSize=on>0.?clamp(1.3+2.1*pow(b,.24),1.3,22.)*boost*pixel:0.;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-   fragmentShader:`varying vec3 vC;varying float vG;void main(){vec2 q=gl_PointCoord-.5;float r=length(q)*2.;float i=exp(-r*r*6.)+.22*exp(-r*r*2.)+vG*(exp(-r*3.2)*.5+.07*(exp(-abs(q.x)*70.)+exp(-abs(q.y)*70.))*(1.-r));if(i<.004)discard;gl_FragColor=vec4(vC*i,1.);}`});
+   fragmentShader:`uniform float gain;varying vec3 vC;varying float vG;void main(){vec2 q=gl_PointCoord-.5;float r=length(q)*2.;float i=exp(-r*r*6.)+.22*exp(-r*r*2.)+vG*(exp(-r*3.2)*.5+.07*(exp(-abs(q.x)*70.)+exp(-abs(q.y)*70.))*(1.-r));if(i<.004)discard;gl_FragColor=vec4(vC*i*gain,1.);}`});
   const p=new THREE.Points(g,starMat);p.frustumCulled=false;p.renderOrder=-2;group.add(p);
  }).catch(()=>{});
  group.userData.update();

@@ -13,14 +13,14 @@ export function addPlanets(view,item,planets){
   const curve=Array.from({length:129},(_,j)=>new THREE.Vector3(a*Math.cos(j/128*Math.PI*2),0,a*Math.sin(j/128*Math.PI*2)));
   const orbit=new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve),new THREE.LineBasicMaterial({color:0xaab5c3,transparent:true,opacity:.48}));group.add(orbit);
   const radius=THREE.MathUtils.clamp((p.radius_earth||1)*.0091577/starRadius,.045,.3);
-  const planet=new THREE.Mesh(new THREE.SphereGeometry(radius,32,20),new THREE.MeshStandardMaterial({color:0xb5aba1,roughness:1,emissive:0x181a20}));
+  const planet=new THREE.Mesh(new THREE.SphereGeometry(radius,32,20),new THREE.MeshStandardMaterial({color:(p.radius_earth||1)>4?0xd9bca0:0xa89989,roughness:1,emissive:0x181a20}));
   planet.name=p.name;planet.userData.displayRadius=radius;group.add(planet);
   planet.userData.update=time=>{
    const phase=index*2.399+time/Math.max(p.period_days,.1)*Math.PI*2;
    const previous=planet.position.clone();planet.position.set(a*Math.cos(phase),0,a*Math.sin(phase));if(view.local?.followPlanet===planet&&!view.journey){const delta=planet.position.clone().sub(previous);view.camera.position.add(delta);view.controls.target.add(delta);const flight=view.flight;if(flight&&!flight.heading){flight.from.add(delta);flight.fromTarget.add(delta);flight.pos.add(delta);flight.target.add(delta);}}
-   // Keep the intentionally enlarged planet at least four pixels across in a
+   // Keep the intentionally enlarged planet at least twelve pixels across in a
    // system overview, without changing its orbital distance or period.
-   const distance=view.camera.position.distanceTo(planet.position),minRadius=distance*2*Math.tan(THREE.MathUtils.degToRad(view.camera.fov/2))*2/Math.max(view.h||800,1);
+   const distance=view.camera.position.distanceTo(planet.position),minRadius=distance*2*Math.tan(THREE.MathUtils.degToRad(view.camera.fov/2))*6/Math.max(view.h||800,1);
    planet.scale.setScalar(Math.max(1,minRadius/radius));
    planet.rotation.y=time*.1;
   };

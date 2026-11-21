@@ -158,10 +158,31 @@ function lockedAt(frame) {
 }
 
 function expectedAt(frame) {
-  const locked = lockedAt(frame);
-  return locked ? inFrame(locked) : targetAt(frame);
+
+  return frame.marker ? targetAt(frame) : (sourceCentres.get(frame)?.at || null);
 }
 
+// Measure only a small patch around this target on this exposure. The fitted motion
+// supplies a search prior. The displayed centre comes from the current image.
+const sourceCentres = new WeakMap();
+function locateSource(frame, image) {
+  if (frame.marker || frame.mosaic || state.field === "vesta" || !catalogEntry()) return;
+  const prior = inFrame(lockedAt(frame) || catalogAt(frame));
+  if (!prior || typeof StarLock === "undefined") return;
+  const cached = sourceCentres.get(frame);
+  if (cached?.lock === state.lock && cached?.session === state.session) return;
+  const w = image.naturalWidth, h = image.naturalHeight;
+  const x = prior[0]*w-.5, y = prior[1]*h-.5;
+  const radius = state.lock ? 5 : 8;
+  const left = Math.max(0,Math.floor(x)-16), top = Math.max(0,Math.floor(y)-16);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.min(w-left,33); canvas.height = Math.min(h-top,33);
+  const ctx = canvas.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(image,-left,-top);
+  const peak = StarLock.detect(ctx.getImageData(0,0,canvas.width,canvas.height), {x:x-left,y:y-top}, radius);
+  const at = peak ? [(left+peak.x+.5)/w,(top+peak.y+.5)/h] : null;
+  sourceCentres.set(frame,{at,lock:state.lock,session:state.session});
+}
 async function previewPixels(frame) {
   const image = await imageFor(frame.preview);
   const canvas = document.createElement("canvas");
@@ -190,7 +211,7 @@ async function computeLock(session) {
   const loaded = await Promise.all(sample.map(async frame => ({frame, image: await previewPixels(frame)})));
   const size = loaded[0].image.width;
   const items = loaded.map(({frame, image}) => {
-    const at = hasCatalog ? catalogAt(frame) : null;
+    const at = catalogAt(frame);
     return {t: dayOf(frame), image, prior: at && {x: at[0] * size - .5, y: at[1] * size - .5}};
   });
   let catalogRate = null;
@@ -214,16 +235,16 @@ async function refreshLock(session) {
     const result = await computeLock(session);
     if (stamp !== state.lockVersion || session !== state.session) return;
     state.lock = result && {value: result.value, size: result.size, session};
-  } catch (error) { state.lock = null; }
+  } catch (error) { if (stamp === state.lockVersion) state.lock = null; }
   if (stamp === state.lockVersion && session === state.session) { updateLegend(); draw(); }
 }
 
-function drawTarget(ctx, x, y) {
+function drawTarget(ctx, x, y, label) {
   ctx.save();
   ctx.strokeStyle = "#eab354"; ctx.lineWidth = 1.6;
   ctx.strokeRect(x-21,y-21,42,42);
   ctx.textAlign = "center";
-  markLabel(ctx, "Expected position", x, y+36, "#eab354");
+  markLabel(ctx, label, x, y+36, "#eab354");
   ctx.restore();
 }
 
@@ -260,7 +281,7 @@ function updateLegend() {
   const items = [];
   if (frame && $("markers").checked) items.push(["center","Field center"]);
   if (frame && $("expected-position").checked && expectedAt(frame)) {
-    items.push(["guide",`${state.title} · Expected position`]);
+    items.push(["guide",`${state.title} · ${frame.marker ? "Expected position" : "Image centre estimate"}`]);
   }
   if (frame && state.point) items.push(["click","Clicked pixel"]);
   const kinds = frame && typeof StarTracker !== "undefined" ? StarTracker.kinds() : {};
@@ -302,8 +323,10 @@ async function paint(canvas, frame, version) {
   if (mask) ctx.drawImage(mask,left,top,side,side);
   if ($("markers").checked) drawCenter(ctx,left+.5*side,top+.5*side);
   if ($("expected-position").checked) {
+    locateSource(frame,image);
     const at = expectedAt(frame);
-    if (at) drawTarget(ctx,left+at[0]*side,top+at[1]*side);
+    if (frame === state.session?.frames[state.index]) updateLegend();
+    if (at) drawTarget(ctx,left+at[0]*side,top+at[1]*side,frame.marker ? "Expected position" : "Image centre estimate");
     // Vesta crosses this fixed patch in under a day: say where it went instead of drawing nothing
     else if (state.field === "vesta" && !frame.marker && !(typeof StarTracker !== "undefined" && Object.keys(StarTracker.kinds()).length)) {
       const days = [...new Set(state.session.frames.filter(f => f.marker).map(f => dateText(f.timestamp)))];
@@ -547,7 +570,7 @@ function sessionReady(session, request, {keepView=false}={}) {
     const obj = state.objectContext;
     $("target-note").hidden = false;
     $("target-note").textContent = obj.kind === "stars"
-      ? `Gaia DR3 · ${Number(obj.distance).toFixed(1)} ${obj.unit}`
+      ? !Number.isFinite(Number(obj.distance)) ? "Selected catalog star" : `Gaia DR3 · ${Number(obj.distance).toFixed(1)} ${obj.unit}`
       : `DESI DR1 · z=${Number(obj.redshift).toFixed(4)}`;
   } else {
     $("target-note").hidden = true;
@@ -860,6 +883,7 @@ async function chainBatches(first, request) {
 }
 
 async function search(source="saved", archiveOffset=0, {sampling="dates", newDates=false}={}) {
+  window.dispatchEvent(new CustomEvent("lab-field-selected", {detail:state.field}));
   const request = {options: {...inputs(), sampling}, source, archiveOffset, newDates, mosaic: false,
     field: state.field, title: state.title, version: ++state.requestVersion};
   state.lastSource = source;
@@ -1420,6 +1444,7 @@ $("vesta-next-guide").onclick = () => {
 };
 for (const id of ["ra","dec"]) $(id).addEventListener("input", () => {
   state.title = "Sky patch"; state.field = "custom"; state.objectContext = null;
+  window.dispatchEvent(new CustomEvent("lab-field-selected", {detail:"custom"}));
   for (const control of ["search-new-dates","exposure-sampling","view-saved-dates","next-live-batch","stop-live-batch"]) $(control).hidden = true;
   for (const button of $("fields").children) button.setAttribute("aria-current","false");
 });
@@ -1546,7 +1571,10 @@ if (guideChapter === "motion" || guideChapter === "spectrum") {
         chooseField(target, {sampling});
       } else {
         state.field = target?.key || "custom";
-        state.title = target?.name || "Selected sky patch";
+        state.title = target?.name || params.get("star") || "Selected sky patch";
+        if (!target && params.has("star")) {
+          state.objectContext = {kind:"stars",name:state.title,ra:Number(params.get("ra")),dec:Number(params.get("dec"))};
+        }
         if (!params.has("detector") && (target || params.get("source") === "archive")) setBand(target?.detector ?? 0);
         await search(params.get("source") === "archive" && !target ? "archive" : "saved", 0, {sampling});
       }

@@ -55,7 +55,7 @@ const EXTINCTION = `
   float extinctMag(float s){ return .22 * (airmass(s) - 1.); }                              // V-band, clear air
 `;
 
-export function installSkyView({toast = () => {}} = {}) {
+export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
   const view = {open: false, ready: null, time: new Date(), live: true, speed: 1, lat: 51.4779, lon: 0, place: 'Greenwich, UK (default)',
     yaw: 180, pitch: 25, fov: 70, fovTarget: 70, pollution: 'rural', layers: {lines: true, labels: true, grid: false, atmosphere: true, ground: true, targets: true},
     selected: null, drag: null};
@@ -88,8 +88,9 @@ export function installSkyView({toast = () => {}} = {}) {
             <label class="sky-check"><input type="checkbox" data-layer="grid"> Alt/az grid</label>
             <label class="sky-check"><input type="checkbox" data-layer="atmosphere" checked> Atmosphere</label>
             <label class="sky-check"><input type="checkbox" data-layer="ground" checked> Ground</label>
-            <label>Sky brightness<select id="sky-pollution">${Object.entries(POLLUTION).map(([k, v]) => `<option value="${k}">${v[1]}</option>`).join('')}</select></label>
+            <label>Star brightness <output id="sky-gain-value">100%</output><input id="sky-gain" type="range" min="50" max="300" step="5" value="100"></label><label>Sky brightness<select id="sky-pollution">${Object.entries(POLLUTION).map(([k, v]) => `<option value="${k}">${v[1]}</option>`).join('')}</select></label>
           </details>
+          <button type="button" id="sky-context" class="quiet">3D Context</button>
           <button type="button" id="sky-close" class="quiet" aria-label="Close sky view">Close</button>
         </div>
       </div>
@@ -205,14 +206,14 @@ export function installSkyView({toast = () => {}} = {}) {
         gl_PointSize = visible > .001 ? size * pixel : 0.;
         gl_Position = projectionMatrix * viewMatrix * world;
       }`, `
-      varying vec3 vColor; varying float vGlow;
+      uniform float gain; varying vec3 vColor; varying float vGlow;
       void main(){
         vec2 q = gl_PointCoord - .5; float r = length(q) * 2.;
         float core = exp(-r * r * 6.) + .25 * exp(-r * r * 2.2);
         float halo = vGlow * (exp(-r * 3.2) * .55 + .08 * (exp(-abs(q.x) * 70.) + exp(-abs(q.y) * 70.)) * (1. - r));
         float i = core + halo; if (i < .004) discard;
-        gl_FragColor = vec4(vColor * i, 1.);
-      }`, {limit: {value: 6}, pixel: {value: 1}, zoom: {value: 1}, time: {value: 0}, twinkle: {value: 1}});
+        gl_FragColor = vec4(vColor * i * gain, 1.);
+      }`, {gain: {value: 1}, limit: {value: 6}, pixel: {value: 1}, zoom: {value: 1}, time: {value: 0}, twinkle: {value: 1}});
     const p = new THREE.Points(g, starMat);
     p.frustumCulled = false;
     p.renderOrder = 2;
@@ -593,6 +594,10 @@ export function installSkyView({toast = () => {}} = {}) {
       + `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`
       + (o.kind === 'target' ? '<p class="micro">One of the targets in the SPHEREx motion study. Its motion is far too small to see by eye; the study measures it in the images.</p>' : '');
     card.querySelector('button').onclick = () => showCard(null);
+    const jump = document.createElement('button');
+    jump.type = 'button'; jump.className = 'sky-jump'; jump.textContent = 'Open in 3D Context';
+    jump.onclick = () => { close(); openContext(o); };
+    card.append(jump);
     card.hidden = false;
   }
 
@@ -630,6 +635,12 @@ export function installSkyView({toast = () => {}} = {}) {
       e.preventDefault();
     });
     $('sky-close').onclick = close;
+    $('sky-gain').oninput = e => setGain(Number(e.target.value));
+    $('sky-context').onclick = () => {
+      const v = camera.getWorldDirection(new THREE.Vector3()).applyMatrix4(skyGroup.matrix.clone().invert()).normalize();
+      close();
+      openContext({ra: (Math.atan2(v.y,v.x)/DEG+360)%360, dec: Math.asin(v.z)/DEG});
+    };
     $('sky-locate').onclick = locate;
     $('sky-now').onclick = () => { view.time = new Date(); view.live = true; view.speed = 1; $('sky-speed').value = '1'; updateSky(true); };
     $('sky-speed').onchange = e => { view.speed = Number(e.target.value); view.live = view.speed === 1; };
@@ -688,13 +699,15 @@ export function installSkyView({toast = () => {}} = {}) {
     camera.fov = view.fov; camera.updateProjectionMatrix();
     camera.rotation.set(view.pitch * DEG, -view.yaw * DEG, 0);
     updateSky(view.speed > 60);
+    starMat.uniforms.gain.value = Number($('sky-gain').value)/100;
     starMat.uniforms.time.value = t / 1000;
     starMat.uniforms.zoom.value = zoomFactor();
     renderer.render(scene, camera);
     if ((frame++ & 1) === 0) { drawLabels(); readout(); }
   }
 
-  async function open() {
+  async function open(focus = null) {
+    if (view.open) return;
     root.hidden = false;
     view.open = true;
     document.body.classList.add('sky-view-open');
@@ -715,6 +728,15 @@ export function installSkyView({toast = () => {}} = {}) {
     // face the brightest part of the sky to start: south-ish in the north, north-ish in the south
     view.yaw = view.lat >= 0 ? 180 : 0;
     updateSky(true);
+    if(focus){
+      const body = [...bodyInfo,moonInfo].find(b=>b?.name.toLowerCase()===focus.name?.toLowerCase());
+      if(body){view.yaw=body.az;view.pitch=THREE.MathUtils.clamp(body.alt,-30,90);}
+      else if(Number.isFinite(focus.ra)&&Number.isFinite(focus.dec)){
+        const dir=eqVector(focus.ra,focus.dec).applyMatrix4(skyGroup.matrix).normalize();
+        view.yaw=Math.atan2(dir.x,-dir.z)/DEG;
+        view.pitch=THREE.MathUtils.clamp(Math.asin(dir.y)/DEG,-30,90);
+      }
+    }
     last = 0;
     requestAnimationFrame(tick);
   }

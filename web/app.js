@@ -254,7 +254,7 @@ async function loadSystems(){const home=document.createElement('button');home.cl
 
 let sceneReady=null;
 async function ensureScene(){
- if(!sceneReady)sceneReady=(async()=>{const [{ObservatoryScene}]=await Promise.all([importScene(),solarData($('date').value)]);scene=new ObservatoryScene(select);scene.skyTarget=skyTarget;scene.theme(document.documentElement.dataset.theme==='light');$('activity-toggle').textContent='Activity '+(scene.activityEnabled?'on':'off');$('activity-toggle').setAttribute('aria-pressed',scene.activityEnabled);await showSolar();prefetchUniverse().catch(()=>{});})();
+ if(!sceneReady)sceneReady=(async()=>{const [{ObservatoryScene}]=await Promise.all([importScene(),solarData($('date').value)]);scene=new ObservatoryScene(select);scene.starGain=Number($('stellar-gain').value)/100;scene.skyTarget=skyTarget;scene.theme(document.documentElement.dataset.theme==='light');$('activity-toggle').textContent='Activity '+(scene.activityEnabled?'on':'off');$('activity-toggle').setAttribute('aria-pressed',scene.activityEnabled);await showSolar();prefetchUniverse().catch(()=>{});})();
  try{await sceneReady;}catch(error){sceneReady=null;throw error;}
 }
 async function contextView(){setWorkspace('context');observations?.close();document.body.classList.remove('observing');$('observations').hidden=true;$('search-panel').hidden=true;try{if(!sceneReady)$('scene-loading').hidden=false;await ensureScene();scene.resize();}catch(e){$('scene-loading').hidden=true;message('3D is unavailable: '+e.message+'. Return to observations to continue.');}}
@@ -431,6 +431,7 @@ function openLabField(point, guideStep){
  if(point&&(guideStep||!labTarget||labTarget.ra!==point.ra||labTarget.dec!==point.dec||labTarget.field!==point.field)){
   labTarget=point;
   const q=new URLSearchParams({ra:point.ra,dec:point.dec,fov:String([5,10,15,30,60].reduce((best,n)=>Math.abs(n-(+$('fov').value||15))<Math.abs(best-(+$('fov').value||15))?n:best,15)),source:'archive'});
+  if (isCatalogStar(skyTarget?.source) && Math.abs(point.ra-skyTarget.point.ra)<1e-6 && Math.abs(point.dec-skyTarget.point.dec)<1e-6) q.set('star',skyTarget.name);
   if (point.field) q.set('field',point.field);
   if (guideStep) {
    q.set('fov','10');
@@ -492,4 +493,32 @@ $('context-star-query').oninput=async()=>{
  }
  if(!matches.length)display.textContent='No match in the installed catalog.';
 };
-const skyView=installSkyView({toast});window.parallaxSky=skyView;$('your-sky').onclick=()=>skyView.open();if(new URLSearchParams(location.search).has('sky'))skyView.open();
+function setGain(value){
+ for(const [control,output] of [['sky-gain','sky-gain-value'],['stellar-gain','stellar-gain-value']]){
+  $(control).value=value; $(output).value=value+'%';
+ }
+ if(scene)scene.starGain=value/100;
+ try{localStorage.setItem('parallax-star-gain',String(value));}catch{}
+}
+async function openSkyContext(object){
+ await contextView();
+ if(!scene)return;
+ scene.leaveSunSky();
+ if(object.kind==='planet'||object.kind==='moon'){
+  if(scene.mode!=='solar'||scene.local)await showSolar();
+  const body=scene.items.find(i=>i.data.name.toLowerCase()===object.name.toLowerCase());
+  if(body){select(body.data.id,true);return;}
+ }
+ if(object.name){
+  const catalog=await scene.loadContextSky();
+  if(document.body.dataset.workspace!=='context')return;
+  const key=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+  const star=catalog?.objects.find(s=>isCatalogStar(s)&&key(s.name)===key(object.name));
+  if(star){await focusCatalogStar(star);return;}
+ }
+ scene.enterSunSky(object);
+}
+const skyView=installSkyView({toast,openContext:openSkyContext,setGain});
+$('stellar-gain').oninput=e=>setGain(Number(e.target.value));
+try{setGain(Math.min(300,Math.max(50,Number(localStorage.getItem('parallax-star-gain'))||100)));}catch{}
+window.parallaxSky=skyView;$('your-sky').onclick=()=>skyView.open(document.body.dataset.workspace==='context' ? selectedData() : null);if(new URLSearchParams(location.search).has('sky'))skyView.open();

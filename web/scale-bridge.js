@@ -42,7 +42,24 @@ export function installScaleBridge(C) {
       if (!at) continue;
       const pos = toStars(at);
       const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pos.toArray(), 3));
-      const dot = new THREE.Points(geometry, new THREE.PointsMaterial({color, size: 4, sizeAttenuation: false, transparent: true, depthWrite: false}));
+      const material = new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false,
+        uniforms: { tint: {value: color}, alpha: {value: 1}, pixels: {value: 12},
+          bands: {value: ['jupiter', 'saturn'].includes(d.id) ? 1 : 0} },
+        vertexShader: `uniform float pixels;
+          void main(){ gl_PointSize=pixels; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+        fragmentShader: `uniform vec3 tint; uniform float alpha, bands;
+          void main(){
+            vec2 xy=2.*gl_PointCoord-1.;
+            float r2=dot(xy,xy); if(r2>1.) discard;
+            vec3 normal=vec3(xy,sqrt(1.-r2));
+            float light=.30+.84*max(0.,dot(normal,normalize(vec3(-.5,-.4,.8))));
+            vec3 albedo=tint*(1.+bands*.12*sin(18.*xy.y));
+            gl_FragColor=vec4(albedo*light,alpha*(1.-smoothstep(.77,1.,r2)));
+            #include <colorspace_fragment>
+          }`
+      });
+      const dot = new THREE.Points(geometry, material);
       dot.userData.id = d.id;
       dots.push(dot); radii.push(pos.length()); group.add(dot);
     }
@@ -54,7 +71,10 @@ export function installScaleBridge(C) {
       const pxPerPc = this.h / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * Math.max(distance, 1e-12));
       const fade = r => THREE.MathUtils.clamp((r * pxPerPc - 3) / 25, 0, 1);   // gone once an orbit is ~3 px across
       lines.forEach(l => { l.material.opacity = .4 * fade(outer); l.visible = l.material.opacity > .01; });
-      dots.forEach((p, k) => { p.material.opacity = fade(radii[k]); p.visible = p.material.opacity > .01; });
+      dots.forEach((p, k) => { const separation = radii[k] * pxPerPc;
+        p.material.uniforms.pixels.value = THREE.MathUtils.clamp(separation * .22, 6, 15) * this.renderer.getPixelRatio();
+        p.material.uniforms.alpha.value = fade(radii[k]);
+        p.visible = p.material.uniforms.alpha.value > .01; });
     };
     this.content.add(group);
     this.solarProxy = group;

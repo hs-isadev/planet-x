@@ -129,12 +129,12 @@ def check():
     return ok
 
 
-def tap(ra, dec, start, end):
+def tap(ra, dec, start, end, radius_deg=0):
     from backend.observation_lab_core.archive import query_tap
     from backend.observation_lab_core.server import CONFIG
     for attempt in range(3):
         try:
-            return query_tap(CONFIG, ra, dec, start, end)
+            return query_tap(CONFIG, ra, dec, start, end, radius_deg=radius_deg)
         except Exception as error:
             if attempt == 2:
                 print(f'  {Time(start, format="mjd").iso[:10]}: query failed ({error})')
@@ -152,9 +152,16 @@ def discover(target, start, end, workers=4):
         windows.append((t, min(t + step, end)))
         t += step
     mids = target['where']([(a + b) / 2 for a, b in windows])
+    radii = [0.0] * len(windows)
+    if windows and target['kind'] == 'horizons':
+        edges = target['where']([a for a, _ in windows] + [windows[-1][1]])
+        for i, mid in enumerate(mids):
+            # Include footprints crossed before or after noon. The FITS WCS and
+            # the exposure-time ephemeris are checked when building the trail.
+            radii[i] = (1 + max(T.separation_arcmin(*mid, *edge) for edge in edges[i:i+2])) / 60
     found = {}
     with ThreadPoolExecutor(workers) as pool:
-        futures = [pool.submit(tap, p[0], p[1], a, b) for (a, b), p in zip(windows, mids)]
+        futures = [pool.submit(tap, p[0], p[1], a, b, radius) for (a, b), p, radius in zip(windows, mids, radii)]
         for i, future in enumerate(as_completed(futures), 1):
             for row in future.result():
                 found[(row['id'], row['detector'])] = row
