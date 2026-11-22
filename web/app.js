@@ -1,7 +1,7 @@
-import {installSkyView} from './sky-view.js?v=observer-map';
-import {installSatelliteView} from './satellite-view.js?v=warm-hum';
+import {installSkyView} from './sky-view.js?v=soft-ambience';
+import {installSatelliteView} from './satellite-view.js?v=soft-ambience';
 import {installShowcase} from './showcase.js';
-import {installAmbientAudio} from './ambient-audio.js?v=warm-hum';
+import {installAmbientAudio} from './ambient-audio.js?v=soft-ambience';
 const $=id=>document.getElementById(id);
 const icons={search:'<circle cx="7.5" cy="7.5" r="5"/><path d="m11.5 11.5 4 4"/>',close:'<path d="m4 4 10 10M14 4 4 14"/>',theme:'<circle cx="9" cy="9" r="5.5"/><path d="M9 3.5v11a5.5 5.5 0 0 0 0-11"/>',info:'<circle cx="9" cy="9" r="7"/><path d="M9 8v5M9 5v.2"/>',expand:'<path d="M2 6V2h4M12 2h4v4M16 12v4h-4M6 16H2v-4"/>',target:'<circle cx="9" cy="9" r="5"/><path d="M9 1v4M9 13v4M1 9h4M13 9h4"/>',arrow:'<path d="M3 9h12M10 4l5 5-5 5"/>',link:'<path d="m7 11 4-4M6 13l-1 1a3 3 0 0 1-4-4l4-4a3 3 0 0 1 4 0M12 5l1-1a3 3 0 0 1 4 4l-4 4a3 3 0 0 1-4 0"/>',play:'<path d="m5 3 9 6-9 6Z"/>',pause:'<path d="M6 3v12M12 3v12"/>',prev:'<path d="M4 4v10M14 4l-8 5 8 5Z"/>',next:'<path d="M14 4v10M4 4l8 5-8 5Z"/>',image:'<rect x="2" y="2" width="14" height="14" rx="2"/><circle cx="6" cy="6" r="1"/><path d="m2 13 5-5 4 4 2-2 3 3"/>'};
 function icon(k){return '<svg viewBox="0 0 18 18" aria-hidden="true">'+(icons[k]||icons.info)+'</svg>';}document.querySelectorAll('[data-icon]').forEach(e=>e.innerHTML=icon(e.dataset.icon));

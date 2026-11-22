@@ -120,7 +120,7 @@ export function installSkyView({toast = () => {}, openContext, getTarget, openSp
           <button type="button" id="sky-satellite">Satellite View</button>
           <button type="button" id="sky-spherex">SPHEREx View</button>
           <button type="button" id="sky-context" class="quiet">3D Context</button>
-          <button type="button" data-ambient-toggle>Play hum</button>
+          <button type="button" data-ambient-toggle>Play sound</button>
           <button type="button" id="sky-close" class="quiet" aria-label="Close sky view">Close</button>
         </div>
       </div>

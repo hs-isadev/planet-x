@@ -5,10 +5,10 @@ export function installAmbientAudio(toast) {
   const buttons=()=>document.querySelectorAll('[data-ambient-toggle]');
   function render(){
     for(const button of buttons()){
-      button.textContent=starting?'Starting…':enabled?'Mute hum':'Play hum';
+      button.textContent=starting?'Starting…':enabled?'Mute sound':'Play sound';
       button.setAttribute('aria-label','Ambient sound');
       button.setAttribute('aria-pressed',String(enabled));
-      button.title=enabled?'Mute background hum':'Play background hum';
+      button.title=enabled?'Mute background sound':'Play background sound';
       button.disabled=starting;
     }
   }
@@ -17,19 +17,38 @@ export function installAmbientAudio(toast) {
     if(!Audio)throw Error('Ambient audio is unavailable in this browser.');
     context=new Audio();
     volume=context.createGain();volume.gain.value=0;
-    const motion=context.createGain();motion.gain.value=.88;
-    volume.connect(motion).connect(context.destination);
-    // A soft fundamental and consonant upper tones that laptop speakers can reproduce.
-    for(const [frequency,level] of [[110,.19],[164.81,.27],[220,.31],[220.37,.10],[329.63,.10],[440,.03]]){
-      const oscillator=context.createOscillator();
-      oscillator.frequency.value=frequency;
-      const mix=context.createGain();mix.gain.value=level;
-      oscillator.connect(mix).connect(volume);oscillator.start();
+    const sampleRate=16000;
+    const length=16*sampleRate;
+    const overlap=sampleRate;
+    const buffer=context.createBuffer(2,length,sampleRate);
+    const channels=[buffer.getChannelData(0),buffer.getChannelData(1)];
+    const slow=[0,0], fast=[0,0];
+    const lowCut=1-Math.exp(-2*Math.PI*240/sampleRate);
+    const highCut=1-Math.exp(-2*Math.PI*880/sampleRate);
+    // Filter stereo noise into a soft airflow texture and crossfade the loop seam.
+    for(let i=0;i<length+overlap;i++){
+      const shared=Math.random()*2-1;
+      const phase=2*Math.PI*i/length;
+      const swell=.78-.16*Math.cos(phase)-.09*Math.sin(3*phase);
+      for(let channel=0;channel<channels.length;channel++){
+        const noise=.72*shared+.28*(Math.random()*2-1);
+        slow[channel]+=lowCut*(noise-slow[channel]);
+        fast[channel]+=highCut*(noise-fast[channel]);
+        const sample=(fast[channel]-slow[channel])*swell;
+        const data=channels[channel];
+        if(i<length)data[i]=sample;
+        else {
+          const first=i-length;
+          const blend=.5-.5*Math.cos(Math.PI*first/(overlap-1));
+          data[first]=sample*(1-blend)+data[first]*blend;
+        }
+      }
     }
-    const sway=context.createOscillator(),depth=context.createGain();
-    sway.frequency.value=.09;depth.gain.value=.095;
-    sway.connect(depth).connect(motion.gain);
-    sway.start();
+    const source=context.createBufferSource();
+    source.buffer=buffer;
+    source.loop=true;
+    source.connect(volume).connect(context.destination);
+    source.start();
   }
   async function enable(){
     if(starting)return;
@@ -52,7 +71,7 @@ export function installAmbientAudio(toast) {
     if(volume){
       volume.gain.cancelScheduledValues(context.currentTime);
       const audible=enabled&&!document.hidden;
-      volume.gain.setTargetAtTime(audible ? .145 : 0,context.currentTime,audible ? .5 : .17);
+      volume.gain.setTargetAtTime(audible ? .075 : 0,context.currentTime,audible ? .5 : .17);
     }
     render();
   }

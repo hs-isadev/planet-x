@@ -80,7 +80,7 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget, o
   dialog.innerHTML = `
     <div class="satellite-heading">
       <h2 id="satellite-camera-title">Satellite View</h2>
-      <div class="satellite-heading-actions"><button type="button" data-ambient-toggle>Play hum</button> <button type="button" id="satellite-close">Close</button></div>
+      <div class="satellite-heading-actions"><button type="button" data-ambient-toggle>Play sound</button> <button type="button" id="satellite-close">Close</button></div>
     </div>
     <p id="satellite-exposure"></p>
     <p class="micro"><a id="satellite-source" target="_blank" rel="noreferrer" hidden></a></p>
