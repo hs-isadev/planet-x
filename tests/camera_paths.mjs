@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {orbitPose,cruisePose,cruiseDuration,orbitDuration} from '../web/camera-path.js';
+import {earthArcPose,inclinedEarthPath,rolledUpVector} from '../web/earth-flight.js';
 import {chronological,sequenceSummary} from '../web/exposure-sequence.js';
 
 const origin=new THREE.Vector3(),from=new THREE.Vector3(0,0,300),to=new THREE.Vector3(0,0,4.4);
@@ -27,6 +28,43 @@ assert.ok(previous.distanceTo(end)<1e-7);assert.ok(maxStep<start.distanceTo(end)
 assert.ok(cruisePose(start,end,heading,1,1).target.distanceTo(end)<3,'The focus distance shrinks on arrival so near clipping cannot hide the destination');
 assert.ok(cruisePose(start,end,heading,1,.99).position.distanceTo(end)<.001,'Arrival slows over the final few radii');
 assert.ok(cruiseDuration(1e8,1)>=20000);
+
+const earth=new THREE.Vector3(.8,.03,.6),up=new THREE.Vector3(0,1,0);
+for(const [distance,entryTime] of [[1.4,530],[200000,5250]]){
+ const source=new THREE.Vector3(.8,.23,.05).setLength(distance).add(earth);
+ const departure=530,total=12000,turn=total*.75,earthRadius=.005;
+ const path=inclinedEarthPath(source,earth,earthRadius,up,departure,entryTime,total);
+ const join=path(turn),line=join.clone().sub(source).normalize();
+ for(let t=departure+100;t<turn;t+=120){
+  const travel=path(t).sub(source);
+  assert.ok(travel.clone().cross(line).length()<1e-7,'Travel remains straight before the last quarter');
+ }
+ const baseline=source.clone().sub(earth).normalize();
+ const altitude=up.clone().addScaledVector(baseline,-up.dot(baseline)).normalize();
+ assert.ok(join.clone().sub(earth).dot(altitude)>0,'The straight approach climbs to an elevated point');
+ assert.ok(path(turn+(total-turn)*.65).clone().sub(join).cross(line).length()>.01,'The last quarter curves off the straight line');
+ for(const boundary of distance>100?[entryTime,turn]:[turn]){
+  const before=path(boundary).sub(path(boundary-.2)).multiplyScalar(5);
+  const after=path(boundary+.2).sub(path(boundary)).multiplyScalar(5);
+  assert.ok(before.distanceTo(after)<.015*after.length(),'Velocity stays continuous at each handoff');
+ }
+ let previous=source.distanceTo(earth);
+ for(let n=0;n<=1000;n++){
+  const position=path(departure+(total-departure)*n/1000);
+  const distance=position.distanceTo(earth);
+  assert.ok(distance<=previous+1e-7 && distance>=6.5*earthRadius-1e-7);
+  previous=distance;
+ }
+ assert.ok(Math.abs(path(total).distanceTo(earth)-6.5*earthRadius)<1e-8);
+}
+const directStart=earth.clone().add(new THREE.Vector3(0,0,4));
+const rollPose=earthArcPose(directStart,earth,.005,.5,1,'twist');
+assert.ok(rollPose.position.clone().sub(earth).normalize().distanceTo(new THREE.Vector3(0,0,1))<1e-9);
+assert.ok(rollPose.target.equals(earth),'The straight approach faces Earth throughout the roll');
+const leftRoll=rolledUpVector(rollPose.position,earth,up,.25,-1);
+const rightRoll=rolledUpVector(rollPose.position,earth,up,.25,1);
+assert.ok(leftRoll.x*rightRoll.x<-.5,'Left and right rotate the frame in opposite directions');
+assert.ok(rolledUpVector(rollPose.position,earth,up,1,1).distanceTo(up)<1e-9);
 
 // The UI must not silently reduce 364 observations to one detector's 36 frames.
 const frames=Array.from({length:364},(_,i)=>({id:'real-fixture-'+i,index:i,mjd:60000+(363-i)/10,date:'2026-01-01',detector:i%6+1,status:i===7?'error':i===8?'pending':'ready'}));

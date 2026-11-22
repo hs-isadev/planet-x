@@ -1,0 +1,28 @@
+// Traditional constellation figures. Serpens Caput and Cauda share one figure.
+const figures = {
+ And:'Andromeda, the chained princess', Ant:'Air pump', Aps:'Bird of paradise',
+ Aqr:'Water bearer', Aql:'Eagle', Ara:'Altar', Ari:'Ram',
+ Aur:'Charioteer carrying a goat', Boo:'Herdsman', Cae:'Engraving chisel',
+ Cam:'Giraffe', Cnc:'Crab', CVn:'Hunting dogs', CMa:'Greater dog',
+ CMi:'Lesser dog', Cap:'Sea goat', Car:'Keel of the Argo', Cas:'Cassiopeia, the queen',
+ Cen:'Centaur', Cep:'Cepheus, the king', Cet:'Sea monster or whale',
+ Cha:'Chameleon', Cir:'Drawing compass', Col:'Dove', Com:'Berenice’s hair',
+ CrA:'Southern crown', CrB:'Northern crown', Crv:'Crow',
+ Crt:'Cup', Cru:'Southern Cross', Cyg:'Swan', Del:'Dolphin',
+ Dor:'Dolphinfish', Dra:'Dragon', Equ:'Little horse', Eri:'River Eridanus',
+ For:'Furnace', Gem:'The twins Castor and Pollux', Gru:'Crane',
+ Her:'Hercules, the hero', Hor:'Clock', Hya:'Water serpent', Hyi:'Lesser water snake',
+ Ind:'The Indian, a historical European sky figure', Lac:'Lizard', Leo:'Lion',
+ LMi:'Lesser lion', Lep:'Hare', Lib:'Scales', Lup:'Wolf',
+ Lyn:'Lynx', Lyr:'Lyre', Men:'Table Mountain', Mic:'Microscope',
+ Mon:'Unicorn', Mus:'Fly', Nor:'Carpenter’s square', Oct:'Octant',
+ Oph:'Serpent bearer', Ori:'Orion, the hunter', Pav:'Peacock', Peg:'Winged horse',
+ Per:'Perseus, the hero', Phe:'Phoenix', Pic:'Painter’s easel', Psc:'Two fish',
+ PsA:'Southern fish', Pup:'Stern of the Argo', Pyx:'Mariner’s compass',
+ Ret:'Reticle', Sge:'Arrow', Sgr:'Centaur archer', Sco:'Scorpion',
+ Scl:'Sculptor', Sct:'Shield', Ser:'Serpent', Sex:'Sextant',
+ Tau:'Bull', Tel:'Telescope', Tri:'Triangle', TrA:'Southern triangle',
+ Tuc:'Toucan', UMa:'Great bear', UMi:'Little bear', Vel:'Sails of the Argo',
+ Vir:'Maiden', Vol:'Flying fish', Vul:'Little fox',
+};
+export const constellationFigure = code => figures[code] || 'Constellation';

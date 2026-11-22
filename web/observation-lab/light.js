@@ -1,6 +1,9 @@
 "use strict";
 const LightLab = (() => {
   let result=null, point=null, mode="spectrum", generation=0, shownRows=50, openingPoint=false, lastSessionKey=null;
+  let extraction;
+  let bundled;
+  window.addEventListener("sky-view-paused", () => extraction?.abort());
   const svgNS="http://www.w3.org/2000/svg";
   const fmt=v => v == null || !Number.isFinite(Number(v)) ? "—" : (Math.abs(v)>=10000 || (Math.abs(v)>0 && Math.abs(v)<.01) ? Number(v).toExponential(2) : Number(v).toLocaleString("en",{maximumFractionDigits:3}));
   function svg(tag,attrs={},text) {
@@ -10,8 +13,12 @@ const LightLab = (() => {
     return element;
   }
   function note(message) { $("light-status").textContent=message; }
-  const subscript=value=>String(value).replace(/([A-Z]+)([0-9]+)/g,
-    (_,element,count)=>element+[...count].map(digit=>"₀₁₂₃₄₅₆₇₈₉"[Number(digit)]).join(""));
+  function reportTiming(timing) {
+    window.lastSpectrumTiming=timing;
+    $("light-result").dataset.timing=JSON.stringify(timing);
+  }
+  const subscript=s => String(s).replace(/([A-Z])([0-9]+)/g,(_, letter, digits) =>
+    letter + digits.replace(/\d/g,d=>"₀₁₂₃₄₅₆₇₈₉"[d]));
   // Round axis steps (1, 2, 2.5 or 5 × 10ⁿ) so tick labels read as plain numbers
   function ticks(min,max,count=5) {
     const raw=(max-min)/count, mag=10**Math.floor(Math.log10(raw));
@@ -31,21 +38,39 @@ const LightLab = (() => {
   }
   function showDefault() { $("light-position").textContent=defaultSelection().label; }
   function invalidate(session) {
+    extraction?.abort();
     generation++; result=null; point=null; $("light-result").hidden=true;
+    delete $("light-result").dataset.timing;
     showDefault();
     note(session && !session.frames?.length
       ? "Open sky first"
       : "Ready");
   }
+  window.addEventListener("sky-subject-changed", () => {
+    lastSessionKey = null;
+    bundled?.controller.abort();
+    bundled = null;
+    invalidate(null);
+    note("Waiting for observations.");
+  });
+  window.addEventListener("star-track-cleared", () => {
+    $("light-follow-track").checked = false;
+    $("light-track-toggle-wrap").hidden = true;
+  });
   window.addEventListener("sky-session-ready",event => {
     const session=event.detail;
+    const scope=$("light-scope"), preset=scope.querySelector('[value="preset"]');
+    preset.hidden=!session.preset_spectrum;
+    preset.disabled=!session.preset_spectrum;
     const nextKey=session?.options ? `${Number(session.options.ra).toFixed(7)},${Number(session.options.dec).toFixed(7)},${session.options.fov}` : null;
     if (openingPoint) { lastSessionKey=nextKey; return; }
     if (nextKey!==lastSessionKey) {
       lastSessionKey=nextKey;
+      scope.value=session.preset_spectrum ? "preset" : "near";
       invalidate(session);
       return;
     }
+    if (scope.value==="preset" && !session.preset_spectrum) scope.value="near";
     if (point && session?.frames?.length && !state.point) {
       state.point={x:point.x,y:point.y};
       draw();
@@ -55,7 +80,9 @@ const LightLab = (() => {
     }
   });
   window.addEventListener("sky-point-picked",event => {
+    extraction?.abort();
     generation++; point=event.detail;
+    if ($("light-scope").value==="preset") $("light-scope").value="near";
     $("light-position").textContent=`${point.ra.toFixed(4)}°, ${point.dec.toFixed(4)}°`;
     if (result) note("Point changed");
   });
@@ -68,13 +95,49 @@ const LightLab = (() => {
       note(`Track ready for ${name}. Light measurement follows moving path.`);
     }
   });
-  $("light-center").onclick=() => { point=null; generation++; showDefault(); };
+  $("light-center").onclick=() => { extraction?.abort(); point=null; generation++; showDefault(); };
+
+  function bundledSpectrum() {
+    const url=state.session?.preset_spectrum;
+    if (!url) return null;
+    if (bundled?.url===url) return bundled.promise;
+    bundled?.controller.abort();
+    const controller=new AbortController();
+    bundled={url,controller,promise:api(url,{signal:controller.signal}).catch(error=>{
+      if (bundled?.controller===controller) bundled=null;
+      throw error;
+    })};
+    return bundled.promise;
+  }
+  $("measure-light").addEventListener("pointerenter",()=>{
+    if (!state.loading && $("light-scope").value==="preset") bundledSpectrum()?.catch(()=>{});
+  });
+
+  function showSpectrum(data, selection, scope) {
+    result=data; shownRows=50;
+    $("light-result").hidden=false;
+    const coords=`${result.ra.toFixed(4)}°, ${result.dec.toFixed(4)}°`;
+    $("light-position").textContent=selection.label ? `${selection.label.split(" · ")[0]} · ${coords}` : coords;
+    const measured=result.points.filter(p=>Number.isFinite(p.flux));
+    const clean=measured.filter(p=>p.chemical_eligible);
+    const dates=measured.map(p=>p.timestamp.slice(0,10)).sort();
+    note(`${measured.length} point${measured.length===1?"":"s"} · ${clean.length} clean`+
+      (result.coverage ? ` · Bundled ${result.coverage}` : scope==="near" && measured.length<=3 ? " · Few points in ±7 days. Try All dates." : ""));
+    $("light-status").title=dates.length ? `${dates[0]} to ${dates.at(-1)} UTC` : "";
+    render(); renderCandidates(); renderTable();
+    $("light-sources").replaceChildren();
+    result.references.forEach((href,index)=>{const link=document.createElement("a");link.href=href;link.target="_blank";link.rel="noreferrer";link.textContent=`Ref ${index+1} ↗`;$("light-sources").append(link);});
+    window.dispatchEvent(new CustomEvent("chemical-point-measured",{detail:{ra:result.ra,dec:result.dec,candidates:result.candidates.filter(c=>c.candidate)}}));
+  }
 
   async function measure(opts={}) {
     if (!state.session?.frames.length || state.loading) { note("Open sky first"); return; }
+    if (extraction && !extraction.signal.aborted) return;
+    const controller = extraction = new AbortController();
     const version=++generation;
+    const openedAt=performance.now();
     const track = typeof StarTracker !== 'undefined' && StarTracker.getResult ? StarTracker.getResult() : null;
-    const followTrack = Boolean(opts.follow_track || ($("light-follow-track")?.checked && track?.points?.length));
+    const followTrack = Boolean(track?.points?.length && (opts.follow_track || $("light-follow-track")?.checked));
     const selection=point || defaultSelection();
     const trackName = track?.ephemeris?.object || track?.catalog?.name || $("track-object")?.value.trim() || 'Tracked target';
     const payload={session:state.session.id,frame:selection.frame ?? state.index,x:selection.x,y:selection.y,
@@ -82,6 +145,7 @@ const LightLab = (() => {
       follow_track: followTrack,
       track_points: followTrack ? track.points : undefined,
       track_object: followTrack ? trackName : undefined};
+    if(payload.scope==="preset" && (point || payload.redshift || followTrack || !state.session.preset_spectrum))payload.scope="all";
     $("measure-light").disabled=true;
     if ($("track-spectrum")) $("track-spectrum").disabled = true;
     note(followTrack ? `Measuring ${trackName} along track…` : "Measuring…");
@@ -97,38 +161,50 @@ const LightLab = (() => {
       $("light-status").after(wave);
     } else $("light-result").classList.add("sl-scanning");
     try {
+      if (payload.scope==="preset") {
+        const field=state.field, transferStarted=performance.now();
+        const data=await bundledSpectrum();
+        const drawStarted=performance.now();
+        if (version!==generation || controller.signal.aborted) return;
+        if (data.field!==field) throw Error("The bundled spectrum does not match the selected field.");
+        showSpectrum(data,{label:state.title},payload.scope);
+        reportTiming({source:"bundled",transfer_ms:drawStarted-transferStarted,draw_ms:performance.now()-drawStarted,first_plot_ms:performance.now()-openedAt});
+        return;
+      }
       const job=await api("/observation-lab/api/spectrum",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-      while (true) {
-        const progress=await api(`/observation-lab/api/jobs/${job.id}`);
-        if (progress.status==="failed") throw new Error(progress.stage);
+      const cancelJob=()=>{
+        if (job.waiter) fetch("/observation-lab/api/spectrum/cancel",{
+          method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,
+          body:JSON.stringify({id:job.id,waiter:job.waiter})
+        }).catch(()=>{});
+      };
+      if (controller.signal.aborted) { cancelJob(); return; }
+      controller.signal.addEventListener("abort",cancelJob,{once:true});
+      while (version===generation && !controller.signal.aborted) {
+        const transferStarted=performance.now();
+        const progress=await api(`/observation-lab/api/jobs/${job.id}`, {signal:controller.signal});
+        if (version!==generation || controller.signal.aborted) break;
+        if (progress.status==="failed" || progress.status==="cancelled") throw new Error(progress.stage);
         if (progress.status==="complete") {
-          if (version!==generation) { note("Cancelled"); break; }
-          result=progress.result; shownRows=50;
-          $("light-result").hidden=false;
-          const coords=`${result.ra.toFixed(4)}°, ${result.dec.toFixed(4)}°`;
-          $("light-position").textContent=selection.label ? `${selection.label.split(" · ")[0]} · ${coords}` : coords;
-          const measured=result.points.filter(p=>Number.isFinite(p.flux));
-          const clean=measured.filter(p=>p.chemical_eligible);
-          const dates=measured.map(p=>p.timestamp.slice(0,10)).sort();
-          note(`${measured.length} point${measured.length===1?"":"s"} · ${clean.length} clean`+(payload.scope==="near" && measured.length<=3 ? " · Few points in ±7 days: try All dates" : ""));
-          $("light-status").title=dates.length ? `${dates[0]} to ${dates.at(-1)} UTC` : "";
-          render(); renderCandidates(); renderTable();
-          $("light-sources").replaceChildren();
-          result.references.forEach((href,index)=>{const link=document.createElement("a");link.href=href;link.target="_blank";link.rel="noreferrer";link.textContent=`Ref ${index+1} ↗`;$("light-sources").append(link);});
-          window.dispatchEvent(new CustomEvent("chemical-point-measured",{detail:{ra:result.ra,dec:result.dec,candidates:result.candidates.filter(c=>c.candidate)}}));
+          const drawStarted=performance.now();
+          showSpectrum(progress.result,selection,payload.scope);
+          reportTiming({source:"live",...progress.result.timing_ms,transfer_ms:drawStarted-transferStarted,draw_ms:performance.now()-drawStarted,first_plot_ms:performance.now()-openedAt});
           break;
         }
         if (version===generation) { note(progress.stage); task?.set(progress.stage ? `Spectrum · ${progress.stage}` : null); }
         await new Promise(resolve=>setTimeout(resolve,500));
       }
-    } catch(error) { if(version===generation) note(error.message); }
+    } catch(error) { if(version===generation && !controller.signal.aborted) note(error.message); }
     finally {
       task?.end(); wave?.remove();
-      $("light-status").classList.remove("sl-inline-busy");
-      $("light-panel").classList.remove("sl-spectrum-busy");
-      $("light-result").classList.remove("sl-scanning");
-      $("measure-light").disabled=false;
-      if ($("track-spectrum")) $("track-spectrum").disabled = false;
+      if (extraction === controller) {
+        extraction=null;
+        $("light-status").classList.remove("sl-inline-busy");
+        $("light-panel").classList.remove("sl-spectrum-busy");
+        $("light-result").classList.remove("sl-scanning");
+        $("measure-light").disabled=false;
+        $("track-spectrum").disabled=!StarTracker.getResult()?.points?.some(p=>p.accepted);
+      }
     }
   }
 
@@ -149,60 +225,68 @@ const LightLab = (() => {
     const axis=document.getElementById("light-axis-x");
     axis.textContent=mode==="spectrum"?"Across · Wavelength in micrometers (µm). Farther right is longer-wavelength infrared light.":"Across · Observation date in UTC. The wavelength window keeps the comparison within a narrow band.";
     document.getElementById("light-dip-guide").hidden=mode==="time";
-    const chart=$("light-chart"); chart.replaceChildren();
-    chart.append(svg("rect",{width:1000,height:390,fill:"#000000"}));
+    const chart=$("light-chart");
+    const width = Math.max(260, chart.parentElement.clientWidth);
+    chart.setAttribute("viewBox", `0 0 ${width} 330`);
+    chart.replaceChildren(svg("rect",{width,height:330,fill:"#000000"}));
     const rows=selectedPoints();
     if(!rows.length) {
-      chart.append(svg("text",{x:500,y:170,"text-anchor":"middle",fill:"#eab354","font-size":20,"font-weight":700},"No data"));
-      chart.append(svg("text",{x:500,y:200,"text-anchor":"middle",fill:"#a1a1a6","font-size":13},"Adjust filters"));
+      chart.append(svg("text",{x:width/2,y:145,"text-anchor":"middle",fill:"#eab354","font-size":20,"font-weight":700},"No data"));
+      chart.append(svg("text",{x:width/2,y:175,"text-anchor":"middle",fill:"#a1a1a6","font-size":13},"Adjust filters"));
       $("plot-note").textContent="Empty filter result";
       chart.setAttribute("aria-label","Measured light chart: no points match the current filters");
       explainChart(rows);
       return;
     }
-    const L=96,R=968,B=326;
-    const labelLanes=[];
-    const featureLabels=[];
-    const T=mode==="spectrum" ? 88 : 42;
+    const L=76,R=width-18,B=278;
     let xmin=.75,xmax=5;
     if(mode==="time") { xmin=Math.min(...rows.map(p=>p.mjd));xmax=Math.max(...rows.map(p=>p.mjd));if(xmax-xmin<1){xmin-=.5;xmax+=.5;} }
     let ymin=Math.min(0,...rows.map(p=>p.flux-p.flux_error)),ymax=Math.max(...rows.map(p=>p.flux+p.flux_error));
     if(ymax<=ymin) ymax=ymin+1;
     const pad=(ymax-ymin)*.08; ymin-=pad; ymax+=pad;
-    const x=v=>L+(v-xmin)/(xmax-xmin)*(R-L),y=v=>B-(v-ymin)/(ymax-ymin)*(B-T);
+    const x=v=>L+(v-xmin)/(xmax-xmin)*(R-L);
+    const z=1+(result.redshift||0);
+    const features=mode==="spectrum" ? result.candidates.filter(f=>f.band[0]*z<xmax && f.band[1]*z>xmin) : [];
+    const measure=document.createElement("canvas").getContext("2d");
+    measure.font="12px sans-serif";
+    const lanes=[];
+    const labels=features
+      .filter(f=>f.center*z>=xmin && f.center*z<=xmax)
+      .sort((a,b)=>a.center-b.center)
+      .map(feature=>{
+        const title=subscript(feature.formula), half=measure.measureText(title).width/2;
+        const anchor=x(feature.center*z), labelX=Math.min(width-half-4,Math.max(half+4,anchor));
+        let row=lanes.findIndex(end=>end+8<=labelX-half);
+        if(row<0)row=lanes.length;
+        lanes[row]=labelX+half;
+        return {feature,title,anchor,labelX,y:16+row*17};
+      });
+    const T=Math.max(32,16+lanes.length*17);
+    const y=v=>B-(v-ymin)/(ymax-ymin)*(B-T);
     const defs=svg("defs"),clip=svg("clipPath",{id:"plot-clip"});clip.append(svg("rect",{x:L,y:T,width:R-L,height:B-T}));defs.append(clip);chart.append(defs);
-    if(mode==="spectrum") for(const feature of result.candidates) {
-      const z=1+result.redshift,start=feature.band[0]*z,end=feature.band[1]*z;
-      if(start<xmax&&end>xmin) {
-        chart.append(svg("rect",{x:x(Math.max(start,xmin)),y:T,width:x(Math.min(end,xmax))-x(Math.max(start,xmin)),height:B-T,fill:feature.color,opacity:.065}));
-        const label=subscript(feature.formula);
-        const half=label.length*3.6+6;
-        const bandX=Math.max(L,Math.min(R,x(feature.center*z)));
-        const labelX=Math.max(L+half,Math.min(R-half,bandX));
-        const start=labelX-half,end=labelX+half;
-        let lane=labelLanes.findIndex(used=>used.every(([a,b])=>end<a||start>b));
-        if(lane<0){lane=labelLanes.length;labelLanes.push([]);}
-        labelLanes[lane].push([start,end]);
-        featureLabels.push({label,labelX,bandX,y:16+lane*14,color:feature.color});
-      }
+    for(const label of labels) {
+      const {feature,title,anchor,labelX,y}=label;
+      chart.append(svg("path",{d:`M${anchor} ${T} L${labelX} ${y+4}`,stroke:feature.color,opacity:.7,fill:"none"}));
+      const text=svg("text",{class:"spectrum-annotation",x:labelX,y,"text-anchor":"middle",fill:feature.color,"font-size":12,"font-family":"sans-serif"},title);
+      text.append(svg("title",{},`${title} · ${(feature.center*z).toFixed(3)} µm`));
+      chart.append(text);
     }
-    for(const feature of featureLabels){
-      chart.append(svg("line",{x1:feature.bandX,y1:T-4,x2:feature.labelX,y2:feature.y+4,stroke:feature.color,opacity:.35}));
-    }
-    for(const feature of featureLabels){
-      chart.append(svg("text",{x:feature.labelX,y:feature.y,"text-anchor":"middle",fill:feature.color,"font-size":11,stroke:"#000","stroke-width":4,"paint-order":"stroke"},feature.label));
+    for(const feature of features) {
+      const start=x(Math.max(feature.band[0]*z,xmin)),end=x(Math.min(feature.band[1]*z,xmax));
+      chart.append(svg("rect",{x:start,y:T,width:end-start,height:B-T,fill:feature.color,opacity:.065}));
     }
     chart.append(svg("line",{x1:L,y1:B,x2:R,y2:B,stroke:"#2c2c2e","stroke-width":1}));
     for(const v of ticks(ymin,ymax)) {
       chart.append(svg("line",{x1:L,y1:y(v),x2:R,y2:y(v),stroke:"#2c2c2e","stroke-width":1,"stroke-dasharray":v===0?"":"3 4"}));
       chart.append(svg("text",{x:L-12,y:y(v)+4,"text-anchor":"end",fill:"#a1a1a6","font-size":12},fmt(v)));
     }
-    for(const xv of mode==="time" ? [0,1,2,3,4,5].map(i=>xmin+(xmax-xmin)*i/5) : ticks(xmin,xmax)) {
+    const dateIntervals=width<530 ? 2 : 5;
+    for(const xv of mode==="time" ? Array.from({length:dateIntervals+1},(_,i)=>xmin+(xmax-xmin)*i/dateIntervals) : ticks(xmin,xmax,width<400?4:6)) {
       const label=mode==="time"?new Date((xv-40587)*86400000).toISOString().slice(0,10):fmt(xv);
       chart.append(svg("text",{x:x(xv),y:B+25,"text-anchor":"middle",fill:"#a1a1a6","font-size":12},label));
     }
-    chart.append(svg("text",{x:530,y:376,"text-anchor":"middle",fill:"#f5f5f7","font-size":13},mode==="spectrum"?"Wavelength (µm)":"Date (UTC)"));
-    chart.append(svg("text",{x:20,y:185,transform:"rotate(-90 20 185)","text-anchor":"middle",fill:"#f5f5f7","font-size":13},"Flux (µJy)"));
+    chart.append(svg("text",{x:(L+R)/2,y:321,"text-anchor":"middle",fill:"#f5f5f7","font-size":13},mode==="spectrum"?"Wavelength (µm)":"Date (UTC)"));
+    chart.append(svg("text",{x:14,y:170,transform:"rotate(-90 14 170)","text-anchor":"middle",fill:"#f5f5f7","font-size":13},"Flux (µJy)"));
     const dots=svg("g",{"clip-path":"url(#plot-clip)"});
     for(const p of rows) {
       const px=x(mode==="time"?p.mjd:p.wavelength),py=y(p.flux),color=hues[p.detector-1];
@@ -222,6 +306,15 @@ const LightLab = (() => {
     chart.setAttribute("aria-label",`${mode==="spectrum"?"Spectrum":"Flux over time"}: ${rows.length} point${rows.length===1?"":"s"} (${warning} flagged), ${xText}, flux ${span(rows.map(p=>p.flux),fmt)} µJy`);
     explainChart(rows);
   }
+
+  let chartWidth;
+  new ResizeObserver(([entry])=>{
+    const width=entry.contentRect.width;
+    if (width>0 && width!==chartWidth) {
+      chartWidth=width;
+      render();
+    }
+  }).observe($("light-chart").parentElement);
 
   // Worded reading of the current graph, recomputed from exactly the plotted points.
   function explainChart(rows) {

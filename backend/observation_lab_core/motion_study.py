@@ -42,6 +42,7 @@ from astropy.wcs import WCS, FITSFixedWarning
 from PIL import Image
 from scipy.ndimage import gaussian_filter, label, map_coordinates, maximum_filter
 from scipy.optimize import least_squares
+from .featured_views import MOTION_ASTROMETRY
 
 warnings.simplefilter('ignore', FITSFixedWarning)
 warnings.simplefilter('ignore', RuntimeWarning)
@@ -83,6 +84,18 @@ TARGETS = {
                                parallax_mas=0.0, assumed=True,
                                source='Field position; proper motion assumed negligible (distant star)')),
 }
+
+NEARBY_BANDS = {
+    'hyg-118720': ("Wolf 359", 3, 1.72),
+    'hyg-92115': ("Ross 154", 3, 2.235),
+    'hyg-24129': ("Kapteyn's Star", 2, 1.15),
+}
+for field, (name, _, _) in NEARBY_BANDS.items():
+    ra, dec, pmra, pmdec, parallax, identity = MOTION_ASTROMETRY[field]
+    TARGETS[field] = dict(name=name, kind='nearby high proper-motion star', expect='motion',
+                          catalog=dict(ra=ra, dec=dec, pmra_mas_yr=pmra, pmdec_mas_yr=pmdec,
+                                       parallax_mas=parallax, source='Gaia via SIMBAD, ICRS J2000, ' +
+                                       'https://simbad.cds.unistra.fr/simbad/sim-id?Ident=' + identity))
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -529,6 +542,14 @@ def study(field, log=print):
     sx_frames, options = spherex_frames(field)
     w_frames, series = wise_frames(field)
     cat, center = catalog_for(field)
+    bands = BANDS
+    if field in NEARBY_BANDS:
+        _, detector, center_um = NEARBY_BANDS[field]
+        sx_frames = [frame for frame in sx_frames if frame['detector'] == detector
+                     and abs(frame['wavelength'] - center_um) <= .025]
+        if len({int(frame['mjd']) for frame in sx_frames}) < 3:
+            raise ValueError(f'{field}: need at least three comparable SPHEREx dates.')
+        bands = [(str(center_um), f'{center_um:g} µm · D{detector}', center_um, .025)]
     grid = display_grid(*center)
     out = OUT / field
     (out / 'img').mkdir(parents=True, exist_ok=True)
@@ -668,7 +689,7 @@ def study(field, log=print):
     # stacks
     bands_out, visits_out, diffs = [], [], {}
     stacks = {}
-    for key, label_, centre, half in BANDS:
+    for key, label_, centre, half in bands:
         for vi, visit in enumerate(sx_visits):
             imgs = np.array([f['image'] for f in visit if abs(f['wavelength'] - centre) <= half])
             if not len(imgs):
@@ -676,7 +697,7 @@ def study(field, log=print):
             stacks[(key, vi)] = (np.nanmedian(np.where(np.isinf(imgs), np.nan, imgs), axis=0),
                                  np.mean(np.isinf(imgs), axis=0) > .5, len(imgs),
                                  float(np.mean([f['wavelength'] for f in visit if abs(f['wavelength'] - centre) <= half])))
-    for key, label_, centre, half in BANDS:
+    for key, label_, centre, half in bands:
         present = [vi for vi in range(len(sx_visits)) if (key, vi) in stacks]
         if not present:
             continue
@@ -700,10 +721,16 @@ def study(field, log=print):
     for vi, visit in enumerate(sx_visits):
         entry = dict(index=vi, mission='SPHEREx', first=visit[0]['date'][:10], last=visit[-1]['date'][:10],
                      mjd=float(np.mean([f['mjd'] for f in visit])), frames=len(visit), stacks={})
-        for key, *_ in BANDS:
+        for key, _, center_um, half in bands:
             if (key, vi) in stacks and len(stacks[(key, vi)]) == 5:
                 _, _, n, wl, name = stacks[(key, vi)]
-                entry['stacks'][key] = dict(png=name, frames=n, wavelength_um=round(wl, 3))
+                contributors = [f for f in visit if abs(f['wavelength'] - center_um) <= half]
+                mjd = float(np.mean([f['mjd'] for f in contributors]))
+                ra, dec, _, _ = expected(cat, mjd)
+                x, y = grid.world_to_pixel_values(ra, dec)
+                entry['stacks'][key] = dict(png=name, frames=n, wavelength_um=round(wl, 3), mjd=mjd,
+                    exposure_ids=[f['id'] for f in contributors],
+                    expected=dict(x=round(float(x), 2), y=round(float(GRID_SIZE - 1 - y), 2)))
         visits_out.append(entry)
 
     # long-baseline time-lapse at 4.6 µm: WISE/NEOWISE W2 visit stacks + SPHEREx 4.6 µm visit stacks
@@ -1103,13 +1130,14 @@ def build_track(slug, out, follow=True, log=print):
     """Measure a tracked target in every exposure and draw the follow and fixed-sky (tile mosaic) images."""
     frames, track = track_exposures(slug)
     measured, noises, highs = [], [], []
-    for f in frames:
+    for sequence_index, f in enumerate(sorted(frames, key=lambda frame: frame['mjd'])):
         parts = load_parts(f)
         m = measure_parts(parts, f['predicted'])
         if not m:
             log(f'  {slug}: target not found in {f["id"]} D{f["detector"]}')
             continue
         f.update(m)
+        f['sequence_index'] = sequence_index
         work = np.concatenate([p['work'][np.isfinite(p['work'])].ravel() for p in parts])
         noises.append(robust_sigma(work)); highs.append(float(np.percentile(work, 99.7)))
         measured.append(f)
@@ -1118,11 +1146,28 @@ def build_track(slug, out, follow=True, log=print):
     noise, hi = float(np.nanmedian(noises)), float(np.nanmedian(highs))
     scenes = _sky_scenes(measured, track)
     follow_frames, sky, path = [], [], []
+    previous = {f['sequence_index']: measured[i-1] if i else None for i, f in enumerate(measured)}
+
+    def adjacent(a, b):
+        return a is not None and b is not None and b['sequence_index'] == a['sequence_index'] + 1 and b['mjd'] - a['mjd'] <= 5
+
     for vi, sc in enumerate(scenes):
         g_sky, size = sc['grid'], sc['size']
-        trail = [[round(float(x), 1), round(float(size - 1 - y), 1)] for x, y in
-                 (g_sky.world_to_pixel_values(o['ra'], o['dec']) for o in sc['members'])]
-        for f in sc['members']:
+        members = sorted(sc['members'], key=lambda frame: frame['mjd'])
+        before = previous[members[0]['sequence_index']]
+        after = next((x for x in measured if x['sequence_index'] == members[-1]['sequence_index'] + 1), None)
+        trail_members = ([before] if adjacent(before, members[0]) else []) + members
+        if adjacent(members[-1], after):
+            trail_members.append(after)
+        trail, last = [], None
+        for point in trail_members:
+            if last is not None and not adjacent(last, point):
+                trail.append(None)
+            x, y = g_sky.world_to_pixel_values(point['ra'], point['dec'])
+            trail.append([round(float(x), 1), round(float(size - 1 - y), 1)]
+                         if math.isfinite(x+y) else None)
+            last = point
+        for f in members:
             i = len(path)
             parts = load_parts(f)
             date = f['date'][:19].replace('T', ' ') + ' UTC'
@@ -1148,7 +1193,8 @@ def build_track(slug, out, follow=True, log=print):
                             detector=f['detector'], measured=dict(x=round(float(mx), 2), y=round(float(size - 1 - my), 2),
                                                                   err_px=round(f['err'] / sc['scale'], 2)),
                             expected=exp, trail=trail, tiles=sc['tiles'], layout=sc['layout'],
-                            have=[p['tile'] for p in parts if p['tile']]))
+                            have=[p['tile'] for p in parts if p['tile']],
+                            gap_before=previous[f['sequence_index']] is not None and not adjacent(previous[f['sequence_index']], f)))
             residual = None
             if f['predicted']:
                 pra, pdec = f['predicted']

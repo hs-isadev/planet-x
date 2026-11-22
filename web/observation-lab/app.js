@@ -4,9 +4,9 @@ const state = { library: null, session: null, index: 0, reference: 0, mode: "sin
   zoom: 1, panX: 0, panY: 0, point: null, timer: null, loading: false, images: new Map(),
   maskCache: new Map(), hoverCache: new Map(),
   drawVersion: 0, inspectVersion: 0, title: "Vesta", field: "vesta", objectContext: null,
-  requestVersion: 0, pending: null, views: new Map(), lock: null, lockVersion: 0, allExposures: false };
+  requestVersion: 0, pending: null, views: new Map(), lock: null, lockVersion: 0, allExposures: false,
+  motionPair: null };
 const hues = ["#b798f4", "#84b3ef", "#a5edcc", "#ebdf82", "#eec083", "#efac99"];
-
 // Inside the Parallax shell this page is an iframe. Its crest used to link to "/", which loaded the whole
 // shell inside the frame (a second header and a second lab). Embedded, the crest is a label, not a link.
 const embedded = window.parent !== window;
@@ -69,6 +69,7 @@ function imageFor(url) {
       image.onerror = () => reject(new Error("A preview could not be loaded."));
       image.src = url;
     }));
+    if (state.images.size > 24) state.images.delete(state.images.keys().next().value);
   }
   return state.images.get(url);
 }
@@ -159,14 +160,15 @@ function lockedAt(frame) {
 
 function expectedAt(frame) {
 
-  return frame.marker ? targetAt(frame) : (sourceCentres.get(frame)?.at || null);
+  if (!state.motionPair) return null;
+  return sourceCentres.get(frame)?.at || inFrame(lockedAt(frame)) || targetAt(frame);
 }
 
 // Measure only a small patch around this target on this exposure. The fitted motion
 // supplies a search prior. The displayed centre comes from the current image.
 const sourceCentres = new WeakMap();
 function locateSource(frame, image) {
-  if (frame.marker || frame.mosaic || state.field === "vesta" || !catalogEntry()) return;
+  if (!state.motionPair || frame.marker || frame.mosaic || state.field === "vesta" || !catalogEntry()) return;
   const prior = inFrame(lockedAt(frame) || catalogAt(frame));
   if (!prior || typeof StarLock === "undefined") return;
   const cached = sourceCentres.get(frame);
@@ -208,7 +210,11 @@ async function computeLock(session) {
   if (frames.length < 2) return null;
   const sample = frames.length <= 16 ? frames
     : Array.from({length: 16}, (_, i) => frames[Math.round(i * (frames.length - 1) / 15)]);
-  const loaded = await Promise.all(sample.map(async frame => ({frame, image: await previewPixels(frame)})));
+  const loaded = [];
+  for (let start = 0; start < sample.length; start += 4) {
+    if (session !== state.session) return null;
+    loaded.push(...await Promise.all(sample.slice(start,start+4).map(async frame => ({frame, image: await previewPixels(frame)}))));
+  }
   const size = loaded[0].image.width;
   const items = loaded.map(({frame, image}) => {
     const at = catalogAt(frame);
@@ -235,17 +241,24 @@ async function refreshLock(session) {
     const result = await computeLock(session);
     if (stamp !== state.lockVersion || session !== state.session) return;
     state.lock = result && {value: result.value, size: result.size, session};
-  } catch (error) { if (stamp === state.lockVersion) state.lock = null; }
+  } catch (error) {
+    if (stamp !== state.lockVersion) return;
+  }
   if (stamp === state.lockVersion && session === state.session) { updateLegend(); draw(); }
 }
 
 function drawTarget(ctx, x, y, label) {
   ctx.save();
   ctx.strokeStyle = "#eab354"; ctx.lineWidth = 1.6;
+  ctx.setLineDash(label === "Image centroid candidate" ? [] : [4, 3]);
   ctx.strokeRect(x-21,y-21,42,42);
   ctx.textAlign = "center";
   markLabel(ctx, label, x, y+36, "#eab354");
   ctx.restore();
+}
+
+function predictionLabel(frame) {
+  return sourceCentres.get(frame)?.at ? "Image centroid candidate" : frame.marker ? "Ephemeris guide" : lockedAt(frame) ? "Prediction from image fit" : "Catalog prediction";
 }
 
 function drawClick(ctx, x, y) {
@@ -281,7 +294,7 @@ function updateLegend() {
   const items = [];
   if (frame && $("markers").checked) items.push(["center","Field center"]);
   if (frame && $("expected-position").checked && expectedAt(frame)) {
-    items.push(["guide",`${state.title} · ${frame.marker ? "Expected position" : "Image centre estimate"}`]);
+    items.push(["guide",`${state.title} · ${predictionLabel(frame)}`]);
   }
   if (frame && state.point) items.push(["click","Clicked pixel"]);
   const kinds = frame && typeof StarTracker !== "undefined" ? StarTracker.kinds() : {};
@@ -326,6 +339,10 @@ function paletteImage(image,palette){
   return canvas;
 }
 window.parallaxLab={
+  get direction() {
+    const options = state.session?.options;
+    return options && {ra: options.ra, dec: options.dec, name: state.title, field: state.field};
+  },
   setPalette(value){
     const select=$("image-palette");
     if(![...select.options].some(option=>option.value===value))return false;
@@ -349,8 +366,11 @@ async function paint(canvas, frame, version) {
   const ctx = canvas.getContext("2d");
   ctx.scale(ratio, ratio);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(paletteImage(image,$("image-palette").value),left,top,side,side);
-  if ($("tint").checked) {
+  const palette = $("image-palette").value;
+  if (palette === "inverted") ctx.filter = "invert(1)";
+  ctx.drawImage(paletteImage(image,palette), left, top, side, side);
+  ctx.filter = "none";
+  if (palette === "detector") {
     ctx.globalCompositeOperation = "source-atop";
     ctx.globalAlpha = .25;
     ctx.fillStyle = hues[frame.detector-1];
@@ -362,11 +382,11 @@ async function paint(canvas, frame, version) {
   if ($("markers").checked) drawCenter(ctx,left+.5*side,top+.5*side);
   if ($("expected-position").checked) {
     locateSource(frame,image);
-    const at = expectedAt(frame);
     if (frame === state.session?.frames[state.index]) updateLegend();
-    if (at) drawTarget(ctx,left+at[0]*side,top+at[1]*side,frame.marker ? "Expected position" : "Image centre estimate");
+    const at = expectedAt(frame);
+    if (at) drawTarget(ctx,left+at[0]*side,top+at[1]*side,predictionLabel(frame));
     // Vesta crosses this fixed patch in under a day: say where it went instead of drawing nothing
-    else if (state.field === "vesta" && !frame.marker && !(typeof StarTracker !== "undefined" && Object.keys(StarTracker.kinds()).length)) {
+    else if (state.motionPair && state.field === "vesta" && !frame.marker && !(typeof StarTracker !== "undefined" && Object.keys(StarTracker.kinds()).length)) {
       const days = [...new Set(state.session.frames.filter(f => f.marker).map(f => dateText(f.timestamp)))];
       markLabel(ctx, "Vesta is not in this frame", left+12, top+66, "#eab354");
       markLabel(ctx, days.length ? `It crosses this patch on ${days.join(" and ")}` : "No frame in this band shows it. Try D3 or D6.", left+12, top+82, "#eab354");
@@ -395,6 +415,17 @@ async function draw() {
   try {
     await Promise.all([paint($("sky"), state.session.frames[state.index], version),
       paint($("reference"), state.session.frames[state.reference], version)]);
+    const request=state.viewRequest;
+    if (version===state.drawVersion && request?.version===state.requestVersion && !request.painted) {
+      request.painted=true;
+      $("sky").dataset.firstFrameMs=(performance.now()-request.startedAt).toFixed(1);
+      if (state.session.frames.length>=2) {
+        const next=state.session.frames[(state.index+1)%state.session.frames.length];
+        imageFor(next.preview).then(()=>{
+          if (request.version===state.requestVersion) $("sky").dataset.playbackReadyMs=(performance.now()-request.startedAt).toFixed(1);
+        }).catch(()=>{});
+      }
+    }
   } catch(error) { status(error.message,"error"); }
 }
 
@@ -522,6 +553,40 @@ function closeTargets() {
   if (popover?.matches?.(":popover-open")) popover.hidePopover();
 }
 
+function clearSubjectMotion() {
+  state.motionPair = null;
+  state.lock = null;
+  state.lockVersion++;
+  state.showMotionExample = false;
+  for (const id of ["tracker", "skip-tracker", "expected-position-control", "motion-pair", "vesta-guide", "vesta-example", "vesta-callout", "target-note"]) $(id).hidden = true;
+}
+
+function selectSubject(field, title, objectContext=null) {
+  state.field = field;
+  state.title = title;
+  state.objectContext = objectContext;
+  state.searchController?.abort();
+  clearSubjectMotion();
+  stop();
+  ++state.requestVersion;
+  ++state.drawVersion;
+  ++state.inspectVersion;
+  state.pending = null;
+  state.session = null;
+  state.point = null;
+  $("filmstrip").replaceChildren();
+  $("pixel-result").replaceChildren();
+  for (const id of ["play","previous","next","timeline","reference-date","export"]) $(id).disabled = true;
+  for (const id of ["sky", "reference"]) {
+    const canvas = $(id);
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    canvas.style.cursor = "";
+  }
+  updateLegend();
+  syncSwitcher();
+  window.dispatchEvent(new CustomEvent("sky-subject-changed", {detail: field}));
+}
+
 function resetView() {
   state.zoom = 1; state.panX = 0; state.panY = 0;
   $("zoom").value = 1;
@@ -536,9 +601,9 @@ function sessionReady(session, request, {keepView=false}={}) {
   if (!Array.isArray(session.failures)) session = {...session, failures: []};
   const previousTime = state.session?.frames[state.index]?.timestamp, prev = state.session?.options;  // read before the new session replaces them
   state.session = session;
+  state.viewRequest = request;
   state.showMotionExample = false;
   state.title = request.title;
-  state.field = request.field;
   // Vesta is in only a few frames of its patch: a newly opened patch starts on one that shows it
   const shown = session.frames.findIndex(frame => frame.marker);
   const samePatch = prev && prev.ra === session.options.ra && prev.dec === session.options.dec;
@@ -646,8 +711,15 @@ function sessionReady(session, request, {keepView=false}={}) {
     : savedCounts ? `${session.saved_dates} UTC observing dates · ${session.saved_exposures} saved exposures` : "");
   $("date-coverage-note").hidden = !coverage;
   $("date-coverage-note").textContent = coverage;
-  const pair = session.motion_example?.indices ?? motionPair(session.frames);
+  const catalog = catalogEntry();
+  const supportedSubject = catalog && (catalog.astrometry_j2000 || !["Nearby star","Bright star"].includes(catalog.category));
+  const pair = supportedSubject && state.field !== "custom" && state.field !== "imported"
+    ? session.motion_example?.indices ?? motionPair(session.frames, state.field === "vesta") : null;
+  state.motionPair = pair || null;
   $("motion-pair").hidden = !pair;
+  $("tracker").hidden = !pair;
+  $("skip-tracker").hidden = !pair;
+  $("expected-position-control").hidden = !pair || (state.field !== "vesta" && !catalogEntry());
   $("motion-pair").onclick = () => {
     stop();
     state.showMotionExample = Boolean(session.motion_example);
@@ -694,7 +766,7 @@ function sessionReady(session, request, {keepView=false}={}) {
   window.dispatchEvent(new CustomEvent("sky-session-ready",{detail:session}));
   loadOlder(state.field);
   olderCompare();
-  refreshLock(state.session);
+  if (pair) refreshLock(state.session);
 }
 
 for (const [id, all] of [["mode-dates", false], ["mode-all", true]]) $(id).onclick = () => {
@@ -812,13 +884,16 @@ function requestIdentity(request) {
   return JSON.stringify(request.options);
 }
 
-function motionPair(frames) {
+function motionPair(frames, asteroid=false) {
   let best = null, longest = 0;
   for (let i = 0; i < frames.length; i++) for (let j = i + 1; j < frames.length; j++) {
     const a = frames[i], b = frames[j], span = b.mjd - a.mjd;
-    if (span >= 1 && span > longest && a.detector === b.detector && a.release === b.release &&
+    const comparable = asteroid
+      ? span >= 1/24 && a.marker && b.marker
+      : span >= 1 && a.wavelength != null && b.wavelength != null && Math.abs(a.wavelength - b.wavelength) <= .05;
+    if (comparable && span > longest && a.detector === b.detector && a.release === b.release &&
         !a.mosaic && !b.mosaic && a.coverage >= 80 && b.coverage >= 80 &&
-        a.wavelength != null && b.wavelength != null && Math.abs(a.wavelength - b.wavelength) <= .05) {
+        Number.isFinite(span)) {
       best = [i, j];
       longest = span;
     }
@@ -921,9 +996,11 @@ async function chainBatches(first, request) {
 }
 
 async function search(source="saved", archiveOffset=0, {sampling="dates", newDates=false}={}) {
-  window.dispatchEvent(new CustomEvent("lab-field-selected", {detail:state.field}));
+  state.searchController?.abort();
   const request = {options: {...inputs(), sampling}, source, archiveOffset, newDates, mosaic: false,
-    field: state.field, title: state.title, version: ++state.requestVersion};
+    field: state.field, title: state.title, version: ++state.requestVersion, startedAt: performance.now()};
+  delete $("sky").dataset.firstFrameMs;
+  delete $("sky").dataset.playbackReadyMs;
   state.lastSource = source;
   state.pending = request;
   $("next-live-batch").hidden = true;
@@ -943,27 +1020,25 @@ async function search(source="saved", archiveOffset=0, {sampling="dates", newDat
   while (state.pending) {
     const current = state.pending;
     state.pending = null;
+    const controller = state.searchController = new AbortController();
     try {
       const key = requestIdentity(current);
       let result = current.source === "saved" && current.field === "vesta" ? state.views.get(key) : null;
       let fetched = false;
       if (!result) {
         const where = `${current.options.fov}′ patch · ${bandLabel(current.options.detector)}`;
-        const cover = window.SpaceLoader?.cover($("viewers"), {eyebrow: current.source === "saved" ? "SPHEREX ARCHIVE · LOADING PATCH" : "IRSA ARCHIVE · PULLING DATA",
-          title: `Loading ${where}`, detail: current.source === "saved" ? "Opening saved SPHEREx exposures for this sky patch." : "Searching IRSA for SPHEREx exposures covering this sky patch."});
         const task = window.SpaceLoader?.begin(current.source === "saved" ? `Loading ${where}` : `Searching IRSA · ${where}`);
         try {
-          const job = await api("/observation-lab/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...current.options,source:current.source,field:current.field,archive_offset:current.archiveOffset,new_dates:current.newDates,all_exposures:state.allExposures,mosaic:current.mosaic ?? "auto"})});
+          const job = await api("/observation-lab/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...current.options,source:current.source,field:current.field,archive_offset:current.archiveOffset,new_dates:current.newDates,all_exposures:state.allExposures,mosaic:current.mosaic ?? "auto"}),signal:controller.signal});
           result = job.result;
           let previewShown = false;
           while (!result && current.version === state.requestVersion) {
-            const progress = await api(`/observation-lab/api/jobs/${job.id}`);
+            const progress = await api(`/observation-lab/api/jobs/${job.id}`, {signal:controller.signal});
             if (progress.status === "failed") throw new Error(progress.stage);
             if (progress.status === "complete") { result = progress.result; break; }
             if (current.version === state.requestVersion) {
               if (progress.preview && !previewShown) {
                 previewShown = true;
-                cover?.done();
                 state.loading = false;
                 sessionReady(progress.preview, current);
                 state.loading = true;
@@ -971,13 +1046,11 @@ async function search(source="saved", archiveOffset=0, {sampling="dates", newDat
               const label = progress.stage || `Loading ${current.options.fov}′ ${bandLabel(current.options.detector)}`;
               status(label, "busy");
               if (!previewShown) loadingMessage(label);
-              const m = /(\d+)\s+of\s+(\d+)/.exec(label);
               task?.set(label);
-              cover?.update({detail: label, progress: m && +m[2] > 0 ? +m[1] / +m[2] : null});
             }
             await new Promise(resolve => setTimeout(resolve,850));
           }
-        } finally { task?.end(); cover?.done(); }
+        } finally { task?.end(); }
         if (!result) continue;
         if (current.field === "vesta" && current.source === "saved") state.views.set(key,result);
         fetched = true;
@@ -1134,9 +1207,7 @@ function emptyActions(session) {
 }
 
 function chooseField(field, {sampling="dates"}={}) {
-  state.title = field.name;
-  state.field = field.key;
-  state.objectContext = null;
+  selectSubject(field.key, field.name);
   $("ra").value = field.ra;
   $("dec").value = field.dec;
   if (field.detector != null) setBand(field.detector);
@@ -1441,9 +1512,7 @@ window.addEventListener?.("universe-open-object", event => {
   const detail = event.detail;
   if (!detail) return;
   setWorkspaceMode("observations");
-  state.title = detail.name || "Catalog object";
-  state.field = "custom";
-  state.objectContext = detail;
+  selectSubject("custom", detail.name || "Catalog object", detail);
   $("ra").value = Number(detail.ra).toFixed(7);
   $("dec").value = Number(detail.dec).toFixed(7);
   $("start").value = "";
@@ -1465,7 +1534,7 @@ $("archive-search").onclick = () => {
 $("vesta-example").onclick = () => {
   const field = state.library?.fields?.find(item => item.key === "vesta");
   if (!field) { status("The saved Vesta field is unavailable.","error"); return; }
-  state.title = field.name; state.field = field.key; state.objectContext = null;
+  selectSubject(field.key, field.name);
   $("ra").value = field.ra; $("dec").value = field.dec;
   for (const button of $("fields").children) button.setAttribute("aria-current",String(button.dataset.key === field.key));
   $("start").value = "2025-08-04"; $("end").value = "2025-08-05";
@@ -1481,8 +1550,7 @@ $("vesta-next-guide").onclick = () => {
   setFrame(marked[(current+1)%marked.length]);
 };
 for (const id of ["ra","dec"]) $(id).addEventListener("input", () => {
-  state.title = "Sky patch"; state.field = "custom"; state.objectContext = null;
-  window.dispatchEvent(new CustomEvent("lab-field-selected", {detail:"custom"}));
+  if (state.field !== "custom" || state.session || state.loading) selectSubject("custom", "Sky patch");
   for (const control of ["search-new-dates","exposure-sampling","view-saved-dates","next-live-batch","stop-live-batch"]) $(control).hidden = true;
   for (const button of $("fields").children) button.setAttribute("aria-current","false");
 });
@@ -1497,7 +1565,7 @@ for (const mode of ["single","split"]) $("mode-"+mode).onclick = () => {
   for (const name of ["single","split"]) $("mode-"+name).setAttribute("aria-pressed",String(mode===name));
   if (state.session) { renderComparison(); draw(); }
 };
-for (const id of ["markers","expected-position","quality","tint","image-palette"]) $(id).onchange = () => {
+for (const id of ["markers","expected-position","quality","image-palette"]) $(id).onchange = () => {
   if ($("flag-legend")) $("flag-legend").hidden = !$("quality").checked;
   if (id === "markers" || id === "expected-position") updateLegend();
   if ($("hover-flag-badge") && !$("quality").checked) $("hover-flag-badge").hidden = true;
@@ -1567,6 +1635,12 @@ document.addEventListener("keydown", event => {
   if (event.key === "ArrowLeft") { event.preventDefault(); $("previous").click(); }
 });
 new ResizeObserver(draw).observe($("viewers"));
+window.addEventListener("message", event => {
+  if (event.origin===location.origin && event.source===window.parent && event.data?.type==="parallax:pause-lab") {
+    stop();
+    window.dispatchEvent(new Event("sky-view-paused"));
+  }
+});
 
 $("lab-showcase-open")?.addEventListener("click", () => {
   if (window.parent !== window) {
@@ -1608,11 +1682,8 @@ if (guideChapter === "motion" || guideChapter === "spectrum") {
           (!params.has("fov") || Number(params.get("fov")) === target.fov)) {
         chooseField(target, {sampling});
       } else {
-        state.field = target?.key || "custom";
-        state.title = target?.name || params.get("star") || "Selected sky patch";
-        if (!target && params.has("star")) {
-          state.objectContext = {kind:"stars",name:state.title,ra:Number(params.get("ra")),dec:Number(params.get("dec"))};
-        }
+        const name = target?.name || params.get("star") || "Selected sky patch";
+        selectSubject(target?.key || "custom", name, !target && params.has("star") ? {kind:"stars", name, ra:Number(params.get("ra")), dec:Number(params.get("dec"))} : null);
         if (!params.has("detector") && (target || params.get("source") === "archive")) setBand(target?.detector ?? 0);
         await search(params.get("source") === "archive" && !target ? "archive" : "saved", 0, {sampling});
       }

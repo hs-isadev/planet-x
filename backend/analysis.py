@@ -168,4 +168,4 @@ def aperture_measure(hdus,position,radius_arcsec,calibration=None):
     if known.sum()!=aperture.sum():return dict(status='missing',reason='Per-pixel wavelength is unavailable.',valid_fraction=coverage)
     wavelength=float(np.average(wave[known],weights=area[known]))
     passband={} if band is None else dict(passband_low_um=float(np.min((wave-band/2)[known])),passband_high_um=float(np.max((wave+band/2)[known])))
-    return dict(**passband,status='ok',flux_ujy=flux,error_ujy=error,wavelength_um=wavelength,wavelength_min_um=float(wave[known].min()),wavelength_max_um=float(wave[known].max()),valid_fraction=coverage,aperture_pixels=int(aperture.sum()),background_mjy_sr=background)
+    return dict(**passband,status='ok',flux_ujy=flux,error_ujy=error,wavelength_um=wavelength,wavelength_min_um=float(wave[known].min()),wavelength_max_um=float(wave[known].max()),valid_fraction=coverage,aperture_pixels=int(aperture.sum()),aperture_flags=np.unique(flags[aperture]).tolist(),background_mjy_sr=background)

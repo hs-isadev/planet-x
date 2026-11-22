@@ -561,6 +561,7 @@ if DIST.exists():
     class FreshStaticFiles(StaticFiles):
         async def get_response(self, path, scope):
             response = await super().get_response(path, scope)
+            path = Path(path).as_posix()
             suffix = Path(path).suffix
             if path.startswith("vendor/") and suffix in (".js", ".css"):
                 response.headers["Cache-Control"] = "public, max-age=604800"

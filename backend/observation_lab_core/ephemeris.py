@@ -28,13 +28,13 @@ def _load(path):
         return {}
 
 
-def _query(command, observer, keys):
+def _query(command, observer, keys, timeout=(10, 60)):
     params = dict(COMMAND=command, OBJ_DATA='NO', MAKE_EPHEM='YES', EPHEM_TYPE='OBSERVER', CENTER=observer,
                   TLIST=','.join("'%s'" % k for k in keys), TLIST_TYPE='JD', TIME_TYPE='UT', QUANTITIES='1,3,20,21',
                   ANG_FORMAT='DEG', EXTRA_PREC='YES', CSV_FORMAT='YES', CAL_FORMAT='BOTH', TIME_DIGITS='FRACSEC')
     params = {k: v if k == 'TLIST' else "'%s'" % v for k, v in params.items()}
     try:
-        r = requests.get(URL, params=dict(params, format='text'), timeout=(10, 60))
+        r = requests.get(URL, params=dict(params, format='text'), timeout=timeout)
         r.raise_for_status()
     except requests.RequestException as e:
         raise EphemerisError('Horizons is unreachable (%s).' % type(e).__name__)
@@ -64,12 +64,12 @@ def _parse(text, command, keys):
     return name('Target body name'), name('Center body name'), rows
 
 
-def fetch(designation, jd_utc_list, cache_dir):
+def fetch(designation, jd_utc_list, cache_dir, *, timeout=(10, 60)):
     with _LOCK:  # several tracking jobs share one cache file: serialise its read-merge-write
-        return _fetch(designation, jd_utc_list, cache_dir)
+        return _fetch(designation, jd_utc_list, cache_dir, timeout)
 
 
-def _fetch(designation, jd_utc_list, cache_dir):
+def _fetch(designation, jd_utc_list, cache_dir, timeout):
     command = designation.strip()
     if not re.fullmatch(r'[A-Za-z0-9 /.()\-]+;?', command):  # also keeps quotes out of the Horizons command
         raise EphemerisError('"%s" is not a valid object designation.' % command)
@@ -90,7 +90,7 @@ def _fetch(designation, jd_utc_list, cache_dir):
         for i in range(0, len(missing), 50):
             chunk = missing[i:i + 50]
             try:
-                parsed = _parse(_query(command, observer, chunk), command, chunk)
+                parsed = _parse(_query(command, observer, chunk, timeout), command, chunk)
             except EphemerisError as e:
                 if 'unreachable' in str(e):
                     raise EphemerisError('%s %d of %d requested exposure times are not in the local cache.'

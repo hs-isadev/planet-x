@@ -90,7 +90,7 @@ def horizons_target(designation, name, slug, kind='Solar System body'):
         out = []
         for i in range(0, len(mjds), 300):          # keep each Horizons request a sensible size
             chunk = [Time(m, format='mjd').jd for m in mjds[i:i + 300]]
-            out += [(r['ra'], r['dec']) for r in ephemeris.fetch(designation + ';', chunk, CACHE)['rows']]
+            out += [(r['ra'], r['dec']) for r in ephemeris.fetch(designation + ';', chunk, CACHE, timeout=(30, 60))['rows']]
         return out
     return dict(slug=slug, name=name, kind='horizons', where=where, anchor=None, gap_days=5.0,
                 info=dict(horizons=designation, body=kind))
@@ -130,15 +130,19 @@ def check():
 
 
 def tap(ra, dec, start, end, radius_deg=0):
-    from backend.observation_lab_core.archive import query_tap
+    from backend.observation_lab_core.archive import query_sia, query_tap
     from backend.observation_lab_core.server import CONFIG
     for attempt in range(3):
         try:
             return query_tap(CONFIG, ra, dec, start, end, radius_deg=radius_deg)
         except Exception as error:
+            if attempt == 0:
+                try:
+                    return query_sia(CONFIG, ra, dec, max(radius_deg, .001), start, end, timeout=(25, 50))
+                except Exception as sia_error:
+                    print(f'  SIA fallback unavailable: {sia_error}', flush=True)
             if attempt == 2:
-                print(f'  {Time(start, format="mjd").iso[:10]}: query failed ({error})')
-                return []
+                raise RuntimeError(f'Incomplete discovery for {Time(start, format="mjd").iso[:10]}') from error
             time.sleep(2 + 3 * attempt)
 
 
@@ -258,7 +262,7 @@ def run(target, args):
         return None
 
     print(f'Searching SPHEREx for {target["name"]} from {args.start} to {args.end} …')
-    rows = discover(target, start, end)
+    rows = discover(target, start, end, workers=args.workers)
     old = {(e['id'], e['detector']): e for e in (previous or {}).get('exposures', [])}
     for key, e in old.items():                     # keep earlier finds even if outside this run's dates
         if not any((r['id'], r['detector']) == key for r in rows):

@@ -262,7 +262,7 @@ def install_analysis_routes(app,jobs,guard,clients):
                         measurement=aperture_measure(hdus,position,radius,calibration)
             except (ValueError,KeyError,OSError,RequestException) as exc:measurement=dict(status='missing',reason=str(exc))
             measurement.pop('wavelength_calibration',None)
-            points.append(dict(measurement,subchannel=channel,release=frame.get('release'),frame=frame['index'],exposure_id=frame.get('id'),date=frame.get('date') or Time(frame['mjd'],format='mjd').isot+'Z',mjd=frame['mjd'],detector=frame.get('detector'),source_url=frame.get('url') or frame.get('cutout_url'),quality_flags=frame.get('source_flag_values',[]),wavelength_calibration='released CWAVE/CBAND' if calibration_url else 'approximate WCS-WAVE',calibration_url=calibration_url))
+            points.append(dict(measurement,observation=frame.get('observation'),subchannel=channel,release=frame.get('release'),frame=frame['index'],exposure_id=frame.get('id'),date=frame.get('date') or Time(frame['mjd'],format='mjd').isot+'Z',mjd=frame['mjd'],detector=frame.get('detector'),source_url=frame.get('url') or frame.get('cutout_url'),quality_flags=frame.get('source_flag_values',[]),wavelength_calibration='released CWAVE/CBAND' if calibration_url else 'approximate WCS-WAVE',calibration_url=calibration_url))
         if method=='epsf':
             return dict(provenance='computed',source_pixels='observed',method=method,available=available,spectral_grid=spectral_grid,
                         ra=float(position.ra.deg),dec=float(position.dec.deg),radius_arcsec=None,

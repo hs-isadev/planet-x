@@ -6,6 +6,29 @@
   const proto = HTMLSelectElement.prototype;
   let uid = 0;
 
+  function positionMenu(menu, trigger, maxHeight, fitWidth=false) {
+    if (!menu.matches(":popover-open")) return;
+    const r = trigger.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    const leftEdge = viewport?.offsetLeft ?? 0, topEdge = viewport?.offsetTop ?? 0;
+    const width = viewport?.width ?? document.documentElement.clientWidth;
+    const height = viewport?.height ?? window.innerHeight;
+    const rightEdge = leftEdge + width, bottomEdge = topEdge + height;
+    if (r.bottom < topEdge || r.top > bottomEdge) { menu.hidePopover(); return; }
+    if (fitWidth) menu.style.minWidth = `${Math.min(r.width, width - 2 * PAD)}px`;
+    menu.style.maxWidth = `${width - 2 * PAD}px`;
+    menu.style.maxHeight = `${Math.min(maxHeight, height - 2 * PAD)}px`;
+    const natural = menu.offsetHeight;
+    const below = bottomEdge - r.bottom - GAP - PAD, above = r.top - topEdge - GAP - PAD;
+    const up = below < natural && above > below;
+    const available = Math.max(0, up ? above : below);
+    menu.style.maxHeight = `${Math.min(natural, available > 90 ? available : height - 2 * PAD)}px`;
+    const left = Math.max(leftEdge + PAD, Math.min(r.left, rightEdge - PAD - menu.offsetWidth));
+    const top = up ? r.top - GAP - menu.offsetHeight : r.bottom + GAP;
+    menu.style.left = `${left}px`;
+    menu.style.top = `${Math.max(topEdge + PAD, Math.min(top, bottomEdge - PAD - menu.offsetHeight))}px`;
+  }
+
   function labelFor(select) {
     // Returns an element whose text names the select, without the select's own option text.
     const forLabel = select.id && document.querySelector(`label[for="${CSS.escape(select.id)}"]`);
@@ -132,20 +155,7 @@
     }
 
     function place() {
-      if (!isOpen()) return;
-      const r = trigger.getBoundingClientRect();
-      const vw = document.documentElement.clientWidth, vh = window.innerHeight;
-      menu.style.minWidth = `${Math.min(r.width, vw - 2 * PAD)}px`;
-      menu.style.maxWidth = `${vw - 2 * PAD}px`;
-      menu.style.maxHeight = "320px";
-      const natural = menu.offsetHeight;
-      const below = vh - r.bottom - GAP - PAD, above = r.top - GAP - PAD;
-      const up = below < natural && above > below;
-      const height = Math.min(natural, 320, Math.max(up ? above : below, 80));
-      menu.style.maxHeight = `${height}px`;
-      const left = Math.max(PAD, Math.min(r.left, vw - PAD - menu.offsetWidth));
-      menu.style.left = `${left}px`;
-      menu.style.top = `${up ? r.top - GAP - menu.offsetHeight : r.bottom + GAP}px`;
+      positionMenu(menu, trigger, 320, true);
     }
 
     function open(seed = "") {
@@ -248,6 +258,7 @@
       if (menu.contains(document.activeElement)) trigger.focus();
     });
     window.addEventListener("resize", place);
+    window.visualViewport?.addEventListener("resize", place);
     window.addEventListener("scroll", event => { if (!menu.contains(event.target)) place(); }, true);
 
     for (const prop of ["value", "selectedIndex"]) {
@@ -267,11 +278,17 @@
   // Arrow-key focus movement for a popover of buttons, such as the target list.
   function menuKeys(popover) {
     if (!popover) return;
+    const trigger = document.querySelector('[popovertarget="target-popover"]');
+    const place = () => positionMenu(popover, trigger, 520);
     const items = () => [...popover.querySelectorAll("button:not(:disabled)")];
     popover.addEventListener("toggle", event => {
       if (event.newState !== "open") return;
-      (popover.querySelector('[aria-current="true"]') || items()[0])?.focus();
+      place();
+      (popover.querySelector('[aria-current="true"]') || items()[0])?.focus({preventScroll:true});
     });
+    window.addEventListener("resize", place);
+    window.visualViewport?.addEventListener("resize", place);
+    window.addEventListener("scroll", event => { if (!popover.contains(event.target)) place(); }, true);
     popover.addEventListener("keydown", event => {
       const list = items(), at = list.indexOf(document.activeElement);
       const next = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: list.length - 1 }[event.key];

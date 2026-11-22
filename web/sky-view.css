@@ -53,6 +53,11 @@ body.sky-view-open{overflow:hidden}
 
 .sky-menu{border:0!important;background:none!important;padding:0!important;box-shadow:none!important}
 #sky-view button,#sky-view select{white-space:nowrap}
+.sky-card>button{margin-top:12px}
+.sky-menu[open]{max-height:min(65dvh,460px);overflow:auto;overscroll-behavior:contain}
+.sky-menu input[type=range]{width:100%}
+@media(min-width:701px){#sky-view:has(.sky-menu[open]) .sky-card{left:20px;right:auto}}
+@media(max-width:700px){#sky-view:has(.sky-menu[open]) .sky-card{visibility:hidden}}
 
 .sky-top{background:linear-gradient(180deg,rgba(4,10,20,.94),transparent);padding-bottom:42px}
 .sky-title{border-left:2px solid #89b9dc;padding-left:12px}
@@ -62,17 +67,61 @@ body.sky-view-open{overflow:hidden}
 .sky-card .sky-jump{width:100%;margin-top:14px;border-color:#6b8da8}
 @media(max-width:700px){.sky-menu[open]{position:relative;z-index:4}.sky-card{max-height:40vh;overflow:auto}.sky-actions{gap:4px}}
 
-.sky-clock{display:grid;justify-items:center;gap:.55rem;padding:.6rem .75rem;border:1px solid #8f7145;border-radius:10px;background:#17140f;color:#f1e0bf}
-#sky-clock-dial{width:132px;padding:0;border:0;border-radius:50%;background:none;cursor:grab;touch-action:none}
-#sky-clock-dial:active{cursor:grabbing}
-#sky-clock-dial svg{display:block;filter:drop-shadow(0 3px 6px #000b)}
-.clock-case{fill:#a27c45;stroke:#e2c28d;stroke-width:2}
-.clock-face{fill:#f0ddba;stroke:#42301b;stroke-width:1.5}
-#sky-clock-dial .minor{stroke:#947c59;stroke-width:.8}
-#sky-clock-dial .major{stroke:#3d2b18;stroke-width:1.5}
-#sky-clock-dial text{fill:#463520;text-anchor:middle;font:11px Georgia,serif}
-#sky-clock-dial .hour,#sky-clock-dial .minute{stroke:#2b2118;stroke-width:4;stroke-linecap:round}
-#sky-clock-dial .minute{stroke-width:2.4}
-.clock-pin{fill:#bc8245;stroke:#4d3120}
-#sky-clock-readout{font:600 1.12rem Georgia,serif;letter-spacing:.05em}
-.sky-clock input{color-scheme:dark;border:1px solid #8f7145;border-radius:5px;background:#231b12;color:inherit;padding:.45rem}
+/* Mtanti's raster face sits inside the 24-hour winding ring. */
+.sky-clock{display:grid;justify-items:center;gap:10px;padding:14px 9px 10px;border:1px solid #405774;border-radius:16px;background:radial-gradient(ellipse at 50% 35%,#202f4e,#0b1424 70%);color:#f5f8fc}
+#sky-clock-readout{min-width:5ch;text-align:center;color:#f5f8fc;font:600 2.1rem/1.1 var(--mono,monospace);font-variant-numeric:tabular-nums;letter-spacing:.03em}
+#sky-view #sky-clock-dial{position:relative;display:block;width:min(236px,65vw);height:auto;aspect-ratio:1;padding:0;border:1px solid #687f9b;border-radius:50%;background:radial-gradient(circle,#20304a 49%,#101e35 70%);cursor:grab;touch-action:none;backdrop-filter:none;box-shadow:0 8px 20px #0008;isolation:isolate;color:#f5ecda}
+#sky-view #sky-clock-dial:active{cursor:grabbing}
+#sky-view #sky-clock-dial:focus-visible{outline:2px solid #acd8ff;outline-offset:3px}
+.clock-orbit{position:absolute;inset:6%;border-radius:50%;border:1px solid #809aba;pointer-events:none}
+.clock-orbit::after{content:"";position:absolute;inset:5%;border-radius:50%;border:1px dashed #c1a77388}
+.clock-orbit-mark{position:absolute;z-index:1;pointer-events:none;line-height:1;font:600 10px/1 var(--mono,monospace);color:#ffe0a4;text-shadow:0 1px 4px #000}
+.clock-orbit-top{top:11%;left:50%;translate:-50% 0}
+.clock-orbit-right{top:50%;right:8%;translate:0 -50%}
+.clock-orbit-bottom{bottom:10%;left:50%;translate:-50% 0}
+.clock-orbit-left{top:50%;left:8%;translate:0 -50%}
+#sky-clock-orbit-marker{position:absolute;z-index:2;inset:6%;border-radius:50%;pointer-events:none}
+#sky-clock-orbit-marker::before{content:"";position:absolute;left:50%;top:0;translate:-50% -50%;width:7px;height:7px;border-radius:50%;background:#ccecfe;box-shadow:0 0 8px 2px #71c6fa99}
+.clock-inner-dial{position:absolute;inset:17%;display:block;padding:3px;border:2px solid #ad9466;border-radius:50%;background:#f3f7fb;box-shadow:0 0 0 3px #091626,0 4px 12px #0008;pointer-events:none}
+.clock-inner-dial img{display:block;width:100%;height:100%;border-radius:50%;user-select:none}
+.clock-inner-dial::after{content:"";position:absolute;top:50%;left:50%;translate:-50% -50%;width:8px;height:8px;background:#112237;border:1px solid #f3f7fb;border-radius:50%}
+.clock-hand{position:absolute;left:50%;bottom:50%;translate:-50% 0;width:4px;border-radius:4px;background:#132238;transform-origin:center bottom}
+#sky-hour-hand{height:23%;width:6px}
+#sky-minute-hand{height:32%}
+#sky-second-hand{height:34%;width:2px;background:#956018}
+.clock-winding-hint{font-size:11px;color:#b8c9df;line-height:1.25}
+.sky-clock label{width:100%}
+.sky-clock input{color-scheme:dark;width:100%;border:1px solid #4d6481;border-radius:6px;background:#162739;color:inherit;padding:.45rem}
+
+#sky-constellations{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#sky-view .constellation-symbol{position:absolute;top:0;left:0;pointer-events:auto;max-width:148px;overflow:hidden;text-overflow:ellipsis;padding:6px 7px;color:#cbd9ed;border-color:transparent;background:transparent;backdrop-filter:none;box-shadow:none;text-shadow:0 0 9px #08162f,0 1px 5px #000;letter-spacing:.12em;text-transform:uppercase;font-size:11px}
+#sky-view .constellation-symbol:hover,#sky-view .constellation-symbol[aria-pressed=true]{color:#fff;border-color:#add0ef;background:#111f3bbd}
+#sky-view .constellation-symbol.is-centered{color:#ffdeb1;text-shadow:0 0 12px #ff8b44,0 1px 5px #000}
+#sky-view .constellation-symbol[hidden]{display:none}
+.constellation-subject{margin:0;text-align:center;color:#e1d6f5;line-height:1.35}
+.sky-top{display:grid;grid-template-columns:minmax(210px,1fr) auto}
+.sky-actions{max-width:min(680px,64vw);position:relative}
+.sky-menu[open]{position:static;overflow:visible;max-height:none}
+.sky-menu[open] .sky-menu-panel{position:absolute;right:0;top:100%;width:min(326px,calc(100vw - 24px));max-height:max(96px,calc(100dvh - var(--sky-menu-anchor,180px) - 12px));overflow:auto;background:#10152bfa;border:1px solid #48567c;border-radius:12px;box-shadow:0 14px 30px #0009;padding:10px;display:grid;gap:3px}
+.sky-menu-panel label{min-width:0;margin:0;padding:4px 7px;background:none}
+.sky-menu-panel label:first-of-type,.sky-menu-panel label:last-of-type{margin:0;padding:4px 7px}
+@media(max-width:700px){
+ .sky-top{grid-template-columns:1fr;gap:8px;padding-bottom:20px}
+ .sky-actions{max-width:none}
+ .sky-card{max-height:38dvh}
+}
+
+.constellation-portrait{display:block;width:100%;max-height:155px;object-fit:contain;margin:10px auto;mix-blend-mode:screen;filter:sepia(.16) hue-rotate(163deg)}
+.constellation-subject{margin-top:8px}
+.sky-credit a{color:#b5cae8;text-decoration:underline;pointer-events:auto}
+
+.sky-location{display:grid;gap:7px;min-width:0;margin:0 0 8px;padding:8px;border:1px solid #405774;border-radius:12px}
+.sky-location legend{padding:0 5px;color:#e8eef7;font-size:12px}
+#sky-view #sky-location-map{position:relative;display:block;width:100%;aspect-ratio:2;overflow:hidden;line-height:0;padding:0;border:0;border-radius:6px;cursor:crosshair;background:#0b1c31;outline:1px solid #607c9b}
+#sky-view #sky-location-map:focus-visible{outline:2px solid #acd8ff;outline-offset:3px}
+#sky-location-map img{display:block;width:100%;height:100%;pointer-events:none;user-select:none}
+.sky-map-pin{position:absolute;left:50%;top:50%;translate:-50% -50%;width:10px;height:10px;border:2px solid #fff0cc;border-radius:50%;background:#d27338;box-shadow:0 0 0 2px #172137,0 0 10px #f0a95c;pointer-events:none}
+#sky-map-help{line-height:1.3;font-size:10px;color:#b8c9df}
+.sky-coordinates{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+.sky-coordinates input{width:100%}
+#sky-apply{justify-self:end}

@@ -1,36 +1,46 @@
 const $=id=>document.getElementById(id);
-const numerals=['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'];
-const marks=Array.from({length:60},(_,i)=>`<line x1="80" x2="80" y1="9" y2="${i%5?13:17}" transform="rotate(${i*6} 80 80)" class="${i%5?'minor':'major'}"/>`).join('');
-const hours=numerals.map((n,i)=>`<text x="${80+51*Math.sin(i*Math.PI/6)}" y="${84-51*Math.cos(i*Math.PI/6)}">${n}</text>`).join('');
-
 export const clockMarkup=`
  <div class="sky-clock">
+  <output id="sky-clock-readout" aria-label="Simulation time"></output>
   <button id="sky-clock-dial" type="button" aria-label="Wind time. Drag, scroll, or use the arrow keys." title="Drag to wind time">
-   <svg viewBox="0 0 160 160" aria-hidden="true">
-    <circle cx="80" cy="80" r="77" class="clock-case"/>
-    <circle cx="80" cy="80" r="69" class="clock-face"/>
-    ${marks}${hours}
-    <line id="sky-hour-hand" class="hour" x1="80" y1="86" x2="80" y2="45"/>
-    <line id="sky-minute-hand" class="minute" x1="80" y1="88" x2="80" y2="26"/>
-    <circle cx="80" cy="80" r="4" class="clock-pin"/>
-   </svg>
+   <span class="clock-orbit" aria-hidden="true"></span>
+   <span class="clock-orbit-mark clock-orbit-top" aria-hidden="true">00</span>
+   <span class="clock-orbit-mark clock-orbit-right" aria-hidden="true">06</span>
+   <span class="clock-orbit-mark clock-orbit-bottom" aria-hidden="true">12</span>
+   <span class="clock-orbit-mark clock-orbit-left" aria-hidden="true">18</span>
+   <span id="sky-clock-orbit-marker" aria-hidden="true"></span>
+   <span class="clock-inner-dial" aria-hidden="true">
+    <img src="/assets/sky/clock-face.webp" alt="" width="548" height="548" draggable="false">
+    <span id="sky-hour-hand" class="clock-hand"></span>
+    <span id="sky-minute-hand" class="clock-hand"></span>
+    <span id="sky-second-hand" class="clock-hand"></span>
+   </span>
   </button>
-  <output id="sky-clock-readout"></output>
+  <small class="clock-winding-hint">Drag the dial to wind time</small>
   <label>Date &amp; time <input id="sky-datetime" type="datetime-local" step="60"></label>
  </div>`;
 
 const localValue=time=>new Date(time.getTime()-time.getTimezoneOffset()*60000).toISOString().slice(0,16);
 export function installSkyClock(getTime,setTime){
  const dial=$('sky-clock-dial'),input=$('sky-datetime');
- let drag=null,lastMinute=null;
- function render(time){
-  const minute=time.getHours()*60+time.getMinutes();
-  $('sky-hour-hand').setAttribute('transform',`rotate(${minute*.5} 80 80)`);
-  $('sky-minute-hand').setAttribute('transform',`rotate(${minute%60*6} 80 80)`);
+ const readout=$('sky-clock-readout'),orbitMarker=$('sky-clock-orbit-marker');
+ const hourHand=$('sky-hour-hand'),minuteHand=$('sky-minute-hand'),secondHand=$('sky-second-hand');
+ const readTime=new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+ let drag=null,lastMinute=null,shownTime=null;
+ function render(time, dt=1/60){
+  if(shownTime===null || drag || Math.abs(time-shownTime)>86400000)shownTime=+time;
+  else shownTime+=(+time-shownTime)*(1-Math.exp(-dt*18));
+  const displayed=new Date(shownTime);
+  const seconds=displayed.getSeconds()+displayed.getMilliseconds()/1000;
+  const minute=displayed.getHours()*60+displayed.getMinutes()+seconds/60;
+  hourHand.style.rotate=minute*.5+'deg';
+  minuteHand.style.rotate=minute%60*6+'deg';
+  secondHand.style.rotate=seconds*6+'deg';
+  orbitMarker.style.rotate=minute*.25+'deg';
   const formatted=localValue(time);
   if(formatted===lastMinute)return;
   lastMinute=formatted;
-  $('sky-clock-readout').value=time.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+  readout.value=readTime.format(time);
   if(document.activeElement!==input)input.value=formatted;
  }
  function wind(minutes){
@@ -64,6 +74,7 @@ export function installSkyClock(getTime,setTime){
  };
  input.onchange=()=>{
   const time=new Date(input.value);
+  shownTime=null;
   if(Number.isFinite(time.getTime())){setTime(time);render(time);}
  };
  render(getTime());

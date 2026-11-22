@@ -22,9 +22,9 @@ function starProfile() {
 
 export function installContext(C){
  const solar=C.prototype.solar,close=C.prototype.stellarCloseup,exit=C.prototype.exitLocal,stars=C.prototype.stars;
- C.prototype.solar=async function(data){
+ C.prototype.solar=async function(data,options){
   data.objects=data.objects.filter(d=>!d.parent);
-  const assets=solar.call(this,data),version=this.version;
+  const assets=solar.call(this,data,options),version=this.version;
   this.camera.far=100000;this.camera.updateProjectionMatrix();
   const sun=this.items.find(item=>item.data.id==='sun');
   if(sun)sun.mesh.add(corona(sun.radius));
@@ -88,7 +88,7 @@ export function installContext(C){
   this.sky.userData.update=()=>{
    this.sky.visible=!this.surface;
    this.sky.position.copy(this.camera.position);
-   material.uniforms.gain.value=this.starGain||1;
+   material.uniforms.gain.value=this.starBrightness??1;
    material.uniforms.flare.value=this.starFlare??1;
    material.uniforms.boost.value=THREE.MathUtils.clamp((this.starSize||1)/2.5,.4,2);
    material.uniforms.pixel.value=this.renderer.getPixelRatio();
@@ -151,10 +151,10 @@ export function installContext(C){
  };
  C.prototype.planetCloseup=async function(planet){
   if(!this.local||!planet)return;
-  this.local.followPlanet=planet;const radius=planet.userData.displayRadius||.1,target=planet.position.clone();
+  this.local.followPlanet=planet;const radius=planet.userData.displayRadius||.01,target=planet.position.clone();
   return this.fly(target,target.clone().add(new THREE.Vector3(0,radius*3,radius*8)),4500);
  };
- C.prototype.exitLocal=function(){exit.call(this);if(this.mode==='solar')for(const i of this.items){i.mesh.visible=!i.model;if(i.model)i.model.visible=true;}if($('stellar-system'))$('stellar-system').hidden=true;$('planet-list')?.replaceChildren();};
+ C.prototype.exitLocal=function(){exit.call(this);if(this.mode==='solar')for(const i of this.items){i.mesh.visible=!i.model&&!i.assetPending;if(i.model)i.model.visible=true;}if($('stellar-system'))$('stellar-system').hidden=true;$('planet-list')?.replaceChildren();};
  C.prototype.focus=async function(){
   this.exitLocal();const i=this.items.find(i=>i.data.id===this.selected);if(!i)return;
   const selected=this.selected,d=Math.max(i.radius*4.4,this.camera.position.distanceTo(this.controls.target));
@@ -217,7 +217,7 @@ function addDeepSky(scene){
  group.userData.update=()=>{
   const mode=scene.mode==='stars'?'stars':'solar';
   if(mode!==lastMode){group.matrix.copy(frames[mode]);group.matrixWorldNeedsUpdate=true;lastMode=mode;}
-  if(starMat){starMat.uniforms.flare.value=scene.starFlare??1;starMat.uniforms.gain.value=scene.starGain||1;starMat.uniforms.minMag.value=mode==='stars'?3.2:-9;starMat.uniforms.pixel.value=scene.renderer.getPixelRatio();starMat.uniforms.boost.value=THREE.MathUtils.clamp((scene.starSize||2.5)/2.5,.5,2);}
+  if(starMat){starMat.uniforms.flare.value=scene.starFlare??1;starMat.uniforms.gain.value=scene.starBrightness??1;starMat.uniforms.minMag.value=mode==='stars'?3.2:-9;starMat.uniforms.pixel.value=scene.renderer.getPixelRatio();starMat.uniforms.boost.value=THREE.MathUtils.clamp((scene.starSize||2.5)/2.5,.5,2);}
   if(mwMat)mwMat.uniforms.strength.value=scene.local?.4:1;
  };
  const tex=new THREE.TextureLoader().load('/assets/sky/milkyway.jpg');

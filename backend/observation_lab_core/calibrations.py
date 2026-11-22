@@ -20,7 +20,7 @@ from astropy.time import Time
 from .archive import write_json
 
 BUCKET = 'https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/'
-from backend.archive import CACHE as PLANET_CACHE
+from backend.archive import CACHE as PLANET_CACHE, LOW_MEMORY
 CACHE = PLANET_CACHE/'observation-lab/calibrations'
 CACHE.mkdir(parents=True, exist_ok=True)
 LOCK = threading.RLock()
@@ -72,11 +72,12 @@ def product_path(product):
                 temporary.replace(path)
             finally:
                 temporary.unlink(missing_ok=True)
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        with path.open('rb') as stream:
+            digest = hashlib.file_digest(stream, 'sha256').hexdigest()
     return path, dict(product, sha256=digest, file_bytes=path.stat().st_size)
 
 
-@lru_cache(maxsize=30)
+@lru_cache(maxsize=6 if LOW_MEMORY else 30)
 def load(release, kind, detector):
     index_path = CACHE/'index.json'
     identity = f'{release}/{kind}/D{detector}'

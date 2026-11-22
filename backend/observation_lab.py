@@ -22,7 +22,7 @@ PUBLIC_GET = re.compile(
     r'|cache/(?:[a-f0-9]{32}/[0-9]+(?:-quality)?\.png|[a-f0-9]{64}\.fits)'
     r'|data/(?:vesta|barnard|epsilon-indi|r-dra|rw-aur|wise-0855)/[\w.-]+\.(?:png|fits))'
 )
-PUBLIC_POST = {'api/jobs','api/spectrum','api/track'}
+PUBLIC_POST = {'api/jobs','api/spectrum','api/spectrum/cancel','api/track'}
 
 
 def start_service():

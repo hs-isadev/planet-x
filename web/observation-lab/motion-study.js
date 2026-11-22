@@ -12,11 +12,7 @@
 (() => {
   "use strict";
   const BASE = "/assets/motion-study/";
-  const TARGETS = [
-    ["barnard", "Barnard’s Star"], ["epsilon-indi", "Epsilon Indi B"], ["wise-0855", "WISE 0855"],
-    ["proxima-centauri", "Proxima Centauri"], ["rw-aur", "RW Aurigae"], ["r-dra", "R Draconis"],
-    ["vesta", "Vesta (asteroid)"],
-  ];
+  const targets = new Set();
   const MISSION_COLOR = {"WISE": "#c792ea", "NEOWISE-R": "#56c8d8", "SPHEREx": "#f5a35c"};
   const VERDICT_TONE = {"as-predicted": "good", "static": "good", "brightness": "info", "too-small": "neutral",
     "differs": "warn", "not-detected": "warn", "not-measurable": "warn", "saturated": "neutral"};
@@ -40,14 +36,15 @@
   const year = mjd => 2000 + (mjd - 51544.5) / 365.25;
 
   const ui = {};
+  let request;
   const view = {field: null, data: null, tab: "timelapse", band: "4.6", index: 0, mode: "flip", a: 0, b: null,
-    loadVersion: 0, playing: false, timer: 0, images: new Map(), residuals: true};
+    playing: false, timer: 0, images: new Map(), residuals: true};
 
-  function readUrl() {
+  function readUrl(expectedField) {
     const p = new URLSearchParams(location.search).get("ms");
     if (!p) return;
     const [field, tab, band, index, mode] = p.split(".");
-    if (field !== state.field) return;
+    if (field !== expectedField) return;
     if (["visits", "timelapse", "sky"].includes(tab)) view.tab = tab;
     if (band) view.band = band.replace("_", ".");
     if (index) view.index = Number(index) || 0;
@@ -60,22 +57,18 @@
     history.replaceState(history.state, "", url);
   }
 
-  async function extraTargets() {     // tracked bodies added by scripts/fetch_track.py
+  async function loadIndex() {
     try {
       const r = await fetch(BASE + "index.json", {cache: "no-cache"});
       if (!r.ok) return;
-      for (const s of (await r.json()).studies || []) {
-        if (TARGETS.some(t => t[0] === s.field)) continue;
-        TARGETS.push([s.field, s.mode === "track" ? `${s.name} (tracked)` : s.name]);
-
-      }
+      for (const s of (await r.json()).studies || []) targets.add(s.field);
     } catch { /* optional */ }
   }
 
   function build() {
     const anchor = document.getElementById("light-panel");
     if (!anchor || document.getElementById("motion-study")) return false;
-    ui.root = el("section", {id: "motion-study", class: "motion-study", "aria-labelledby": "ms-title"});
+    ui.root = el("section", {id: "motion-study", class: "motion-study", "aria-labelledby": "ms-title", hidden: ""});
     ui.verdictBadge = el("span", {class: "ms-badge", id: "ms-badge"});
     const head = el("div", {class: "ms-head"},
       el("div", {},
@@ -139,29 +132,31 @@
   }
 
   async function load(field) {
-    if (!field) return;
+    request?.abort();
     stop();
-    view.field = field;
-    const version = ++view.loadVersion;
-    view.data = null;
     ui.root.hidden = true;
+    view.data = null;
     view.images.clear();
-    ui.status.textContent = "Loading motion study…";
+    view.field = field;
+    Object.assign(view, {tab: "timelapse", band: "4.6", index: 0, mode: "flip", a: 0, b: null});
+    if (!targets.has(field)) return;
+    readUrl(field);
+    const controller = request = new AbortController();
     try {
-      const response = await fetch(BASE + field + "/study.json", {cache: "no-cache"});
-      if (!response.ok) throw new Error(response.status === 404 ? "No precomputed study for this target yet." : `HTTP ${response.status}`);
-      const study = await response.json();
-      if (version !== view.loadVersion || state.field !== field || study.field !== field) return;
-      view.data = study;
-      document.getElementById("ms-title").textContent = study.name + " motion study";
+      const response = await fetch(BASE + encodeURIComponent(field) + "/study.json", {signal: controller.signal});
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (controller.signal.aborted || state.field !== field || data.field !== field) return;
+      view.data = data;
+      document.getElementById("ms-title").textContent = data.name + " motion study";
       if (!view.data.timelapse.length) view.tab = "visits";
       ui.status.textContent = "";
-      render();
       ui.root.hidden = false;
+      render();
     } catch (error) {
-      if (version !== view.loadVersion) return;
+      if (controller.signal.aborted) return;
       view.data = null;
-      ui.status.textContent = `Motion study unavailable: ${error.message}`;
+      ui.root.hidden = true;
     }
   }
 
@@ -174,8 +169,9 @@
     return d.visits.filter(v => v.stacks[view.band]).map(v => {
       const s = v.stacks[view.band];
       const tl = d.timelapse.find(t => t.mission === "SPHEREx" && Math.abs(t.mjd - v.mjd) < 25);
-      return {png: s.png, mjd: v.mjd, date: v.first === v.last ? v.first : `${v.first} → ${v.last}`, mission: "SPHEREx",
-        expected: tl?.expected, measured: tl?.measured,
+      return {png: s.png, mjd: s.mjd ?? v.mjd, date: v.first === v.last ? v.first : `${v.first} → ${v.last}`, mission: "SPHEREx",
+        expected: s.expected ?? (view.band === "4.6" ? tl?.expected : null),
+        measured: view.band === "4.6" ? tl?.measured : null,
         label: `SPHEREx visit ${v.index + 1} · ${v.first === v.last ? v.first : v.first + " → " + v.last} · ${s.frames} exposure${s.frames === 1 ? "" : "s"} at ${fmt(s.wavelength_um, 2)} µm`};
     });
   }
@@ -227,7 +223,6 @@
     if (view.a >= list.length) view.a = 0;
     ui.slider.max = String(Math.max(0, list.length - 1));
     ui.slider.value = String(view.index);
-    for (const f of list) image(f.png);
     setMode(view.mode, false);
     drawVerdict();
     drawCharts();
@@ -282,6 +277,7 @@
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, W);
     let shown = list[view.index], label = shown.label;
+    if (view.playing && view.mode === "flip") image(list[(view.index+1)%list.length].png);
     if (view.mode === "blink") {
       shown = list[view.blinkOn ? view.b : view.a];
       label = `${view.blinkOn ? "B" : "A"} · ${shown.label}`;
@@ -338,8 +334,20 @@
     }
     if (now?.trail) {           // fixed-sky Vesta view: its path through this visit
       ctx.strokeStyle = "rgba(108,184,255,.55)"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
-      ctx.beginPath(); now.trail.forEach(([x, y], i) => i ? ctx.lineTo((x + .5) * k, (y + .5) * k) : ctx.moveTo((x + .5) * k, (y + .5) * k)); ctx.stroke();
+      let joined = false;
+      ctx.beginPath();
+      for (const point of now.trail) {
+        if (!point) { joined = false; continue; }
+        const [x,y] = point.map(value => (value + .5) * k);
+        if (joined) ctx.lineTo(x,y); else ctx.moveTo(x,y);
+        joined = true;
+      }
+      ctx.stroke();
       ctx.setLineDash([]);
+      if (now.gap_before) {
+        ctx.fillStyle="#151820";ctx.fillRect(10,38,150,22);
+        ctx.font="12px system-ui";ctx.fillStyle="#f5a35c";ctx.fillText("Coverage gap before this",16,53);
+      }
     }
     const pts = list.filter(same).map(f => f.expected).filter(Boolean);
     if (pts.length > 1) {          // catalog path across all frames
@@ -537,27 +545,12 @@
     ui.limits.replaceChildren(el("summary", {text: "Method, limits and credits"}), body);
   }
 
-  function follow(fieldKey) {
-    if (fieldKey === view.field) return;
-    stop();
-    ui.root.hidden = true;
-    view.field = null;
-    view.data = null;
-    view.loadVersion++;
-    if (TARGETS.some(t => t[0] === fieldKey)) {
-      view.index = 0; view.a = 0; view.b = null;
-      readUrl();
-      load(fieldKey);
-    }
-  }
-
   async function start() {
     if (!build()) return;
-    ui.root.hidden = true;
-    window.addEventListener("lab-field-selected", e => follow(e.detail));
-    window.addEventListener("sky-session-ready", () => follow(state.field));
-    await extraTargets();
-    if (state.session || state.requestVersion) follow(state.field);
+    window.addEventListener("sky-subject-changed", event => load(event.detail));
+    window.addEventListener("sky-view-paused", stop);
+    await loadIndex();
+    load(state.field);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();

@@ -6,20 +6,13 @@ const StarTracker = (() => {
   const HELP_IDLE="Pick 2nd needs a clicked point first. 3D motion needs a tracked Gaia star with a reliable distance.";
   const setText=(id,val)=>{const el=$(id);if(el)el.textContent=val;};
   const PRED='#b9a3f5', BAD='#f0806e';
-  let typedObject=false, identity=null, idSeq=0, idText='';
-  // A clicked star's name is for reading only; just Solar System objects go to JPL Horizons
-  const toJPL=()=>{const v=$("track-object").value.trim();return identity&&v===identity.name?(identity.horizons||''):v;};
-  // A named object is tracked at its JPL position (tracking.py warns about the click distance only afterwards), so say so up front
-  const noteObject=()=>{const v=$("track-object").value.trim();$("track-object-note").hidden=!toJPL();setText("track-object-note",`Tracks ${v} at its JPL-predicted position, not the pixel you click.`);};
-  const prefillObject=()=>{if(!typedObject)$("track-object").value=state.field==='vesta'?'Vesta':'';noteObject();};
+  let request;
   // Busy state: Track point says it is working and Clear becomes Cancel; clear() and the run's end restore both
   // While busy, #track-status shows each stage silently; the hidden announcer speaks only start, finish and failure
   const announcer=document.createElement("p");announcer.className="sr-only";announcer.setAttribute("role","status");$("track-status").after(announcer);
   const announce=msg=>{announcer.textContent=msg;};
   let trackTask=null;
   const setBusy=busy=>{if(busy&&!trackTask)trackTask=window.SpaceLoader?.begin("Tracking target across exposures");if(!busy){trackTask?.end();trackTask=null;}$("track-status").classList.toggle("sl-inline-busy",busy);$("track-star").textContent=busy?"Tracking…":"Track point";setText("track-clear",busy?"Cancel":"Clear");$("track-status")[busy?"removeAttribute":"setAttribute"]("role","status");};
-  // Editing the object invalidates a running request, so its answer is never shown under the new name
-  $("track-object").addEventListener('input',()=>{typedObject=true;noteObject();version++;if($("track-star").disabled){$("track-star").disabled=false;setBusy(false);$("track-status").textContent="Object changed. Press Track point to run again.";}});
   const compass=deg=>['N','NE','E','SE','S','SW','W','NW'][Math.round(((deg%360)+360)%360/45)%8];
 
   const fmtSpeed=m=>m.preferred_unit==='hr'?`${m.speed_arcsec_per_hr.toFixed(1)} ″/hr`:`${m.speed_arcsec_per_year.toFixed(2)} ″/yr`;
@@ -32,7 +25,9 @@ const StarTracker = (() => {
   }
 
   function clear() {
+    request?.abort();
     version++;result=null;choice=null;anchor2=null;
+    if($("star-space").open)$("star-space").close();
     dropCard();$("track-path").hidden=true;
     resetAnchorBtn();
     $("track-result").hidden=true;
@@ -40,55 +35,40 @@ const StarTracker = (() => {
     if($("track-spectrum"))$("track-spectrum").disabled=true;
     setText("track-help",HELP_IDLE);
     $("track-star").disabled=false;setBusy(false);
-    $("vesta-callout").hidden=false;
-    $("track-status").textContent="Click a star or asteroid, then track its path.";$("track-status").classList.remove("track-error");
+    $("vesta-callout").hidden=!state.motionPair || state.field!=="vesta";
+    $("track-object").value=state.motionPair ? state.title : "";
+    $("track-object-note").hidden=state.field!=="vesta";
+    $("track-status").textContent="Track the selected subject or click near its guide to refine the starting point.";$("track-status").classList.remove("track-error");
     setText("track-kind-pill","Ready");
     setText("kpi-speed","—");setText("kpi-heading","—");setText("kpi-change","—");setText("kpi-points","—");
     draw();
     updateLegend();
+    window.dispatchEvent(new Event("star-track-cleared"));
   }
 
-  window.addEventListener("sky-session-ready",()=>{idSeq++;identity=null;clear();prefillObject();});
+  window.addEventListener("sky-subject-changed",clear);
+  window.addEventListener("sky-session-ready",clear);
   window.addEventListener("sky-point-picked",event=>{
+    if(!state.motionPair || state.field==="vesta")return;
+    const hit=event.detail, frame=state.session?.frames[hit.frame];
+    const prior=frame && expectedAt(frame);
+    const tolerance=2*6.15/(state.session.options.fov*60);
+    if(!prior || Math.hypot(hit.x-prior[0],hit.y-prior[1])>tolerance)return;
     if(awaitingAnchor2 && choice && event.detail.frame !== choice.frame){
       anchor2=event.detail;
       resetAnchorBtn();
       $("track-status").textContent=`Anchor 2 locked (frame ${anchor2.frame+1}). Ready to track moving path.`;
       return;
     }
-    // Stepping frames re-inspects the same pixel; that must not wipe a finished track or ask the catalogs again.
     const same=choice&&event.detail.x===choice.x&&event.detail.y===choice.y;
-    if(result&&same)return;
-    if(!same)identity=null;  // before clear() redraws, so the previous name is not shown on the new click
+    if(same)return;
     clear();
     choice=event.detail;
     if($("track-anchor"))$("track-anchor").disabled=false;
-    if(same)$("track-status").textContent=idText;
-    else identify(choice);
+    $("track-status").textContent=`Starting point set for ${state.title}. Press Track point to compare exposures.`;
   });
 
-  // Names the clicked source (asteroids and comets: IMCCE SkyBoT; stars: SIMBAD) and puts the name in the object box
-  async function identify(c){
-    const token=++idSeq, box=$("track-object"), where=`Selected ${c.ra.toFixed(5)}°, ${c.dec.toFixed(5)}°.`;
-    identity=null;
-    $("track-status").textContent=idText=`${where} Identifying the source…`;
-    try{
-      const r=await api('/observation-lab/api/identify?'+new URLSearchParams({session:state.session.id,frame:c.frame,x:c.x,y:c.y}));
-      if(token!==idSeq)return;
-      const m=r.match, down=r.unavailable.length?` ${r.unavailable.join(', ')} did not answer.`:'';
-      identity=m?{...m,frame:c.frame,x:c.x,y:c.y}:null;
-      if(m){box.value=m.name;typedObject=false;}
-      else if(!typedObject)box.value='';
-      noteObject();
-      idText=m?`${m.name} · ${m.kind}, ${m.source}, ${m.separation_arcsec.toFixed(1)}″ from the ${r.centroided?'measured source':'clicked pixel'}. `
-        +(m.horizons?'Track point follows it with JPL Horizons.':'Track point measures it on every frame.')+down
-        :`${where} No catalogued object within ${r.tolerance_arcsec.toFixed(1)}″ (${r.searched.join(', ')}). Track point follows the source itself.${down}`;
-      $("track-status").textContent=idText;
-      draw();
-    }catch(e){if(token===idSeq)$("track-status").textContent=idText=`${where} Could not identify it: ${e.message}`;}
-  }
-
-  $("track-clear").onclick=()=>{idSeq++;identity=null;clear();};
+  $("track-clear").onclick=clear;
   if($("track-anchor")){
     $("track-anchor").onclick=()=>{
       if(!choice){$("track-status").textContent="Pick the object on frame 1 first.";return;}
@@ -99,22 +79,25 @@ const StarTracker = (() => {
   }
 
   $("track-star").onclick=async()=>{
-    if(!state.session?.frames.length)return;
-    const obj=toJPL();
-    if(!choice&&!obj){$("track-status").textContent="Click a star or moving object in the image first, or type a Solar System object.";return;}
+    if(!state.motionPair || !state.session?.frames.length)return;
+    const obj=state.field==="vesta" ? "Vesta" : null;
+    const frame=choice?.frame ?? state.motionPair[0];
+    const at=choice ? [choice.x,choice.y] : expectedAt(state.session.frames[frame]);
+    if(!at&&!obj){$("track-status").textContent="The selected subject is outside the usable image.";return;}
+    const controller=request=new AbortController();
     const token=++version;$("track-star").disabled=true;setBusy(true);$("track-status").classList.remove("track-error");announce("Tracking started.");
     // The walkthrough card has done its job once a track starts; it returns on Clear or a new pick
     $("vesta-callout").hidden=true;
     // Drop the previous result first: a failed rerun must not leave an earlier success on screen
     result=null;$("track-result").hidden=true;$("track-3d").disabled=true;draw();
     try{
-      const body={session:state.session.id,frame:choice?choice.frame:state.index};
-      if(choice){body.x=choice.x;body.y=choice.y;}
+      const body={session:state.session.id,frame};
+      if(at){[body.x,body.y]=at;}
       if(obj)body.object=obj;
       if(anchor2&&!obj)body.anchor2={frame:anchor2.frame,x:anchor2.x,y:anchor2.y};
-      const job=await api('/observation-lab/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const job=await api('/observation-lab/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});
       while(token===version){
-        const status=await api('/observation-lab/api/jobs/'+job.id);if(token!==version)return;
+        const status=await api('/observation-lab/api/jobs/'+job.id,{signal:controller.signal});if(token!==version)return;
         $("track-status").textContent=status.stage;trackTask?.set(status.stage?"Tracking · "+status.stage:null);
         if(status.status==='failed')throw new Error(status.stage);
         if(status.status==='complete'){
@@ -239,7 +222,7 @@ const StarTracker = (() => {
     updateLegend();
     const wingCount=points.filter(p=>p.fit_mode==='wing').length;
     const fitNote=wingCount?` (${wingCount} wing-fit)`:'';
-    $("track-status").textContent=`${points.length} / ${result.points.length} measured${fitNote}. ${c?c.name:result.catalog_note}`;
+    $("track-status").textContent=`${state.title} · ${points.length} / ${result.points.length} measured${fitNote}.`;
 
     if(m){
       const useHr=m.preferred_unit==='hr';
@@ -262,7 +245,7 @@ const StarTracker = (() => {
     $("verdict-head").classList.toggle("low",low);
     if(m){
       const sample=document.createElement("span");sample.className="verdict-sample";
-      sample.textContent=`${low?"Low confidence · ":""}${points.length} of ${result.points.length} frames measured`;
+      sample.textContent=`${result.target_kind==='asteroid'?'Measured track':'Candidate motion'} · ${low?"Low confidence · ":""}${points.length} of ${result.points.length} frames measured`;
       $("verdict-head").append(sample);
     }
     $("verdict-compare").hidden=!both;
@@ -350,10 +333,6 @@ const StarTracker = (() => {
   }
 
   function paint(ctx,frame,{side,left,top}){
-    // Name the clicked source next to the click, on the frame it was identified in (a moving object is elsewhere on other frames)
-    // Inside the saved target's gold box (±21 px) the box already names it
-    const at=identity&&$("markers").checked&&targetAt(frame), boxed=at&&Math.abs(at[0]-identity.x)*side<21&&Math.abs(at[1]-identity.y)*side<21;
-    if(identity&&!boxed&&!cur()&&frame.index===identity.frame)markLabel(ctx,identity.name,left+identity.x*side+14,top+identity.y*side-16,'#6cb8ff');
     if(!result||result.session!==state.session?.id)return;
     const p=result.points.find(pt=>pt.index===frame.index);if(!p)return;
     const ordered=result.points.filter(v=>v.accepted).sort((a,b)=>a.mjd-b.mjd);

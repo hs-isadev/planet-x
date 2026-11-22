@@ -20,18 +20,18 @@
   <link rel="stylesheet" href="/space-loader.css?v=2">
   <script src="/space-loader.js?v=1"></script>
   <script src="star-lock.js?v=2" defer></script>
-  <script src="app.js?v=lab-color-2" defer></script>
+  <script src="app.js?v=direction-links" defer></script>
   <script src="spectrum-story.js?v=1" defer></script>
-  <script src="light.js?v=band-labels-2" defer></script>
-  <script src="motion-study.js?v=target-2" defer></script>
+  <script src="light.js?v=11" defer></script>
+  <script src="motion-study.js?v=subject-1" defer></script>
   <script src="universe.js?v=3" defer></script>
-  <script src="tracking.js?v=18" defer></script>
-  <script src="ui-select.js?v=2" defer></script>
+  <script src="tracking.js?v=19" defer></script>
+  <script src="ui-select.js?v=3" defer></script>
 <link rel="stylesheet" href="planet-x.css">
   <link rel="stylesheet" href="css/motion-study.css?v=1"></head>
 <body>
   <a class="skip-link" href="#sky">Skip to image</a>
-  <a class="skip-link" href="#tracker">Skip to tracker</a>
+  <a class="skip-link" id="skip-tracker" href="#tracker" hidden>Skip to tracker</a>
   <header class="app-bar">
     <div class="app-bar-left">
       <a href="/" class="crest" aria-label="SPHEREx Celestial Workbench home">
@@ -214,26 +214,25 @@
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2"/></svg>
                 <span>Field center</span>
               </label>
-              <label class="toggle-chip" title="Show the position predicted from catalog coordinates or ephemeris">
+              <label class="toggle-chip" id="expected-position-control" hidden title="Show the position predicted from catalog coordinates, an image fit, or ephemeris">
                 <input type="checkbox" id="expected-position" checked>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="3" width="10" height="10"/></svg>
-                <span>Target position</span>
+                <span>Expected Position</span>
               </label>
               <label class="toggle-chip"><input type="checkbox" id="quality">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2l5.5 2.5v3.8c0 3.3-2.3 5.5-5.5 6.2-3.2-.7-5.5-2.9-5.5-6.2V4.5L8 2z"/></svg>
                 <span>Flags</span>
               </label>
-              <label class="toggle-chip">Image palette
-                <select id="image-palette" title="False color maps infrared image intensity.">
+              <label class="toggle-chip" title="Display colors only. The selected detector and wavelength stay the same.">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="6.2" cy="8" r="3.5"/><circle cx="9.8" cy="8" r="3.5"/></svg>
+                <span>Palette</span><select id="image-palette">
                   <option value="grayscale">Grayscale</option>
-                  <option value="infrared">Infrared heat</option>
+                  <option value="infrared">Infrared false color</option>
                   <option value="thermal">Blue–green</option>
                   <option value="amber">Amber</option>
+                  <option value="inverted">Inverted grayscale</option>
+                  <option value="detector">Detector tint</option>
                 </select>
-              </label>
-              <label class="toggle-chip"><input type="checkbox" id="tint">
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="6.2" cy="8" r="3.5"/><circle cx="9.8" cy="8" r="3.5"/></svg>
-                <span>Tint</span>
               </label>
               <span class="float-divider" aria-hidden="true"></span>
               <label class="zoom-control" title="Zoom sky viewport">
@@ -360,6 +359,7 @@
             <div class="light-controls">
               <label>Window
                 <select id="light-scope">
+                  <option value="preset" hidden>Bundled spectrum</option>
                   <option value="near">±7 days</option>
                   <option value="dates">Viewer dates</option>
                   <option value="all">All dates · slow</option>
@@ -440,7 +440,7 @@
         </section>
 
         <aside class="inspector" aria-label="Details">
-          <div id="vesta-callout" class="vesta-callout inspector-section">
+          <div id="vesta-callout" class="vesta-callout inspector-section" hidden>
             <p id="target-note" class="callout-banner" hidden></p>
             <button id="vesta-example" type="button" class="btn-ghost example-shortcut" hidden>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M8 5.5v3l2 1.5"/></svg>
@@ -511,18 +511,18 @@
             </div>
           </section>
 
-          <div class="tracking-bar inspector-section" id="tracker" tabindex="-1">
+          <div class="tracking-bar inspector-section" id="tracker" tabindex="-1" hidden>
             <div class="tracking-head">
               <div class="tracking-title-row">
                 <h2 class="section-title">Motion tracker</h2>
                 <span id="track-kind-pill" class="track-kind-pill">Ready</span>
               </div>
-              <p id="track-status" role="status">Click a star or asteroid, then track its path.</p>
+              <p id="track-status" role="status">Track the selected subject.</p>
             </div>
-            <label class="track-object" for="track-object">Object (named from your click; asteroids and comets use JPL Horizons)
-              <input id="track-object" type="text" placeholder="Vesta, 4, 433 Eros" autocomplete="off" spellcheck="false" aria-describedby="track-object-note">
+            <label class="track-object" for="track-object">Selected subject
+              <input id="track-object" type="text" readonly aria-describedby="track-object-note">
             </label>
-            <p id="track-object-note" class="track-object-note" hidden></p>
+            <p id="track-object-note" class="track-object-note" hidden>Vesta’s predicted path comes from JPL Horizons.</p>
             <div class="tracking-actions">
               <button id="track-star" type="button" class="btn-brass">Track point</button>
               <button id="track-anchor" type="button" class="btn-outline" disabled aria-pressed="false" title="Needs a clicked point first. Then step to another frame and click the moving object to anchor its path.">Pick 2nd</button>

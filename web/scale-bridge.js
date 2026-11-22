@@ -72,7 +72,7 @@ export function installScaleBridge(C) {
       const fade = r => THREE.MathUtils.clamp((r * pxPerPc - 3) / 25, 0, 1);   // gone once an orbit is ~3 px across
       lines.forEach(l => { l.material.opacity = .4 * fade(outer); l.visible = l.material.opacity > .01; });
       dots.forEach((p, k) => { const separation = radii[k] * pxPerPc;
-        p.material.uniforms.pixels.value = THREE.MathUtils.clamp(separation * .22, 6, 15) * this.renderer.getPixelRatio();
+        p.material.uniforms.pixels.value = THREE.MathUtils.clamp(separation * .12, .7, 1.7) * this.renderer.getPixelRatio();
         p.material.uniforms.alpha.value = fade(radii[k]);
         p.visible = p.material.uniforms.alpha.value > .01; });
     };

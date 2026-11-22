@@ -335,7 +335,7 @@ def ensure_local(record):
                             record['requested_source_width_deg'] / 1.5 * 60, CACHE)
 
 
-def fetch_cutouts(records, ra, dec, fov, progress, failures, start=None, end=None):
+def fetch_cutouts(records, ra, dec, fov, progress, failures, start=None, end=None, check_cancelled=None):
     """Download cutouts around (ra, dec) for observations with no local file.
 
     Returns {(id, detector): record}. Index records only guarantee that an
@@ -356,9 +356,13 @@ def fetch_cutouts(records, ra, dec, fov, progress, failures, start=None, end=Non
         except (requests.RequestException, RuntimeError, ValueError):
             failures.append('Live IRSA coverage search is unavailable. Checking saved observations against their native coverage.')
     done = {}
+    def download_one(record):
+        if check_cancelled:
+            check_cancelled()
+        return archive_download({k: v for k, v in record.items() if k != 'featured_cache'}, ra, dec, fov, CACHE)
+
     with ThreadPoolExecutor(max_workers=1 if LOW_MEMORY else 6) as pool:
-        futures = {pool.submit(archive_download, {k: v for k, v in r.items() if k != 'featured_cache'},
-                               ra, dec, fov, CACHE): r for r in records}
+        futures = {pool.submit(download_one, record): record for record in records}
         for count, future in enumerate(as_completed(futures), 1):
             try:
                 record = future.result()
@@ -559,6 +563,9 @@ def cached_featured_session(field, options, job_id):
                     excluded_frames=[], limited=limited, daily_sequence=daily)
     if preset:
         manifest.update(saved_exposures=available, saved_dates=date_count)
+        spectrum = f"assets/spectra/{field['key']}-{entry['session']}.json"
+        if (PLANET_ROOT / 'web' / spectrum).is_file():
+            manifest['preset_spectrum'] = '/' + spectrum
     if example:
         by_hash = {frame['sha256']: index for index, frame in enumerate(frames)}
         if matched_example.issubset(by_hash):
@@ -794,8 +801,18 @@ def create_session(job_id, payload, *, archive_rows=None, cached_records=None):
             buffer.close()
 
 
+class SpectrumCancelled(Exception):
+    pass
+
+
 def create_spectrum(job_id, payload):
+    def check_cancelled():
+        with LOCK:
+            if JOBS[job_id].get('_cancel_requested'):
+                raise SpectrumCancelled()
+
     try:
+        check_cancelled()
         from .spectroscopy import extract
         session_id = str(payload.get('session',''))
         if not re.fullmatch('[a-f0-9]{32}', session_id):
@@ -821,12 +838,15 @@ def create_spectrum(job_id, payload):
         records.extend(dict(f, path=str(cache_path(f['fits_url'].removeprefix('/cache/')) or ''))
                        for f in manifest['frames'] if f.get('fits_url', '').startswith('/cache/'))
         def progress(message):
+            check_cancelled()
             with LOCK:
                 JOBS[job_id].update(stage=message)
         def resolve(chosen):
+            check_cancelled()
             missing=[r for r in chosen.values() if not available(r) and r.get('source')]
             if missing:
-                chosen.update(fetch_cutouts(missing,float(sky.ra.deg),float(sky.dec.deg),5,progress,[],start,end))
+                chosen.update(fetch_cutouts(missing,float(sky.ra.deg),float(sky.dec.deg),5,progress,[],start,end,
+                                            check_cancelled=check_cancelled))
         track_points = payload.get('track_points')
         follow = bool(payload.get('follow_track') and track_points)
         result = extract(records, sky.ra.deg, sky.dec.deg, CACHE, progress, start, end,
@@ -835,7 +855,11 @@ def create_spectrum(job_id, payload):
                          track_object=payload.get('track_object') if follow else None)
         result['scope']=scope
         with LOCK:
+            check_cancelled()
             JOBS[job_id].update(status='complete',stage='Light measurements ready',result=result)
+    except SpectrumCancelled:
+        with LOCK:
+            JOBS[job_id].update(status='cancelled',stage='Light measurement cancelled.')
     except Exception as error:
         traceback.print_exc()
         with LOCK:
@@ -1001,7 +1025,8 @@ class Handler(SimpleHTTPRequestHandler):
             if parsed.path.startswith('/api/jobs/'):
                 job_id = parsed.path.rsplit('/', 1)[1]
                 with LOCK:
-                    job = JOBS.get(job_id)
+                    saved = JOBS.get(job_id)
+                    job = {key: value for key, value in saved.items() if not key.startswith('_')} if saved else None
                 return self.json_response(job or {'error': 'Job not found'}, 200 if job else 404)
             if parsed.path in ('/api/pixel', '/api/identify'):
                 args = {k: v[0] for k, v in parse_qs(parsed.query).items()}
@@ -1065,16 +1090,42 @@ class Handler(SimpleHTTPRequestHandler):
                     JOBS[job_id] = {'status': 'running', 'stage': 'Preparing request', 'id': job_id, 'job_key': job_key}
                 POOL.submit(run_job, create_session, job_id, options)
                 return self.json_response({'id': job_id}, 202)
+            if self.path == '/api/spectrum/cancel':
+                options = json.loads(payload)
+                if not isinstance(options, dict):
+                    raise ValueError('Expected a cancellation request.')
+                with LOCK:
+                    job = JOBS.get(str(options.get('id','')), {})
+                    waiters = job.get('_waiters')
+                    waiter = str(options.get('waiter',''))
+                    if job.get('status') == 'running' and waiters and waiter in waiters:
+                        waiters.remove(waiter)
+                        if not waiters:
+                            job['_cancel_requested'] = True
+                return self.json_response({'ok': True})
             if self.path in ('/api/spectrum','/api/track'):
                 options=json.loads(payload)
+                if not isinstance(options, dict):
+                    raise ValueError('Expected a measurement request.')
+                job_key=json.dumps([self.path, options], sort_keys=True)
+                waiter = uuid.uuid4().hex if self.path == '/api/spectrum' else None
                 with LOCK:
                     trim_finished_jobs()
+                    existing=next((jid for jid, job in JOBS.items()
+                                   if job['status']=='running' and not job.get('_cancel_requested')
+                                   and job.get('job_key')==job_key), None)
+                    if existing:
+                        if waiter:
+                            JOBS[existing]['_waiters'].add(waiter)
+                        return self.json_response({'id':existing,'waiter':waiter},202)
                     if sum(job['status']=='running' and not job.get('warmup') for job in JOBS.values())>=ACTIVE_JOBS:
                         return self.json_response({'error':'The archive worker is busy. Try again shortly.'},429)
                     job_id=uuid.uuid4().hex
-                    JOBS[job_id]={'status':'running','stage':'Preparing star tracking' if self.path=='/api/track' else 'Preparing light measurements','id':job_id}
+                    JOBS[job_id]={'status':'running','stage':'Preparing star tracking' if self.path=='/api/track' else 'Preparing light measurements','id':job_id,'job_key':job_key}
+                    if waiter:
+                        JOBS[job_id]['_waiters'] = {waiter}
                 POOL.submit(run_job,create_track if self.path=='/api/track' else create_spectrum,job_id,options)
-                return self.json_response({'id':job_id},202)
+                return self.json_response({'id':job_id,'waiter':waiter},202)
             return self.json_response({'error': 'Unknown endpoint'}, 404)
         except (ValueError, TypeError, KeyError) as error:
             return self.json_response({'error': str(error)}, 400)

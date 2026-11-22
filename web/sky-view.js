@@ -1,4 +1,6 @@
-import {clockMarkup,installSkyClock} from './sky-clock.js';
+import {clockMarkup,installSkyClock} from './sky-clock.js?v=orbit';
+import {constellationFigure} from './constellation-figures.js?v=artwork';
+import {makeSkyIllustrations} from './sky-illustrations.js?v=ember';
 import {stellarProfileGLSL} from './star-profile.js';
 // "Your sky": a planetarium view of the real sky from the user's location and time (Stellarium-style).
 //
@@ -18,6 +20,7 @@ const ASSETS = '/assets/sky/';
 const TARGETS = [
   ['Barnard’s Star', 269.4521, 4.6934], ['Proxima Centauri', 217.4290, -62.6795], ['Epsilon Indi B', 330.8003, -56.7853],
   ['WISE 0855−0714', 133.7862, -7.2444], ['RW Aurigae', 76.9565, 30.4014], ['R Draconis', 248.1676, 66.7550],
+  ['Wolf 359', 164.120504, 7.014723], ['Ross 154', 282.455682, -23.836235], ["Kapteyn's Star", 77.919124, -45.018434],
 ];
 const BODIES = [
   ['Mercury', '#c9b9a6'], ['Venus', '#fff3d6'], ['Mars', '#ff9b6a'], ['Jupiter', '#f4e2c4'], ['Saturn', '#f1d9a0'],
@@ -58,12 +61,16 @@ const EXTINCTION = `
   float extinctMag(float s){ return .22 * (airmass(s) - 1.); }                              // V-band, clear air
 `;
 
-export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
+export function installSkyView({toast = () => {}, openContext, getTarget, openSpherex, openSatellite} = {}) {
   const view = {open: false, ready: null, time: new Date(), live: true, speed: 1, lat: 51.4779, lon: 0, place: 'Greenwich, UK (default)',
     yaw: 180, pitch: 25, fov: 70, fovTarget: 70, pollution: 'rural', layers: {lines: true, labels: true, grid: false, atmosphere: true, ground: true, targets: true},
-    selected: null, drag: null};
+    selected: null, drag: null, brightness: 1, flare: 1};
   let renderer, scene, camera, skyGroup, sky, twilightMesh, starMat, mwMat, lineMat, gridGroup, ground, horizonMat, sunSprite, moonMesh, bodyPoints = [], labels = [], data;
   const root = buildDom();
+  const constellationButtons=[];
+  let constellations=[], observerFlight=null, openedBefore=false;
+  let illustrationAtlas={}, paintIllustrations, skyPointer=null, placeRevision=0;
+  const pointerDirection=new THREE.Vector3(),gazeDirection=new THREE.Vector3(),equatorialRotation=new THREE.Matrix4();
   const updateClock=installSkyClock(()=>view.time,time=>{
     view.time=time;view.live=false;view.speed=0;$('sky-speed').value='0';
     if(renderer)updateSky(true);
@@ -78,26 +85,42 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     el.innerHTML = `
       <canvas id="sky-canvas" aria-label="Planetarium view of the sky"></canvas>
       <div id="sky-labels" aria-hidden="true"></div>
+      <div id="sky-constellations" aria-label="Constellations in view"></div>
       <div class="sky-top">
         <div class="sky-title"><span class="eyebrow">YOUR SKY · COMPUTED</span><strong id="sky-place">Locating…</strong><small id="sky-when"></small></div>
         <div class="sky-actions">
           <button type="button" id="sky-locate" class="quiet">Use my location</button>
-          <details class="sky-menu"><summary>Place &amp; time</summary>
-            <label>Latitude<input id="sky-lat" type="number" step="0.0001" min="-90" max="90"></label>
-            <label>Longitude<input id="sky-lon" type="number" step="0.0001" min="-180" max="180"></label>
+          <details class="sky-menu"><summary>Place &amp; time</summary><div class="sky-menu-panel">
+            <fieldset class="sky-location">
+              <legend>Observer location</legend>
+              <button type="button" id="sky-location-map" aria-label="World map for observer location" aria-describedby="sky-map-help">
+                <img src="/assets/sky/observer-map.webp" width="768" height="384" alt="" draggable="false">
+                <span class="sky-map-pin" aria-hidden="true"></span>
+              </button>
+              <small id="sky-map-help">Pick a location on the map or use the arrow keys.</small>
+              <div class="sky-coordinates">
+                <label>Latitude<input id="sky-lat" type="number" step="0.0001" min="-90" max="90"></label>
+                <label>Longitude<input id="sky-lon" type="number" step="0.0001" min="-180" max="180"></label>
+              </div>
+              <button type="button" id="sky-apply">Apply coordinates</button>
+            </fieldset>
             ${clockMarkup}
-            <button type="button" id="sky-apply">Apply</button>
-          </details>
-          <details class="sky-menu"><summary>Show</summary>
+          </div></details>
+          <details class="sky-menu"><summary>Show</summary><div class="sky-menu-panel">
             <label class="sky-check"><input type="checkbox" data-layer="lines" checked> Constellations</label>
             <label class="sky-check"><input type="checkbox" data-layer="labels" checked> Names</label>
             <label class="sky-check"><input type="checkbox" data-layer="targets" checked> SPHEREx targets</label>
             <label class="sky-check"><input type="checkbox" data-layer="grid"> Alt/az grid</label>
             <label class="sky-check"><input type="checkbox" data-layer="atmosphere" checked> Atmosphere</label>
             <label class="sky-check"><input type="checkbox" data-layer="ground" checked> Ground</label>
-            <label>Star brightness <output id="sky-gain-value">100%</output><input id="sky-gain" type="range" min="50" max="300" step="5" value="100"></label><label>Star flare <output id="sky-flare-value">100%</output><input id="sky-flare" type="range" min="0" max="250" step="5" value="100"></label><label>Sky brightness<select id="sky-pollution">${Object.entries(POLLUTION).map(([k, v]) => `<option value="${k}">${v[1]}</option>`).join('')}</select></label>
-          </details>
+            <label>Sky brightness<select id="sky-pollution">${Object.entries(POLLUTION).map(([k, v]) => `<option value="${k}">${v[1]}</option>`).join('')}</select></label>
+            <label>Star brightness<input id="sky-star-brightness" type="range" min="0" max="180" value="100"></label>
+            <label>Star flare<input id="sky-star-flare" type="range" min="0" max="180" value="100"></label>
+          </div></details>
+          <button type="button" id="sky-satellite">Satellite View</button>
+          <button type="button" id="sky-spherex">SPHEREx View</button>
           <button type="button" id="sky-context" class="quiet">3D Context</button>
+          <button type="button" data-ambient-toggle>Play hum</button>
           <button type="button" id="sky-close" class="quiet" aria-label="Close sky view">Close</button>
         </div>
       </div>
@@ -111,7 +134,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
         <div id="sky-readout" class="sky-readout"></div>
       </div>
       <article id="sky-card" class="sky-card" hidden></article>
-      <p class="sky-credit">Stars: Hipparcos/HYG via d3-celestial · ephemeris: astronomy-engine · computed for your place and time; not a photograph.</p>`;
+      <p class="sky-credit">Stars: Hipparcos/HYG via d3-celestial · ephemeris: astronomy-engine · <a href="/assets/sky/constellations/CREDITS.txt" target="_blank" rel="noopener">Illustration and clock credits</a></p>`;
     document.body.append(el);
     return el;
   }
@@ -150,6 +173,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = .55;
     scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x02030a);
     camera = new THREE.PerspectiveCamera(70, 1, .1, 5000);
     camera.rotation.order = 'YXZ';
 
@@ -173,7 +197,16 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     scene.add(skyGroup);
     skyGroup.add(milkyWay());
     skyGroup.add(stars(buffer));
+    constellations=data.labels.map(([code,name,ra,dec])=>({
+      kind:'constellation',code,name,ra,dec,direction:eqVector(ra,dec,990),
+      lines:data.lines.filter(([id])=>id===code).map(([,points])=>points),
+    }));
     skyGroup.add(constellationLines());
+    paintIllustrations=makeSkyIllustrations(skyGroup);
+    fetch(ASSETS+'constellations/index.json')
+      .then(response=>response.ok?response.json():{})
+      .then(atlas=>{illustrationAtlas=atlas;})
+      .catch(()=>{});
     gridGroup = altAzGrid();
     scene.add(gridGroup);
     ground = landscape();
@@ -262,8 +295,8 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
           float dec = asin(clamp(d.z, -1., 1.));
           float v = texture2D(map, vec2(ra / 6.2831853, .5 + dec / 3.1415926)).r;
           float ext = pow(10., -.4 * extinctMag(vS)) * smoothstep(-.01, .08, vS);
-          vec3 tint = mix(vec3(.55, .6, .78), vec3(1., .9, .76), v);        // faint arms bluish-grey, core warm
-          gl_FragColor = vec4(tint * pow(v, 1.35) * .34 * strength * ext, 1.);
+          vec3 tint = mix(vec3(.45, .44, .84), vec3(.93, .94, 1.), v);        // faint arms bluish-grey, core warm
+          gl_FragColor = vec4(tint * pow(v, 1.22) * .49 * strength * ext, 1.);
         }`,
     });
     const m = new THREE.Mesh(new THREE.SphereGeometry(1500, 96, 48), mwMat);
@@ -273,22 +306,43 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
   }
 
   function constellationLines() {
-    const pts = [];
-    for (const [, seg] of data.lines) {
+    const pts = [], groups = [], centers = [];
+    for (const [code, seg] of data.lines) {
       for (let i = 0; i < seg.length - 1; i++) {
         const a = eqVector(seg[i][0], seg[i][1], 990), b = eqVector(seg[i + 1][0], seg[i + 1][1], 990);
-        // stop short of the stars so the lines do not cover them
-        const d = b.clone().sub(a), len = d.length(), cut = Math.min(len * .2, 6);
-        d.normalize();
-        pts.push(...a.clone().addScaledVector(d, cut).toArray(), ...b.clone().addScaledVector(d, -cut).toArray());
+        pts.push(...a.toArray(), ...b.toArray());
+        const center=constellations.reduce((nearest,figure,index)=>{
+          if(figure.code===code && (nearest<0 || figure.direction.dot(a)>constellations[nearest].direction.dot(a)))return index;
+          return nearest;
+        },-1);
+        const direction=(constellations[center]?.direction||a).clone().normalize().toArray();
+        groups.push(center,center);centers.push(...direction,...direction);
       }
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    g.setAttribute('figure',new THREE.Float32BufferAttribute(groups,1));
+    g.setAttribute('center',new THREE.Float32BufferAttribute(centers,3));
     lineMat = new THREE.ShaderMaterial({transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-      uniforms: {strength: {value: .5}},
-      vertexShader: `varying float vS; void main(){ vec4 w = modelMatrix * vec4(position,1.); vS = normalize(w.xyz).y; gl_Position = projectionMatrix * viewMatrix * w; }`,
-      fragmentShader: `uniform float strength; varying float vS; void main(){ gl_FragColor = vec4(vec3(.33,.52,.78) * strength * smoothstep(-.01,.03,vS), 1.); }`});
+      uniforms: {strength: {value: .5}, selected: {value: -2},
+        gaze: {value: gazeDirection}, pointer: {value: pointerDirection}},
+      vertexShader: `attribute float figure; attribute vec3 center;
+        uniform float selected; uniform vec3 gaze; uniform vec3 pointer;
+        varying float highlight; varying float vS; varying float proximity;
+        void main(){
+          vec4 world = modelMatrix * vec4(position,1.);
+          vS = normalize(world.xyz).y;
+          float look = smoothstep(.955,.993,dot(center,gaze));
+          float hover = smoothstep(.984,.998,dot(center,pointer));
+          proximity = max(look,hover);
+          highlight = (1. - step(.25,abs(figure-selected))) * proximity;
+          gl_Position = projectionMatrix * viewMatrix * world;
+        }`,
+      fragmentShader: `uniform float strength; varying float highlight; varying float vS; varying float proximity;
+        void main(){
+          vec3 ink = mix(vec3(.38,.59,.94), vec3(.92,.81,1.), highlight);
+          gl_FragColor = vec4(ink, strength * (1. + highlight*.32) * proximity * smoothstep(-.01,.03,vS));
+        }`});
     const lines = new THREE.LineSegments(g, lineMat);
     lines.frustumCulled = false;
     return lines;
@@ -362,6 +416,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
           // natural airglow + city light dome, strongest on the horizon
           float night = 1. - smoothstep(-18., -10., h);
           col += night * (vec3(.004, .007, .006) * exp(-alt * 4.) + pollution * vec3(.11, .065, .03) * exp(-alt * 3.2) + pollution * vec3(.012, .013, .02));
+          col += night * smoothstep(-.02,.18,d.y) * mix(vec3(.018,.035,.085),vec3(.062,.028,.093),pow(abs(sin(2.7*d.x + 3.2*d.z)),2.5));
           col += moon * vec3(.012, .02, .04) * (.4 + .6 * exp(-alt * 2.));       // moonlit sky
           gl_FragColor = vec4(col, 1.);
         }`});
@@ -418,8 +473,13 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0], 3));
     const mat = pointsShaderMaterial(`uniform float size; uniform float pixel; void main(){ gl_PointSize = size * pixel; gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.); }`,
-      `uniform vec3 color; uniform float alpha; void main(){ vec2 q = gl_PointCoord - .5; float r = length(q) * 2.; float i = exp(-r*r*7.) + exp(-r*3.) * .35; gl_FragColor = vec4(color * i * alpha, 1.); }`,
-      {size: {value: 6}, pixel: {value: 1}, color: {value: new THREE.Color(color)}, alpha: {value: 1}});
+      `uniform vec3 color; uniform float alpha; uniform float phase;
+       void main(){ vec2 q = (gl_PointCoord - .5) * 2.; float r = length(q);
+       float z = sqrt(max(0., 1. - r*r));
+       float light = dot(vec3(q,z),vec3(sin(phase),-.18,cos(phase)));
+       float disc = (1.-smoothstep(.70,.97,r))*(.16+.84*smoothstep(-.07,.22,light));
+       gl_FragColor = vec4(color * disc * alpha, 1.); }`,
+      {size: {value: 6}, pixel: {value: 1}, color: {value: new THREE.Color(color)}, alpha: {value: 1}, phase: {value: 0}});
     const p = new THREE.Points(g, mat);
     p.frustumCulled = false;
     p.renderOrder = 3;
@@ -478,6 +538,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
       const eq = A.Equator(name, time, observer, true, true);
       const hor = A.Horizon(time, observer, eq.ra, eq.dec, 'normal');
       p.userData.mag = il.mag;
+      p.material.uniforms.phase.value = Math.acos(THREE.MathUtils.clamp(2 * il.phase_fraction - 1, -1, 1));
       return {name, mag: il.mag, alt: hor.altitude, az: hor.azimuth, ra: eq.ra * 15, dec: eq.dec, dist_au: il.geo_dist, phase: il.phase_fraction, pos: p.position};
     });
     updateLighting();
@@ -494,7 +555,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     limit = Math.max(-1.5, limit - 2.5 * day) + Math.max(0, Math.log2(70 / view.fov)) * .8;
     starMat.uniforms.limit.value = limit;
     mwMat.uniforms.strength.value = (1 - twilight) * (1 - pol * .9) * (1 - moonUp * .7);
-    lineMat.uniforms.strength.value = view.layers.lines ? .24 * (1 - day) * (1 - twilight * .5) : 0;
+    lineMat.uniforms.strength.value = view.layers.lines ? .86 * (1 - day) * (1 - twilight * .65) : 0;
     view.daylight = day;
     sky.visible = view.layers.atmosphere && sunAlt > -8;
     twilightMesh.visible = view.layers.atmosphere;
@@ -509,16 +570,17 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     const groundLight = new THREE.Color().setRGB(.006 + .05 * day + .01 * moonUp, .008 + .065 * day + .012 * moonUp, .01 + .04 * day + .016 * moonUp);
     horizonMat.uniforms.light.value.copy(groundLight);
     horizonMat.uniforms.glow.value.setRGB(.9 * pol * (1 - day), .55 * pol * (1 - day), .25 * pol * (1 - day));
-    scene.background = new THREE.Color(0x000000);
     sunSprite.visible = view.layers.atmosphere ? true : sunAlt > -1;
     moonMesh.material.uniforms.fade.value = 1;
     moonMesh.userData.glow.material.opacity = (1 - day) * .9;
     for (const p of bodyPoints) {
       const b = Math.pow(10, -.4 * (p.userData.mag - limit));
       p.material.uniforms.alpha.value = THREE.MathUtils.clamp(b, 0, 1.4);
-      p.material.uniforms.size.value = THREE.MathUtils.clamp(2.5 + 2.2 * Math.pow(Math.max(b, 0), .3), 2.5, 14) * zoomFactor();
+      p.material.uniforms.size.value = THREE.MathUtils.clamp(8 + 3 * Math.pow(Math.max(b, 0), .3), 8, 18) * zoomFactor();
     }
     starMat.uniforms.twinkle.value = 1 - day;
+    starMat.uniforms.gain.value = view.brightness;
+    starMat.uniforms.flare.value = view.flare;
     ground.visible = view.layers.ground;
     gridGroup.visible = view.layers.grid;
   }
@@ -539,7 +601,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     if (!scene_) tmp.applyMatrix4(skyGroup.matrix);
     const alt = Math.asin(THREE.MathUtils.clamp(tmp.clone().normalize().y, -1, 1)) / DEG;
     tmp.project(camera);
-    if (tmp.z > 1 || Math.abs(tmp.x) > 1.05 || Math.abs(tmp.y) > 1.05) return null;
+    if (tmp.z < -1 || tmp.z > 1 || Math.abs(tmp.x) > 1.05 || Math.abs(tmp.y) > 1.05) return null;
     const r = renderer.domElement.getBoundingClientRect();
     return {x: (tmp.x * .5 + .5) * r.width, y: (-tmp.y * .5 + .5) * r.height, alt};
   }
@@ -553,10 +615,6 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
         if (mag > Math.min(lim - 1.2, 1.4 + Math.log2(70 / view.fov) * 1.2)) continue;
         const p = project(eqVector(ra, dec, 1000)); if (p && p.alt > .5) put(name, p, 'star');
       }
-      if (view.layers.lines && view.daylight < .5) for (const [, name, ra, dec, rank] of data.labels) {
-        if (rank > (view.fov < 40 ? 3 : view.fov < 80 ? 2 : 1)) continue;
-        const p = project(eqVector(ra, dec, 1000)); if (p && p.alt > 2) put(name.toUpperCase(), p, 'const');
-      }
       if (view.fov < 60) for (const [m, alt, , mag, ra, dec] of data.dsos) {
         if (mag > lim) continue;
         const p = project(eqVector(ra, dec, 1000)); if (p && p.alt > 1) put(alt ? `${m} · ${alt}` : m, p, 'dso');
@@ -568,11 +626,72 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     if (view.layers.targets) for (const [name, ra, dec] of TARGETS) {
       const p = project(eqVector(ra, dec, 1000)); if (p && p.alt > 0) put(name, p, 'target');
     }
+    const target=getTarget?.();
+    if(view.layers.targets && target?.point && !TARGETS.some(([name])=>name===target.name)){
+      const p=project(eqVector(target.point.ra,target.point.dec,1000));
+      if(p && p.alt>0)put(target.name||'SPHEREx target',p,'target');
+    }
     for (const [name, az] of [['N', 0], ['NE', 45], ['E', 90], ['SE', 135], ['S', 180], ['SW', 225], ['W', 270], ['NW', 315]]) {
       const v = new THREE.Vector3(Math.sin(az * DEG), .02, -Math.cos(az * DEG)).multiplyScalar(900);
       put(name, project(v, true), name.length === 1 ? 'cardinal' : 'cardinal minor');
     }
     for (let i = n; i < labelPool.length; i++) labelPool[i].hidden = true;
+  }
+
+  function drawConstellationSymbols() {
+    const width=renderer.domElement.clientWidth,height=renderer.domElement.clientHeight;
+    const centerDistance=({point})=>Math.hypot(point.x-width/2,point.y-height/2);
+    const visible=view.layers.lines && view.daylight<.65 ? constellations
+      .map(figure=>({figure,point:project(figure.direction)}))
+      .filter(({point})=>point && point.alt>2)
+      .sort((a,b)=>centerDistance(a)-centerDistance(b)) : [];
+    const drawings=visible.filter(({figure})=>illustrationAtlas[figure.code]);
+    const focused=drawings[0];
+    const intensity=focused ? 1-THREE.MathUtils.smoothstep(centerDistance(focused)/height,.047,.20) : 0;
+    const figures=visible.filter(({point})=>point.x>45 && point.x<width-45 && point.y>height*.18 && point.y<height*.82)
+      .slice(0,width<600?6:10);
+    for (const [index,{figure,point}] of figures.entries()) {
+      let button=constellationButtons[index];
+      if(!button){
+        button=document.createElement('button');button.type='button';button.className='constellation-symbol';
+        $('sky-constellations').append(button);constellationButtons.push(button);
+      }
+      if(button.figure!==figure){
+        button.figure=figure;button.textContent=figure.name;
+        button.setAttribute('aria-label','Select '+figure.name+' constellation');
+        button.onclick=()=>showCard(figure);
+      }
+      button.hidden=false;
+      button.setAttribute('aria-pressed',String(view.selected===figure));
+      button.classList.toggle('is-centered',focused?.figure===figure && intensity>.55);
+      button.style.transform='translate('+point.x+'px,'+point.y+'px) translate(-50%,-50%)';
+    }
+    for(let i=figures.length;i<constellationButtons.length;i++)constellationButtons[i].hidden=true;
+    const art=drawings.slice(0,width<600?7:12).map(({figure})=>({
+      record:illustrationAtlas[figure.code],
+      focus:focused?.figure===figure?intensity:0,
+      selected:view.selected===figure,
+    }));
+    paintIllustrations.update(art,view.layers.lines?1-THREE.MathUtils.smoothstep(view.daylight,0,.56):0);
+
+  }
+
+  function constellationCard(figure, card) {
+    for(const menu of root.querySelectorAll('.sky-menu'))menu.open=false;
+    const subject=constellationFigure(figure.code);
+    card.innerHTML='<header><span class="eyebrow">CONSTELLATION</span><h3></h3><button type="button" class="quiet" aria-label="Close constellation">×</button></header>'
+      + '<p class="constellation-subject"></p>';
+    card.querySelector('h3').textContent=figure.name;
+    card.querySelector('.constellation-subject').textContent=subject;
+    const record=illustrationAtlas[figure.code];
+    if(record){
+      const picture=document.createElement('img');
+      picture.className='constellation-portrait';picture.alt=subject;
+      picture.src=ASSETS+'constellations/'+record[0]+'.webp';
+      card.insertBefore(picture,card.querySelector('.constellation-subject'));
+    }
+    card.querySelector('button').onclick=()=>showCard(null);
+    card.hidden=false;
   }
 
   function readout() {
@@ -582,6 +701,7 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     $('sky-readout').textContent = `Looking ${compass(az)} ${az.toFixed(0)}° · alt ${view.pitch.toFixed(0)}° · field ${view.fov.toFixed(0)}° · ${phase} · stars to mag ${lim.toFixed(1)}`;
     $('sky-when').textContent = view.time.toLocaleString(undefined, {weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'})
       + ` · Sun ${sunAlt.toFixed(1)}°` + (view.live && view.speed === 1 ? ' · live' : '');
+
   }
   const compass = az => ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'][Math.round(az / 22.5) % 16];
 
@@ -590,6 +710,11 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     const consider = (obj, v, isScene = false) => { const p = project(v, isScene); if (!p || p.alt < -1) return; const d = Math.hypot(p.x - x, p.y - y); if (d < bestD) { bestD = d; best = obj; } };
     for (const b of bodyInfo) consider({kind: 'planet', ...b}, b.pos);
     if (moonInfo) consider({kind: 'moon', ...moonInfo}, moonInfo.pos);
+    const sun=project(sunSprite.position);
+    if(sun?.alt>=0 && Math.hypot(sun.x-x,sun.y-y)<bestD){
+      const v=sunSprite.position.clone().normalize();
+      consider({kind:'sun',name:'Sun',ra:(Math.atan2(v.y,v.x)/DEG+360)%360,dec:Math.asin(v.z)/DEG},sunSprite.position);
+    }
     for (const t of TARGETS) consider({kind: 'target', name: t[0], ra: t[1], dec: t[2]}, eqVector(t[1], t[2], 1000));
     for (const [ra,dec,mag,name,con,distance,band='V'] of data.named){
       if(mag>starMat.uniforms.limit.value+.5)continue;
@@ -600,8 +725,10 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
 
   function showCard(o) {
     const card = $('sky-card');
-    if (!o) { card.hidden = true; view.selected = null; return; }
     view.selected = o;
+    lineMat.uniforms.selected.value=o?.kind==='constellation'?constellations.findIndex(figure=>figure.code===o.code):-2;
+    if (!o) { card.hidden = true; return; }
+    if (o.kind==='constellation') { constellationCard(o,card); return; }
     const A = Astronomy, time = A.MakeTime(view.time);
     const hor = o.alt != null ? o : A.Horizon(time, observer, o.ra / 15, o.dec, 'normal');
     const rows = [['Altitude', `${hor.altitude?.toFixed?.(1) ?? hor.alt.toFixed(1)}°`], ['Azimuth', `${(hor.azimuth ?? hor.az).toFixed(1)}° (${compass(hor.azimuth ?? hor.az)})`],
@@ -619,14 +746,31 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
       const alt = hor.altitude ?? hor.alt;
       rows.push(['Tonight', alt > 0 ? 'Above your horizon now' : 'Below your horizon now']);
     }
-    card.innerHTML = `<header><span class="eyebrow">${{planet: 'PLANET', moon: 'MOON', star: 'STAR' + (o.con ? ' · ' + o.con : ''), target: 'SPHEREx STUDY TARGET'}[o.kind]}</span><h3>${o.name}</h3><button type="button" class="quiet" aria-label="Close">×</button></header>`
+    card.innerHTML = `<header><span class="eyebrow">${{planet: 'PLANET', moon: 'MOON', sun: 'STAR', star: 'STAR' + (o.con ? ' · ' + o.con : ''), target: 'SPHEREx STUDY TARGET'}[o.kind]}</span><h3>${o.name}</h3><button type="button" class="quiet" aria-label="Close">×</button></header>`
       + `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`
       + (o.kind === 'target' ? '<p class="micro">One of the targets in the SPHEREx motion study. Its motion is far too small to see by eye; the study measures it in the images.</p>' : '');
     card.querySelector('button').onclick = () => showCard(null);
-    const jump = document.createElement('button');
-    jump.type = 'button'; jump.className = 'sky-jump'; jump.textContent = 'Open in 3D Context';
-    jump.onclick = () => { close(); openContext(o); };
-    card.append(jump);
+    if (openContext) {
+      const button=document.createElement('button');
+      button.type='button';button.textContent='Open in 3D Context';
+      button.onclick=async()=>{
+        button.disabled=true;
+        try { if (await openContext(o)) close(); }
+        catch(error) { toast(error.message); }
+        finally { button.disabled=false; }
+      };
+      card.append(button);
+    }
+    if(openSpherex){
+      const observe=document.createElement('button');observe.type='button';observe.textContent='Open in SPHEREx';
+      observe.onclick=()=>{
+        const v=equatorialDirection(o);
+        if(!v)return;
+        const coordinates={...o,ra:(Math.atan2(v.y,v.x)/DEG+360)%360,dec:Math.asin(v.z)/DEG};
+        close();openSpherex(coordinates);
+      };
+      card.append(observe);
+    }
     card.hidden = false;
   }
 
@@ -635,7 +779,12 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
 
   function bindControls() {
     const canvas = $('sky-canvas');
-    canvas.addEventListener('pointerdown', e => { view.drag = {x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch, moved: false}; canvas.setPointerCapture(e.pointerId); });
+    root.addEventListener('pointermove',event=>{
+      skyPointer=event.pointerType!=='touch' && (event.target===canvas || event.target.closest('.constellation-symbol'))
+        ? [event.clientX,event.clientY] : null;
+    });
+    root.addEventListener('pointerleave',()=>{skyPointer=null;});
+    canvas.addEventListener('pointerdown', e => { observerFlight=null; view.drag = {x: e.clientX, y: e.clientY, yaw: view.yaw, pitch: view.pitch, moved: false}; canvas.setPointerCapture(e.pointerId); });
     canvas.addEventListener('pointermove', e => {
       const d = view.drag; if (!d) return;
       const k = view.fov / canvas.clientHeight;
@@ -664,12 +813,13 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
       e.preventDefault();
     });
     $('sky-close').onclick = close;
-    $('sky-gain').oninput = e => setGain(Number(e.target.value));
-    $('sky-context').onclick = () => {
-      const v = camera.getWorldDirection(new THREE.Vector3()).applyMatrix4(skyGroup.matrix.clone().invert()).normalize();
-      close();
-      openContext({ra: (Math.atan2(v.y,v.x)/DEG+360)%360, dec: Math.asin(v.z)/DEG});
+    const sightline=()=>{
+      const v=camera.getWorldDirection(new THREE.Vector3()).applyMatrix4(skyGroup.matrix.clone().invert()).normalize();
+      return {ra:(Math.atan2(v.y,v.x)/DEG+360)%360, dec:Math.asin(v.z)/DEG};
     };
+    $('sky-context').onclick=()=>{const point=sightline();close();openContext?.(point);};
+    $('sky-satellite').onclick=()=>{const point=sightline();close();openSatellite?.(point);};
+    $('sky-spherex').onclick=()=>{const point=sightline();close();openSpherex?.(point);};
     $('sky-locate').onclick = locate;
     $('sky-now').onclick = () => { view.time = new Date(); view.live = true; view.speed = 1; $('sky-speed').value = '1'; updateSky(true); };
     $('sky-speed').onchange = e => { view.speed = Number(e.target.value); view.live = view.speed === 1; };
@@ -678,19 +828,65 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
     for (const c of root.querySelectorAll('[data-layer]')) c.onchange = () => { view.layers[c.dataset.layer] = c.checked; updateLighting(); };
     $('sky-pollution').value = view.pollution;
     $('sky-pollution').onchange = e => { view.pollution = e.target.value; updateLighting(); };
-    $('sky-apply').onclick = () => {
-      const lat = Number($('sky-lat').value), lon = Number($('sky-lon').value);
-      if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) setPlace(lat, lon, `${fmtCoord(lat, 'N', 'S')}, ${fmtCoord(lon, 'E', 'W')}`);
-
-      updateSky(true);
+    for (const name of ['brightness', 'flare']) $('sky-star-' + name).oninput = e => {
+      view[name]=Number(e.target.value)/100; updateLighting();
     };
+    const map=$('sky-location-map');
+    map.onclick=event=>{
+      if(!event.detail)return;
+      const box=map.getBoundingClientRect();
+      const x=THREE.MathUtils.clamp((event.clientX-box.left)/box.width,0,1);
+      const y=THREE.MathUtils.clamp((event.clientY-box.top)/box.height,0,1);
+      pickLocation(90-y*180,x*360-180);
+    };
+    map.onkeydown=event=>{
+      const step=event.shiftKey?1:5;
+      const moves={ArrowLeft:[0,-step],ArrowRight:[0,step],ArrowUp:[step,0],ArrowDown:[-step,0]};
+      const offset=moves[event.key];
+      if(!offset)return;
+      event.preventDefault();event.stopPropagation();
+      pickLocation(THREE.MathUtils.clamp(view.lat+offset[0],-90,90),shortAngle(view.lon+offset[1]));
+    };
+    $('sky-apply').onclick = () => {
+      const lat=$('sky-lat').valueAsNumber,lon=$('sky-lon').valueAsNumber;
+      if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){
+        toast('Enter latitude from −90° to 90° and longitude from −180° to 180°.');
+        return;
+      }
+      pickLocation(lat,lon);
+    };
+    const menus=[...root.querySelectorAll('.sky-menu')];
+    for(const menu of menus)menu.addEventListener('toggle',()=>{
+      if(!menu.open)return;
+      positionMenus();
+      for(const other of menus)if(other!==menu)other.open=false;
+      if(menu.contains($('sky-datetime'))){
+        const local=new Date(view.time.getTime()-view.time.getTimezoneOffset()*60000);
+        $('sky-datetime').value=local.toISOString().slice(0,16);
+      }
+    });
+    root.addEventListener('pointerdown',event=>{
+      if(!event.target.closest('.sky-menu, .sky-card'))for(const menu of menus)menu.open=false;
+    });
   }
 
   const fmtCoord = (v, p, n) => `${Math.abs(v).toFixed(2)}° ${v >= 0 ? p : n}`;
+  function pickLocation(lat,lon){
+    setPlace(lat,lon,fmtCoord(lat,'N','S')+', '+fmtCoord(lon,'E','W'));
+  }
+  function syncLocationControls(){
+    $('sky-lat').value=view.lat.toFixed(4);
+    $('sky-lon').value=view.lon.toFixed(4);
+    const pin=$('sky-location-map').querySelector('.sky-map-pin');
+    pin.style.left=(view.lon+180)/3.6+'%';
+    pin.style.top=(90-view.lat)/1.8+'%';
+  }
   function setPlace(lat, lon, name) {
+    placeRevision++;
+    observerFlight=null;
     view.lat = lat; view.lon = lon; view.place = name;
     $('sky-place').textContent = name;
-    $('sky-lat').value = lat.toFixed(4); $('sky-lon').value = lon.toFixed(4);
+    syncLocationControls();
     try { localStorage.setItem('parallax-sky-place', JSON.stringify({lat, lon, name})); } catch { /* private mode */ }
     if (renderer) updateSky(true);
   }
@@ -698,14 +894,21 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
   function locate() {
     if (!navigator.geolocation) { toast('Location is not available in this browser; enter latitude and longitude instead.'); return; }
     $('sky-place').textContent = 'Locating…';
+    const revision=++placeRevision;
     navigator.geolocation.getCurrentPosition(
-      p => setPlace(p.coords.latitude, p.coords.longitude, `Your location · ${fmtCoord(p.coords.latitude, 'N', 'S')}, ${fmtCoord(p.coords.longitude, 'E', 'W')}`),
-      () => { $('sky-place').textContent = view.place; toast('Location permission was not given; showing ' + view.place + '. Set it under Place & time.'); },
+      p => {if(revision===placeRevision) setPlace(p.coords.latitude, p.coords.longitude, `Your location · ${fmtCoord(p.coords.latitude, 'N', 'S')}, ${fmtCoord(p.coords.longitude, 'E', 'W')}`);},
+      () => { if(revision!==placeRevision)return; $('sky-place').textContent = view.place; toast('Location permission was not given; showing ' + view.place + '. Set it under Place & time.'); },
       {enableHighAccuracy: false, timeout: 10000, maximumAge: 600000});
+  }
+
+  function positionMenus(){
+    const anchor=root.querySelector('.sky-actions').getBoundingClientRect().bottom;
+    root.style.setProperty('--sky-menu-anchor',Math.ceil(anchor)+'px');
   }
 
   function resize() {
     if (!renderer) return;
+    positionMenus();
     const w = root.clientWidth || innerWidth, h = root.clientHeight || innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
@@ -716,28 +919,89 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
   }
 
   // ---------------------------------------------------------------------------------------------------------
-  let last = 0, frame = 0;
+  let last = 0, frame = 0, animationFrame = 0;
   function tick(t) {
     if (!view.open) return;
-    requestAnimationFrame(tick);
+    animationFrame=requestAnimationFrame(tick);
     const dt = Math.min(.1, (t - (last || t)) / 1000); last = t;
+    if(document.hidden)return;
     if (view.live && view.speed === 1) view.time = new Date();
     else if (view.speed) view.time = new Date(view.time.getTime() + dt * 1000 * view.speed);
     view.fov += (view.fovTarget - view.fov) * (1 - Math.exp(-dt * 10));
+    updateSky(view.speed > 60);
+    if(observerFlight)stepObserverFlight(t);
     camera.fov = view.fov; camera.updateProjectionMatrix();
     camera.rotation.set(view.pitch * DEG, -view.yaw * DEG, 0);
-    updateSky(view.speed > 60);
-    updateClock(view.time);
-    starMat.uniforms.flare.value = Number($('sky-flare').value)/100;
-    starMat.uniforms.gain.value = Number($('sky-gain').value)/100;
+    camera.updateMatrixWorld();
+    updateClock(view.time,dt);
     starMat.uniforms.time.value = t / 1000;
     starMat.uniforms.zoom.value = zoomFactor();
+    equatorialRotation.copy(skyGroup.matrix).invert();
+    camera.getWorldDirection(gazeDirection).transformDirection(equatorialRotation);
+    if(skyPointer){
+      const rect=renderer.domElement.getBoundingClientRect();
+      pointerDirection.set(2*(skyPointer[0]-rect.left)/rect.width-1,1-2*(skyPointer[1]-rect.top)/rect.height,.5)
+        .unproject(camera).sub(camera.position).transformDirection(equatorialRotation);
+    }else pointerDirection.set(0,0,0);
+    paintIllustrations.animate(t/1000,dt);
     renderer.render(scene, camera);
-    if ((frame++ & 1) === 0) { drawLabels(); readout(); }
+    if ((frame++ & 1) === 0) { drawLabels(); drawConstellationSymbols(); readout(); }
   }
 
-  async function open(focus = null) {
-    if (view.open) return;
+  const shortAngle=degrees=>((degrees%360)+540)%360-180;
+  function equatorialDirection(object) {
+    const body=object.body || (['planet','sun','moon'].includes(object.kind) ? object.name : null);
+    if(body){
+      const eq=Astronomy.Equator(body,Astronomy.MakeTime(view.time),observer,false,true);
+      return eqVector(eq.ra*15,eq.dec);
+    }
+    if(Number.isFinite(object.ra)&&Number.isFinite(object.dec))return eqVector(object.ra,object.dec);
+  }
+
+  function face(object) {
+    if(!object || !observer)return;
+    observerFlight=null;
+    const direction=equatorialDirection(object);
+    if(!direction)return;
+    const sceneDirection=direction.clone().applyMatrix4(skyGroup.matrix);
+    const altitude=Math.asin(THREE.MathUtils.clamp(sceneDirection.y,-1,1))/DEG;
+    if(altitude >= 2){
+      view.yaw=Math.atan2(sceneDirection.x,-sceneDirection.z)/DEG;
+      view.pitch=altitude;
+      return;
+    }
+    const time=Astronomy.MakeTime(view.time);
+    const eqDate=Astronomy.RotateVector(Astronomy.Rotation_EQJ_EQD(time),
+      new Astronomy.Vector(direction.x,direction.y,direction.z,time));
+    const targetLon=shortAngle(Math.atan2(eqDate.y,eqDate.x)/DEG-Astronomy.SiderealTime(time)*15);
+    observerFlight={object,start:performance.now(),lat:view.lat,lon:view.lon,pitch:view.pitch,
+      deltaLon:shortAngle(targetLon-view.lon),targetLat:Math.asin(THREE.MathUtils.clamp(eqDate.z,-1,1))/DEG};
+    $('sky-place').textContent='Moving to a viewpoint under '+(object.body || object.name || 'this direction');
+  }
+
+  function stepObserverFlight(t){
+    const move=observerFlight;
+    const fraction=THREE.MathUtils.clamp((t-move.start)/1600,0,1);
+    const eased=fraction*fraction*(3-2*fraction);
+    view.lat=THREE.MathUtils.lerp(move.lat,move.targetLat,eased);
+    view.lon=shortAngle(move.lon+move.deltaLon*eased);
+    updateSky(fraction===1);
+    const direction=equatorialDirection(move.object).applyMatrix4(skyGroup.matrix);
+    const altitude=Math.asin(THREE.MathUtils.clamp(direction.y,-1,1))/DEG;
+    if(altitude<86){
+      const yaw=Math.atan2(direction.x,-direction.z)/DEG;
+      view.yaw+=shortAngle(yaw-view.yaw)*Math.sin(eased*Math.PI/2)*.15;
+    }
+    view.pitch=THREE.MathUtils.lerp(move.pitch,Math.max(3,altitude),eased);
+    if(fraction===1){
+      observerFlight=null;
+      $('sky-place').textContent='Virtual viewpoint · '+fmtCoord(view.lat,'N','S')+', '+fmtCoord(view.lon,'E','W');
+      syncLocationControls();
+    }
+  }
+
+  async function open(object) {
+    const wasOpen=view.open;
     root.hidden = false;
     view.open = true;
     document.body.classList.add('sky-view-open');
@@ -750,28 +1014,29 @@ export function installSkyView({toast = () => {}, openContext, setGain} = {}) {
       close();
       return;
     }
+    if(!view.open)return false;
+    if(wasOpen){face(object);return true;}
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem('parallax-sky-place') || 'null'); } catch { /* ignore */ }
-    if (saved) setPlace(saved.lat, saved.lon, saved.name); else { setPlace(view.lat, view.lon, view.place); locate(); }
-    view.time = new Date(); view.live = true; view.speed=1; $('sky-speed').value='1';
+    if (saved) setPlace(saved.lat, saved.lon, saved.name); else { setPlace(51.4779, 0, 'Greenwich, UK (default)'); if(!object)locate(); }
+    if(!openedBefore){view.time=new Date();openedBefore=true;}
     resize();
     // face the brightest part of the sky to start: south-ish in the north, north-ish in the south
     view.yaw = view.lat >= 0 ? 180 : 0;
     updateSky(true);
-    if(focus){
-      const body = [...bodyInfo,moonInfo].find(b=>b?.name.toLowerCase()===focus.name?.toLowerCase());
-      if(body){view.yaw=body.az;view.pitch=THREE.MathUtils.clamp(body.alt,-30,90);}
-      else if(Number.isFinite(focus.ra)&&Number.isFinite(focus.dec)){
-        const dir=eqVector(focus.ra,focus.dec).applyMatrix4(skyGroup.matrix).normalize();
-        view.yaw=Math.atan2(dir.x,-dir.z)/DEG;
-        view.pitch=THREE.MathUtils.clamp(Math.asin(dir.y)/DEG,-30,90);
-      }
-    }
+    face(object);
     last = 0;
-    requestAnimationFrame(tick);
+    cancelAnimationFrame(animationFrame);
+    animationFrame=requestAnimationFrame(tick);
+    return true;
   }
 
   function close() {
+    cancelAnimationFrame(animationFrame);
+    observerFlight=null;
+    skyPointer=null;
+    if(lineMat)showCard(null);
+    for(const menu of root.querySelectorAll('.sky-menu'))menu.open=false;
     view.open = false;
     root.hidden = true;
     document.body.classList.remove('sky-view-open');

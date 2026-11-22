@@ -6,6 +6,7 @@ Source coordinates are fixed; neighboring sources are not jointly deblended.
 import hashlib
 import json
 import math
+from time import perf_counter
 import numpy as np
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
@@ -236,73 +237,52 @@ def feature_candidates(points, redshift=0):
 
 
 def extract(records, ra, dec, cache, progress=lambda value:None, start_mjd=None, end_mjd=None, redshift=0, resolve=None, track_points=None, track_object=None):
+    started = perf_counter()
     sky=coordinate(ra,dec)
     if not math.isfinite(redshift) or not 0<=redshift<=5:
         raise ValueError('Reference redshift must be between 0 and 5.')
     directory=cache/'spectra';directory.mkdir(exist_ok=True)
-
-    # Instant fast-path for pre-extracted featured target spectra
-    if not track_points and start_mjd is None and end_mjd is None:
-        if not hasattr(extract, '_cached_spectra_meta'):
-            cached_meta = []
-            for sf in directory.glob('*.json'):
-                try:
-                    data = json.loads(sf.read_text())
-                    if not data.get('tracking_linked') and data.get('ra') is not None:
-                        cached_meta.append((data['ra'], data['dec'], sf, len(data.get('points', []))))
-                except Exception:
-                    pass
-            cached_meta.sort(key=lambda x: x[3], reverse=True)
-            extract._cached_spectra_meta = cached_meta
-        for cra, cdec, sf, count in extract._cached_spectra_meta:
-            if abs(cra - float(sky.ra.deg)) < 0.015 and abs(cdec - float(sky.dec.deg)) < 0.015:
-                try:
-                    cached_result = json.loads(sf.read_text())
-                    if redshift != 0:
-                        cached_result = dict(cached_result, redshift=redshift, candidates=feature_candidates(cached_result['points'], redshift))
-                    return cached_result
-                except Exception:
-                    pass
-    elif track_object and track_points:
-        for sf in directory.glob('*.json'):
-            try:
-                data = json.loads(sf.read_text())
-                if data.get('tracking_linked') and data.get('track_object') == track_object and len(data.get('points', [])) > 0:
-                    return data
-            except Exception:
-                pass
 
     track_lookup = {}
     if track_points:
         for p in track_points:
             if p.get('id'): track_lookup[str(p['id'])] = p
             if p.get('sha256'): track_lookup[str(p['sha256'])] = p
-            if 'index' in p: track_lookup[f"idx_{p['index']}"] = p
     selected=[]
     for r in records:
         if start_mjd is not None and r['mjd']<start_mjd: continue
         if end_mjd is not None and r['mjd']>end_mjd: continue
-        if track_points:
+        if track_points and (str(r['id']) in track_lookup or str(r['sha256']) in track_lookup):
             selected.append(r)
-        elif sky.separation(SkyCoord(*r['center'],unit='deg')).deg <= r['radius_deg']:
+        elif not track_points and sky.separation(SkyCoord(*r['center'],unit='deg')).deg <= r['radius_deg']:
             selected.append(r)
     dedup={}
     for r in sorted(selected,key=reduction_priority,reverse=True):
         dedup.setdefault((r['id'],r['detector']),r)
-    calibration_index=json.loads((calibrations.CACHE/'index.json').read_text()) if (calibrations.CACHE/'index.json').exists() else {'products':calibrations.discover()}
+    index_path=calibrations.CACHE/'index.json'
+    if not index_path.exists():
+        progress('Loading the official IRSA calibration index.')
+        calibrations.discover()
+    calibration_index=json.loads(index_path.read_text())
     signature=[METHOD,float(sky.ra.deg),float(sky.dec.deg),redshift,start_mjd,end_mjd,
-               sorted(r['sha256'] for r in dedup.values()),calibration_index['products'],
-               track_object,len(track_points) if track_points else 0]
+               sorted((r['id'], r['detector'], r['release'], r['sha256']) for r in dedup.values()),
+               calibration_index['products'], track_object, track_points]
     key=hashlib.sha256(json.dumps(signature,sort_keys=True).encode()).hexdigest()
     path=directory/f'{key}.json'
-    if path.exists(): return json.loads(path.read_text())
+    if path.exists():
+        result = json.loads(path.read_text())
+        result['timing_ms'] = {'lookup': round(1000*(perf_counter()-started), 1), 'cache_hit': True}
+        return result
+    fetch_started = perf_counter()
     if resolve: resolve(dedup)  # fetch pixels for index-only observations
+    extraction_started = perf_counter()
     points=[]
-    for index,record in enumerate(sorted(dedup.values(),key=lambda r:r['mjd'])):
+    # Group FITS measurements so the same detector calibrations stay hot on memory-limited hosts.
+    for index,record in enumerate(sorted(dedup.values(),key=lambda r:(r['release'], r['detector'], r['mjd']))):
         progress(f"Measuring light in observation {index+1} of {len(dedup)}")
         try:
             if not record.get('path'): raise FileNotFoundError('Observation could not be fetched from the archive, or does not cover this position.')
-            tp = track_lookup.get(str(record.get('id'))) or track_lookup.get(str(record.get('sha256'))) or track_lookup.get(f"idx_{index}") if track_points else None
+            tp = (track_lookup.get(str(record.get('sha256'))) or track_lookup.get(str(record.get('id')))) if track_points else None
             if tp is not None:
                 if tp.get('accepted') and tp.get('ra') is not None:
                     target_sky = coordinate(tp['ra'], tp['dec'])
@@ -323,6 +303,7 @@ def extract(records, ra, dec, cache, progress=lambda value:None, start_mjd=None,
         except Exception as error:
             points.append(dict(id=record['id'],detector=record['detector'],timestamp=record['timestamp'],
                 mjd=record['mjd'],release=record['release'],accepted=False,reason=str(error)))
+    points.sort(key=lambda point: point['mjd'])
     notes=['Single-source forced fit using official ePSF, CWAVE/CBAND and pixel-area products.',
            'Every plotted point is extracted from a real FITS observation; error bars are statistical estimates.',
            'Different wavelengths can be measured on different dates. Variability can imitate spectral features.',
@@ -338,5 +319,12 @@ def extract(records, ra, dec, cache, progress=lambda value:None, start_mjd=None,
         references=REFERENCES,calibration_checked_utc=calibration_index.get('checked_utc'),
         tracking_linked=bool(track_points), track_object=track_object,
         notes=notes)
-    write_json(path,result)
+    if points and all('flux' in p or 'sha256' in p for p in points):
+        write_json(path,result)
+    result['timing_ms'] = {
+        'lookup': round(1000*(fetch_started-started), 1),
+        'fetch': round(1000*(extraction_started-fetch_started), 1),
+        'extraction': round(1000*(perf_counter()-extraction_started), 1),
+        'cache_hit': False,
+    }
     return result

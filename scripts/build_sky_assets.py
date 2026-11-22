@@ -10,6 +10,7 @@ Writes web/assets/sky/:
   stars.bin           little-endian float32 records [ra°, dec°, Vmag, B−V], brightest first (mag ≤ 7.5)
   sky.json            named stars, constellation lines + labels, bright deep-sky objects
   milkyway.jpg        equirectangular RA/Dec brightness map (RA 0° at the image centre... see MW_LAYOUT)
+  satellite-sky.jpg   magnitude-rendered star catalog on a Milky Way background for Satellite View
 """
 import json
 import struct
@@ -29,6 +30,29 @@ MW_W, MW_H = 4096, 2048
 
 def ra_of(lon):
     return lon % 360.0
+
+
+def build_satellite_sky():
+    """Rasterize the real sky catalog in the Satellite View's east-left projection."""
+    width, height = MW_W, MW_H
+    with Image.open(OUT / 'milkyway.jpg') as image:
+        brightness = np.asarray(image.resize((width, height)), dtype=np.float32)
+    columns = (width // 2 - np.arange(width)) % width
+    sky = 2 + brightness[:, columns, None] * np.array([.06, .075, .11], dtype=np.float32)
+    positions = np.fromfile(OUT / 'stars.bin', dtype='<f4').reshape(-1, 4)
+    for ra, dec, magnitude, bv in positions:
+        x = (.5 - float(ra) / 360) * width
+        y = (.5 - float(dec) / 180) * height
+        strength = min(255, 72 * 10 ** (-.25 * (float(magnitude) - 2)))
+        sigma = .58 + .33 * max(0, (3 - float(magnitude)) / 4)
+        red = float(np.clip(bv / 1.7, 0, 1))
+        color = np.array([.77 + .23 * red, .86, 1 - .38 * red], dtype=np.float32)
+        radius = int(np.ceil(2.5 * sigma))
+        xs = np.arange(round(x) - radius, round(x) + radius + 1)
+        ys = np.arange(max(0, round(y) - radius), min(height, round(y) + radius + 1))
+        profile = np.exp(-((xs - x)**2 + (ys[:, None] - y)**2) / (2 * sigma**2))
+        sky[ys[:, None], xs % width] += (profile * strength)[:, :, None] * color
+    Image.fromarray(np.clip(sky, 0, 255).astype(np.uint8)).save(OUT / 'satellite-sky.jpg', quality=86)
 
 
 def build(src):
@@ -115,6 +139,7 @@ def build(src):
         noise += weight * np.asarray(Image.fromarray((n * 255).astype(np.uint8)).resize((MW_W + 2 * scale, MW_H + 2 * scale), Image.BICUBIC), np.float32)[scale:scale + MW_H, scale:scale + MW_W] / 255
     a = a * (.72 + .56 * noise)
     Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).save(OUT / 'milkyway.jpg', quality=88)
+    build_satellite_sky()
     print(f'{len(rows)} stars ≤ mag {MAG_LIMIT}, {len(named)} named, {len(lines)} constellation lines, {len(dsos)} Messier objects → {OUT}')
 
 

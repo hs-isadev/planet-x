@@ -1,6 +1,6 @@
 import {icrsDirection,installSunSky} from './sun-sky.js';
 import {orbitPose,cruisePose,orbitDuration} from './camera-path.js';
-import {installEarthFlight} from './earth-flight.js';
+import {installEarthFlight} from './earth-flight.js?v=spiral';
 import {installContext} from './context-scene.js?v=deep-2';
 import {installNavigation} from './navigation.js?v=bridge-1';
 import {flares,dust} from './activity.js';
@@ -42,12 +42,16 @@ export class ObservatoryScene {
   this.controls.maxDistance=200;this.controls.minDistance=.000001;
   const version=this.version,tex=new THREE.TextureLoader(),gltf=new GLTFLoader(),assets=[],focused=[];
   const ordered=focusAsset?[...data.objects].sort((a,b)=>Number(b.id===focusAsset)-Number(a.id===focusAsset)):data.objects;
+   const sun=data.objects.find(d=>d.id==='sun');
+   const sunRadius=sun ? sun.radius_km*(sun.display_radius_factor??16) : Infinity;
   for(const d of ordered){
    const begin=assets.length;
-   const p=this.vector(d.xyz_au),factor=d.display_radius_factor??(d.id==='sun'?16:250),r=d.radius_km/149597870.7*factor;
+    const nominal=d.display_radius_factor??(d.id==='sun'?16:250);
+    const factor=data.size_layout||d.id==='sun'?nominal:Math.min(nominal,.38*sunRadius/d.radius_km);
+    const p=this.vector(d.xyz_au),r=d.radius_km/149597870.7*factor;
    d.display_factor=factor;
-   const material=d.id==='sun'?photosphere(d):new THREE.MeshStandardMaterial({color:0xdad9d4,roughness:1,metalness:0});
-   const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,96,64),material);
+    const material=d.id==='sun'?photosphere(d):new THREE.MeshStandardMaterial({color:0x4f4b47,roughness:1,metalness:0});
+   const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,128,80),material);
    mesh.position.copy(p);mesh.userData.id=d.id;this.content.add(mesh);this.label(d,p,r,mesh);
    if(d.id==='sun')mesh.add(flares(r));if(d.id==='mars')mesh.add(dust(r));
    if(d.id==='earth'&&!data.size_layout){
@@ -58,7 +62,12 @@ export class ObservatoryScene {
    if(d.texture)assets.push(tex.loadAsync(d.texture).then(t=>{
     if(version!==this.version){t.dispose();return;}
     t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(8,this.renderer.capabilities.getMaxAnisotropy());
-    material.map=t;material.color.set(0xffffff);material.needsUpdate=true;
+     material.map=t;material.color.set(0xffffff);
+     if(d.id==='mercury'||d.id==='mars'){
+      // Terrain contrast from the published color map, without claiming measured elevations.
+      material.bumpMap=t;material.bumpScale=r*.025;
+     }
+     material.needsUpdate=true;
    }).catch(()=>{d.asset_error='Published appearance map unavailable. No replacement detail invented.';}));
    if(d.model)assets.push(gltf.loadAsync(d.model).then(result=>{
     if(version!==this.version){result.scene.traverse(o=>{o.geometry?.dispose();for(const m of (Array.isArray(o.material)?o.material:[o.material])){m?.map?.dispose();m?.dispose();}});return;}
@@ -67,7 +76,16 @@ export class ObservatoryScene {
     group.position.copy(p);group.userData.id=d.id;group.rotation.y=mesh.rotation.y;this.content.add(group);mesh.visible=false;
     const item=this.items.find(i=>i.data===d);if(item){item.hit=group;item.model=group;}
    }).catch(()=>{d.asset_error='NASA model unavailable. Neutral geometry shown.';}));
-   if(d.id===focusAsset)focused.push(...assets.slice(begin));
+    const pending=assets.slice(begin);
+    if(pending.length){
+     const item=this.items.at(-1);
+     item.assetPending=true;mesh.visible=false;
+     Promise.allSettled(pending).then(()=>{
+      if(version!==this.version)return;
+      item.assetPending=false;mesh.visible=!item.model;
+     });
+    }
+    if(d.id===focusAsset)focused.push(...pending);
    if(d.orbit_au){const geometry=new THREE.BufferGeometry().setFromPoints(d.orbit_au.map(a=>this.vector(a))),orbit=new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x6b7988,transparent:true,opacity:.4}));orbit.userData.body=d.id;this.orbits.add(orbit);}
   }
   this.orbits.visible=this.showPaths;
@@ -87,7 +105,7 @@ export class ObservatoryScene {
   const visibleStars=new Set();
   for(const item of this.items){
    const visible=this.mode!=='stars'||this.passes(item.data)||item.data.id===this.selected;
-   item.mesh.visible=visible&&!item.model;if(item.model)item.model.visible=visible;
+   item.mesh.visible=visible&&!item.model&&!item.assetPending;if(item.model)item.model.visible=visible;
    if(visible&&this.mode==='stars')visibleStars.add(item.data.id);
   }
   this.visibleCatalogStars=visibleStars;
@@ -156,7 +174,7 @@ export class ObservatoryScene {
   if(!marker.hidden)marker.style.transform='translate('+((p.x*.5+.5)*this.w)+'px,'+((-p.y*.5+.5)*this.h)+'px)';
  }
  theme(light){this.lightTheme=light;this.scene.background.set('#080b10');}
- animate(){requestAnimationFrame(()=>this.animate());let now=performance.now(),dt=Math.min(.05,(now-(this.lastTick||now))/1000);this.lastTick=now;if(this.sunSky){this.renderSunSky(dt);return;}if(this.activityEnabled&&!this.loading&&!this.journey)this.activityTime+=dt;this.navigationTick(dt);if(this.surface){const marker=$('sky-target-marker');if(marker)marker.hidden=true;this.surface.update();return;}const panning=!!this.pan,flying=!!this.flight;if(this.pan){const p=this.pan,k=Math.min(1,(now-p.start)/p.duration),t=k*k*k*(k*(k*6-15)+10);this.camera.quaternion.slerpQuaternions(p.fromQuaternion,p.toQuaternion,t);const direction=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);this.controls.target.copy(this.camera.position).addScaledVector(direction,p.distance);if(k===1){this.pan=null;p.done(true);}}if(this.flight){const f=this.flight;if(f.continuousEarth)f.elapsed=(f.elapsed||0)+Math.min(48,Math.max(0,now-(f.lastFrame||f.start)));f.lastFrame=now;const k=Math.min(1,(f.continuousEarth?f.elapsed:now-f.start)/f.duration),pose=f.sample?f.sample(k):f.heading?cruisePose(f.from,f.pos,f.heading,f.clearance,k):orbitPose(f.from,f.fromTarget,f.pos,f.target,k);this.camera.position.copy(pose.position);this.controls.target.copy(pose.target);this.camera.lookAt(pose.target);if(k===1){this.flight=null;f.done(true);}}if(!panning&&!flying)this.controls.update();if(this.localGroup)this.localGroup.traverse(o=>{if(o.material?.uniforms?.clock)o.material.uniforms.clock.value=this.activityTime;});let occupied=[];
+ animate(){requestAnimationFrame(()=>this.animate());let now=performance.now(),elapsed=now-(this.lastTick||now);this.lastTick=now;const workspace=document.body.dataset.workspace;if(document.hidden||(workspace&&workspace!=='context')||document.body.classList.contains('sky-view-open')){this.navKeys.clear();if(this.flight){this.flight.start+=elapsed;if(this.flight.lastFrame)this.flight.lastFrame+=elapsed;}if(this.pan)this.pan.start+=elapsed;return;}const dt=Math.min(.05,elapsed/1000);if(this.sunSky){this.renderSunSky(dt);return;}if(this.activityEnabled&&!this.loading&&!this.journey)this.activityTime+=dt;this.navigationTick(dt);if(this.surface){const marker=$('sky-target-marker');if(marker)marker.hidden=true;this.surface.update();return;}const panning=!!this.pan,flying=!!this.flight;if(this.pan){const p=this.pan,k=Math.min(1,(now-p.start)/p.duration),t=k*k*k*(k*(k*6-15)+10);this.camera.quaternion.slerpQuaternions(p.fromQuaternion,p.toQuaternion,t);const direction=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);this.controls.target.copy(this.camera.position).addScaledVector(direction,p.distance);if(k===1){this.pan=null;p.done(true);}}if(this.flight){const f=this.flight;if(f.continuousEarth)f.elapsed=(f.elapsed||0)+Math.min(48,Math.max(0,now-(f.lastFrame||f.start)));f.lastFrame=now;const k=Math.min(1,(f.continuousEarth?f.elapsed:now-f.start)/f.duration),pose=f.sample?f.sample(k):f.heading?cruisePose(f.from,f.pos,f.heading,f.clearance,k):orbitPose(f.from,f.fromTarget,f.pos,f.target,k);this.camera.position.copy(pose.position);this.controls.target.copy(pose.target);if(pose.up)this.camera.up.copy(pose.up);this.camera.lookAt(pose.target);if(k===1){this.flight=null;f.done(true);}}if(!panning&&!flying)this.controls.update();if(this.localGroup)this.localGroup.traverse(o=>{if(o.material?.uniforms?.clock)o.material.uniforms.clock.value=this.activityTime;});
   if(this.mode==='solar'&&!this.loading&&!this.journey&&!this.surface&&!this.flight&&!this.pan&&this.activityEnabled&&(this.orbitRate??1)>0){this.orbitDays=(this.orbitDays||0)+dt*(this.orbitRate??1);for(let i of this.items){let curve=i.data.orbit_au,period=i.data.orbital_period_days;if(!curve||!period)continue;let t=(128+this.orbitDays/period*256)%256,k=Math.floor(t),f=t-k,a=this.vector(curve[k]),b=this.vector(curve[(k+1)%256]),next=a.lerp(b,f),delta=next.clone().sub(i.pos),follow=i.data.id===this.selected&&this.controls.target.distanceTo(i.pos)<i.radius*.1;i.pos.copy(next);i.mesh.position.copy(next);if(i.model)i.model.position.copy(next);if(follow&&!this.flight){this.controls.target.add(delta);this.camera.position.add(delta);}}let el=document.getElementById('simulation-time');if(el)el.textContent='COMPUTED orbit time +'+this.orbitDays.toFixed(1)+' d · '+(this.orbitRate??1)+' d/s';if(this.orbitEpoch&&document.activeElement.id!=='date')document.getElementById('date').value=new Date(Date.parse(this.orbitEpoch)+this.orbitDays*86400000).toISOString().slice(0,10);}
    if(this.mode==='solar')this.smallBodies?.update(
     this.orbitDays||0,now,this.camera.position.distanceTo(this.controls.target),this.camera.position,this.h,this.camera.fov);
@@ -169,8 +187,8 @@ export class ObservatoryScene {
     for(const i of this.items){if(spins[i.data.id]!=null)(i.model||i.mesh).rotation.y+=dt*spins[i.data.id];}
    }
   if(!this.local){this.camera.near=Math.max(1e-10,Math.min(.01,this.camera.position.distanceTo(this.controls.target)*.0005));this.camera.updateProjectionMatrix();}this.camera.updateMatrixWorld();this.renderSkyTarget();
-  for(let i of [...this.items].sort((a,b)=>(b.data.id===this.selected)-(a.data.id===this.selected))){if(i.mesh.material?.uniforms?.clock)i.mesh.material.uniforms.clock.value=this.activityTime;let p=i.pos.clone().project(this.camera),depth=i.pos.distanceTo(this.camera.position),pixelRadius=i.radius/Math.max(depth,1e-12)*this.h/(2*Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2)));if(this.mode==='stars'){i.mesh.material.color.setScalar(this.starGain||1);let mag=i.data.phot_g_mean_mag??i.data.v_mag??8,dist=i.data.distance_pc||10,app=i.data.id==='origin'?-26.7+5*Math.log10(Math.max(depth*206264.8,1e-9)):mag-5*Math.log10(dist/10)+5*Math.log10(Math.max(depth,1e-9)/10),px=THREE.MathUtils.clamp(1.8+9*Math.pow(10,-.13*(app-.5)),1.8,14);if(i.data.id===this.selected)px=Math.max(px,8);i.mesh.scale.setScalar(px*(this.starSize||1)*depth*2*Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2))/this.h);}
-   let selected=i.data.id===this.selected,x=(p.x*.5+.5)*this.w,y=(-p.y*.5+.5)*this.h,width=i.label.offsetWidth||110;let visible=this.showLabels&&selected&&!this.local&&!this.journey&&p.z>-1&&p.z<1&&x>8&&x<this.w-8&&y>4&&y<this.h-10;i.label.hidden=!visible;if(visible)i.label.style.transform='translate('+Math.min(this.w-width-8,Math.max(8,x+Math.max(9,pixelRadius*.65)))+'px,'+Math.max(8,y-15)+'px)';
+  for(const i of this.items){if(i.mesh.material?.uniforms?.clock)i.mesh.material.uniforms.clock.value=this.activityTime;let p=i.pos.clone().project(this.camera),depth=i.pos.distanceTo(this.camera.position),pixelRadius=i.radius/Math.max(depth,1e-12)*this.h/(2*Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2)));if(this.mode==='stars'){let mag=i.data.phot_g_mean_mag??i.data.v_mag??8,dist=i.data.distance_pc||10,app=i.data.id==='origin'?-26.7+5*Math.log10(Math.max(depth*206264.8,1e-9)):mag-5*Math.log10(dist/10)+5*Math.log10(Math.max(depth,1e-9)/10),px=THREE.MathUtils.clamp(1.8+9*Math.pow(10,-.13*(app-.5)),1.8,14);if(i.data.id===this.selected)px=Math.max(px,8);i.mesh.material.color.setScalar(this.starBrightness??1);i.mesh.scale.setScalar(px*(this.starSize||1)*depth*2*Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2))/this.h);}
+   let selected=i.data.id===this.selected,x=(p.x*.5+.5)*this.w,y=(-p.y*.5+.5)*this.h;let visible=this.showLabels&&selected&&!this.local&&!this.journey&&p.z>-1&&p.z<1&&x>8&&x<this.w-8&&y>4&&y<this.h-10;i.label.hidden=!visible;if(visible)i.label.style.transform='translate('+Math.min(this.w-(i.label.offsetWidth||110)-8,Math.max(8,x+Math.max(9,pixelRadius*.65)))+'px,'+Math.max(8,y-15)+'px)';
   }
   if(this.beaconLabel&&this.earthBeacon){let p=this.camera.position.clone().addScaledVector(this.earthBeacon,10).project(this.camera);this.beaconLabel.hidden=!this.journey||p.z<0||p.z>1||Math.abs(p.x)>1||Math.abs(p.y)>1;this.beaconLabel.style.transform='translate('+((p.x*.5+.5)*this.w)+'px,'+((-p.y*.5+.5)*this.h)+'px)';}this.renderer.render(this.scene,this.camera);let d=this.controls.target.distanceTo(this.camera.position),width=2*d*Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2))*this.camera.aspect,amount=width*100/(this.w||1);$('scale').textContent=this.local?'Modeled photosphere · normalized size':amount.toFixed(amount<.1?5:amount<10?2:0)+(this.mode==='sizes'?' R☉':this.mode==='solar'?' AU':' pc')+' / 100 px';
   let selected=this.items.find(i=>i.data.id===this.selected);if(!this.flight&&!this.journey&&!this.local&&selected&&this.mode==='solar'&&this.camera.position.distanceTo(selected.pos)<selected.radius*1.025){let dir=this.camera.position.clone().sub(selected.pos).normalize();if(!dir.lengthSq())dir.set(0,0,1);this.camera.position.copy(selected.pos).addScaledVector(dir,selected.radius*1.025);}

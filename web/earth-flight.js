@@ -3,7 +3,9 @@ const AU_PER_PC=206264.806247;
 const clamp=t=>Math.max(0,Math.min(1,t));
 const ease=t=>t*t*(3-2*t);
 const ENTRY_AU=60;
-const MAX_BANK=.28;
+const MAX_BANK=.20;
+const routes=['head-on','twist','left','right'];
+const randomRoute=()=>routes[Math.floor(Math.random()*routes.length)];
 function frame(v,outward){const e=23.439291111*Math.PI/180,x=v.x,y=-v.z,z=v.y;return outward?v.set(x,Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y-Math.sin(e)*z)):v.set(x,-Math.sin(e)*y+Math.cos(e)*z,-(Math.cos(e)*y+Math.sin(e)*z));}
 function dispose(group){group?.traverse(o=>{o.geometry?.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material]){m?.map?.dispose();m?.dispose();}});}
 // Follow an offset corridor and turn the view into it before the AU scale change.
@@ -14,7 +16,7 @@ export function solarEntry(from, earth, up, approach=1){
  side.normalize();
  const high=radial.clone().cross(side).normalize();
  side.multiplyScalar(approach);
- const entry=radial.clone().addScaledVector(side,.38).addScaledVector(high,.23).normalize();
+ const entry=radial.clone().addScaledVector(side,.38*Math.abs(approach)).addScaledVector(high,.23*Math.abs(approach)).normalize();
  return {radial,entry,side,rotation:new THREE.Quaternion().setFromUnitVectors(radial,entry)};
 }
 
@@ -27,19 +29,87 @@ function bankedTarget(position,earth,side,angle){
 
 // Descend from above the arrival plane and wrap toward Earth's lit hemisphere.
 // Positions are presentation geometry in AU, using the displayed Earth radius.
-export function earthArcPose(start,earth,radius,progress,approach=1){
+export function earthArcPose(start,earth,radius,progress,approach=1,route='right'){
  const t=clamp(progress),offset=start.clone().sub(earth),r0=offset.length();
  const lit=earth.clone().negate().normalize();if(!lit.lengthSq())lit.set(1,0,0);
  const endDirection=lit.clone().add(new THREE.Vector3(0,.18,0)).normalize();
  const from=offset.normalize(),rotation=new THREE.Quaternion().setFromUnitVectors(from,endDirection);
- const direction=from.clone().applyQuaternion(new THREE.Quaternion().slerp(rotation,ease(t)));
- const horizontal=new THREE.Vector3(0,1,0).cross(endDirection);
- direction.y+=Math.sin(Math.PI*t)**2*.65;
- direction.addScaledVector(horizontal, approach*.8*Math.sin(Math.PI*t)**2).normalize();
+ const direction=from.clone().applyQuaternion(new THREE.Quaternion().slerp(rotation,route==='twist'?0:ease(t)));
+ const lift=route==='twist'?0:Math.sin(Math.PI*t)**2;
+ const lateral=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),endDirection).normalize();
+ direction.y+=lift*.55;
+ direction.addScaledVector(lateral,lift*.55*approach).normalize();
  const finalRadius=radius*6.5;
- const distance=finalRadius+(r0-finalRadius)*Math.pow(1-t,3);
+ const distance=finalRadius+(Math.max(r0,finalRadius)-finalRadius)*(1-t)**2;
  return {position:earth.clone().addScaledVector(direction,distance),target:earth.clone()};
 }
+// All steering geometry lives in AU, including the interstellar leg. Switching
+// render scales can then sample the same line on both sides of the boundary.
+export function inclinedEarthPath(start, earth, radius, up, departureTime, entryTime, totalTime){
+ const radial=start.clone().sub(earth).normalize();
+ const vertical=up.clone().addScaledVector(radial,-up.dot(radial));
+ if(vertical.lengthSq()<1e-8){
+  vertical.set(Math.abs(radial.x)<.9?1:0,Math.abs(radial.x)<.9?0:1,0);
+  vertical.addScaledVector(radial,-vertical.dot(radial));
+ }
+ vertical.normalize();
+ const lateral=vertical.clone().cross(radial);
+ const sunward=earth.clone().negate().normalize();
+ const arrivalAngle=Math.atan2(sunward.dot(lateral),sunward.dot(radial));
+ const sweep=(Math.sign(arrivalAngle)||1)*Math.max(Math.PI/4,Math.abs(arrivalAngle));
+ const finalRadius=radius*6.5;
+ const finalElevation=THREE.MathUtils.clamp(Math.asin(THREE.MathUtils.clamp(sunward.dot(vertical),-1,1)),-.38,.38);
+ const finalHeight=finalRadius*Math.sin(finalElevation);
+ const finalRun=finalRadius*Math.cos(finalElevation);
+ const joinRun=Math.max(finalRun*1.15,Math.min(2.2,start.distanceTo(earth)*.28));
+ const joinHeight=joinRun*.32;
+ const join=earth.clone().addScaledVector(radial,joinRun).addScaledVector(vertical,joinHeight);
+ const backward=start.clone().sub(join).normalize();
+ const length=start.distanceTo(join);
+ const boundary=Math.min(length,ENTRY_AU);
+ const turnTime=totalTime*.75;
+ const curveTime=totalTime-turnTime;
+ const inboundTime=turnTime-entryTime;
+ const interstellar=entryTime>departureTime;
+ const inboundLength=interstellar?boundary:length;
+ const closingDistance=joinRun-finalRun;
+ const projection=backward.dot(radial);
+ const endSpeed=Math.min(3*closingDistance/(curveTime*projection),1.25*inboundLength/inboundTime);
+ const slope=endSpeed*curveTime*projection/closingDistance;
+ const verticalTangent=-endSpeed*curveTime*backward.dot(vertical);
+ const inboundTail=endSpeed*inboundTime;
+ const cruiseTail=(3*inboundLength-2*inboundTail)/inboundTime*(entryTime-departureTime);
+ return elapsed=>{
+  if(elapsed<entryTime){
+   const t=clamp((elapsed-departureTime)/(entryTime-departureTime));
+   const distance=boundary+(length-boundary-cruiseTail)*(1-t*t)**5+cruiseTail*(1-t);
+   return join.clone().addScaledVector(backward,distance);
+  }
+  if(elapsed<turnTime){
+   const t=clamp((elapsed-entryTime)/inboundTime);
+   const distance=interstellar
+    ? (inboundLength-inboundTail)*(1-t)**3+inboundTail*(1-t)
+    : inboundLength*(1-ease(t))+inboundTail*t*t*(1-t);
+   return join.clone().addScaledVector(backward,distance);
+  }
+  const t=clamp((elapsed-turnTime)/curveTime);
+  const run=finalRun+closingDistance*(1-t)**2*(1+(2-slope)*t);
+  const height=THREE.MathUtils.lerp(joinHeight,finalHeight,ease(t))+verticalTangent*t*(1-t)**2;
+  return earth.clone().addScaledVector(radial.clone().applyAxisAngle(vertical,sweep*ease(t)),run)
+   .addScaledVector(vertical,height);
+ };
+}
+
+export function rolledUpVector(position,target,up,progress,direction){
+ const forward=target.clone().sub(position).normalize();
+ const axisUp=up.clone().addScaledVector(forward,-up.dot(forward));
+ if(axisUp.lengthSq()<1e-8){
+  axisUp.set(Math.abs(forward.x)<.9?1:0,Math.abs(forward.x)<.9?0:1,0);
+  axisUp.addScaledVector(forward,-axisUp.dot(forward));
+ }
+ return axisUp.normalize().applyAxisAngle(forward,direction*Math.PI*2*ease(clamp(progress)));
+}
+
 export function surfacePose(from,center,radius,earth,progress){
  const t=clamp(progress),heading=earth.clone().sub(center).normalize();
  if(!heading.lengthSq())heading.set(0,0,1);
@@ -55,8 +125,8 @@ export function surfacePose(from,center,radius,earth,progress){
 }
 export function installEarthFlight(C){
  const clear=C.prototype.clear,solar=C.prototype.solar;
- C.prototype.solar=async function(data){
-  const ready=solar.call(this,data),version=this.version;
+ C.prototype.solar=async function(data,options){
+  const ready=solar.call(this,data,options),version=this.version;
   this.solarFlightReady=false;
   await ready;
   if(this.version!==version||this.mode!=='solar'||!this.items.some(i=>i.data.id==='earth'))return;
@@ -86,7 +156,12 @@ export function installEarthFlight(C){
   this.camera.near=.000001;this.camera.far=100000;this.camera.updateProjectionMatrix();
   this.cachedFlightSolar=null;this.solarFlightReady=true;
  };
- C.prototype.trace=async function(context,solarData,progress,approach=1){
+ C.prototype.trace=async function(context,solarData,progress,route=randomRoute()){
+  if(typeof route==='number')route=route<0?'left':'right';
+  const roll=route==='roll-left'?-1:route==='roll-right'?1:route==='twist'?(Math.random()<.5?-1:1):0;
+  const spiral=route==='head-on';
+  const approach=route==='left'?-1:1;
+  const straight=roll||spiral;
   const item=this.items.find(i=>i.data.id===this.selected);if(!item||item.data.id==='earth')return false;
   const stellar=this.mode==='stars';
   if(stellar&&!this.cachedFlightSolar)throw Error('Earth scene is still preparing. Try again when Trace back to Earth is enabled.');
@@ -108,21 +183,34 @@ export function installEarthFlight(C){
   }
   this.controls.enabled=false;
   const start=this.camera.position.clone(),q0=this.camera.quaternion.clone();
-  const surface=surfacePose(start,sourceCenter,sourceRadius,earth,1).position;
+  const launchDirection=earth.clone().sub(start).normalize();
+  const nearSourceAt=Math.max(0,sourceCenter.clone().sub(start).dot(launchDirection));
+  const clearLaunch=start.clone().addScaledVector(launchDirection,nearSourceAt).distanceTo(sourceCenter)>sourceRadius*1.2;
+  const rollInPlace=roll && clearLaunch;
+  const surface=rollInPlace?start:surfacePose(start,sourceCenter,sourceRadius,earth,1).position;
   const departurePc=stellar?surface.clone().multiplyScalar(physicalRadius).add(item.pos):null;
-  const corridor=stellar?solarEntry(departurePc,earthPc,original.up,approach):null;
-  const boundaryPc=stellar?earthPc.clone().addScaledVector(corridor.entry,ENTRY_AU/AU_PER_PC):null;
-  const arrivalStart=stellar?frame(boundaryPc.clone(),false).multiplyScalar(AU_PER_PC):surface.clone();
-  const arrivalSide=stellar?frame(corridor.side.clone(),false):null;
+  const corridor=stellar&&!spiral?solarEntry(departurePc,earthPc,original.up,roll?0:approach):null;
+  const boundaryPc=corridor?earthPc.clone().addScaledVector(corridor.entry,ENTRY_AU/AU_PER_PC):null;
+  const arrivalStart=boundaryPc?frame(boundaryPc.clone(),false).multiplyScalar(AU_PER_PC):surface.clone();
+  const arrivalSide=corridor?frame(corridor.side.clone(),false):null;
   const retired=[];
   let phase='surface',lastStage='';
-  const departMs=this.reduced?150:1800,cruiseMs=stellar?(this.reduced?150:3000):0,arcMs=this.reduced?350:4600,total=departMs+cruiseMs+arcMs;
+  const departMs=this.reduced?120:stellar?1050:530;
+  const cruiseMs=stellar?(this.reduced?240:spiral?4200:roll?4300:3700):0;
+  const arcMs=this.reduced?(spiral?400:270):spiral?(stellar?6400:8200):roll?(stellar?5000:6800):4100;
+  const total=departMs+cruiseMs+arcMs;
+  const bank=straight?0:MAX_BANK;
+  const arrivalUp=stellar?frame(original.up.clone(),false):original.up;
+  const spiralPosition=spiral?inclinedEarthPath(
+   stellar?frame(departurePc.clone(),false).multiplyScalar(AU_PER_PC):surface,
+   earthAu,solarEarth.radius,arrivalUp,departMs,departMs+cruiseMs,total
+  ):null;
   const sample=progressValue=>{
    const ms=progressValue*total;
    let pose;
    if(ms<departMs){
-    pose=surfacePose(start,sourceCenter,sourceRadius,earth,ms/departMs);
-    const look=new THREE.Matrix4().lookAt(pose.position,pose.target,this.camera.up),q1=new THREE.Quaternion().setFromRotationMatrix(look);
+    pose=rollInPlace?{position:start,target:earth}:surfacePose(start,sourceCenter,sourceRadius,earth,ms/departMs);
+    const look=new THREE.Matrix4().lookAt(pose.position,pose.target,original.up),q1=new THREE.Quaternion().setFromRotationMatrix(look);
     const q=q0.clone().slerp(q1,ease(clamp((ms/departMs-.45)/.55)));
     pose.target=pose.position.clone().addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(q),Math.max(sourceRadius*2,pose.position.distanceTo(earth)));
    }else if(stellar&&ms<departMs+cruiseMs){
@@ -137,31 +225,47 @@ export function installEarthFlight(C){
     this.content.visible=true;this.controls.enabled=false;
      this.camera.near=1e-12;this.camera.far=100000;this.camera.updateProjectionMatrix();phase='cruise';
     }
-    const t=clamp((ms-departMs)/cruiseMs),u=t*t*(2-t);
-    const end=ENTRY_AU/AU_PER_PC,r0=departurePc.distanceTo(earthPc);
-    const tail=3*(ENTRY_AU-solarEarth.radius*6.5)*cruiseMs/arcMs/AU_PER_PC;
-    const radius=end+(r0-end)*Math.pow(1-u,6)+tail*u*(1-u);
-    const bearing=corridor.radial.clone().applyQuaternion(new THREE.Quaternion().slerp(corridor.rotation,ease(t)));
-    const position=earthPc.clone().addScaledVector(bearing,radius);
-    pose={position,target:bankedTarget(position,earthPc,corridor.side,MAX_BANK*ease(Math.min(1,t*3)))};
+    if(spiralPosition){
+     const position=frame(spiralPosition(ms),true).multiplyScalar(1/AU_PER_PC);
+     pose={position,target:earthPc};
+    }else{
+     const t=clamp((ms-departMs)/cruiseMs);
+     const end=ENTRY_AU/AU_PER_PC,r0=departurePc.distanceTo(earthPc);
+     const tail=2*(ENTRY_AU-solarEarth.radius*6.5)*cruiseMs/arcMs/AU_PER_PC;
+     // Match the arrival leg's closing speed at the scale change.
+     const radius=end+(r0-end-tail)*(1-t*t)**5+tail*(1-t);
+     const bearing=corridor.radial.clone().applyQuaternion(new THREE.Quaternion().slerp(corridor.rotation,ease(t)));
+     const position=earthPc.clone().addScaledVector(bearing,radius);
+     pose={position,target:bankedTarget(position,earthPc,corridor.side,bank*ease(Math.min(1,t*3)))};
+    }
    }else{
     if(phase!=='arrival'){
      if(stellar){this.activateFlightSolar(retired);this.camera.up.copy(frame(original.up.clone(),false));}
      phase='arrival';
     }
     const t=clamp((ms-departMs-cruiseMs)/arcMs);
-    pose=earthArcPose(arrivalStart,earthAu,solarEarth.radius,t,approach);
-    if(stellar)pose.target=bankedTarget(pose.position,earthAu,arrivalSide,MAX_BANK*(1-ease(Math.min(1,t*1.6))));
+    pose=spiralPosition?{position:spiralPosition(ms),target:earthAu}
+     :earthArcPose(arrivalStart,earthAu,solarEarth.radius,t,approach,roll?'twist':route);
+    if(stellar && bank)pose.target=bankedTarget(pose.position,earthAu,arrivalSide,bank*(1-ease(Math.min(1,t*1.6))));
    }
-   const stage=ms<departMs?'surface':ms<departMs+cruiseMs?'cruise':'arrival';
-   if(stage!==lastStage){lastStage=stage;progress(stage==='surface'?'Facing Earth from '+item.data.name:stage==='cruise'?'Crossing toward the Solar System':'Arcing toward sunlit Earth','Continuous illustrative flight · catalog distances and enlarged body radii · not a physical trajectory.');}
+   if(roll && !this.reduced){
+    const rollProgress=(ms-departMs)/(total-departMs);
+    pose.up=rolledUpVector(pose.position,pose.target,phase==='arrival'?arrivalUp:original.up,rollProgress,roll);
+   }
+   let stage='Closing in on Earth';
+   if(ms<departMs)stage='Facing Earth from '+item.data.name;
+   else if(ms<departMs+cruiseMs)stage='Crossing toward the Solar System';
+   else if(spiral && progressValue>=.75)stage='Spiraling down toward Earth';
+   else if(roll)stage='Direct approach to Earth';
+   else if(!spiral)stage='Arcing toward sunlit Earth';
+   if(stage!==lastStage){lastStage=stage;progress(stage,'Continuous illustrative flight · catalog distances and enlarged body radii · not a physical trajectory.');}
    return pose;
   };
   const reached=await new Promise(done=>{this.flight={start:performance.now(),duration:total,baseFov:this.camera.fov,continuousEarth:true,sample,done};});
   if(retired.length)setTimeout(()=>retired.forEach(dispose),250);
   if(!reached||token!==this.travelToken)return false;
-  this.selected='earth';this.controls.target.copy(earthAu);this.camera.lookAt(earthAu);
+  this.selected='earth';this.camera.up.copy(arrivalUp);this.controls.target.copy(earthAu);this.camera.lookAt(earthAu);
   this.camera.near=.000001;this.camera.updateProjectionMatrix();
-  progress('Sunlit Earth','Stay in orbit or return to your object. The globe remains at a comfortable viewing distance.');return true;
+  progress(roll||spiral?'Earth':'Sunlit Earth','Stay in orbit or return to your object. The globe remains at a comfortable viewing distance.');return true;
  };
 }

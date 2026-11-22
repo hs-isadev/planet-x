@@ -22,6 +22,14 @@ HISTORY = ROOT / 'backend/data/preset-archive-index.json'
 INVENTORIES = BUNDLE / 'inventories'
 MOTION_EXAMPLES = BUNDLE.parent / 'motion-examples.json'
 
+# ICRS J2000 position, Gaia proper motion (mas/yr), parallax (mas) and SIMBAD record.
+MOTION_ASTROMETRY = {
+    'proxima-centauri': (217.42895219, -62.67948975, -3781.741, 769.465, 768.067, 'GJ+551'),
+    'hyg-118720': (164.120503626, 7.014723135, -3866.338, -2699.215, 415.1794, 'GJ+406'),
+    'hyg-92115': (282.455682401, -23.836235382, 639.368, -193.958, 336.0266, 'GJ+729'),
+    'hyg-24129': (77.919124331, -45.018433815, 6491.223, -5708.614, 254.1986, 'GJ+191'),
+}
+
 
 @lru_cache(maxsize=1)
 def fields():
@@ -44,7 +52,12 @@ def fields():
             key='proxima-centauri', name='Proxima Centauri',
             ra=217.39232147200883, dec=-62.67607511676666, distance_pc=1.302,
             category='Nearby star', description='Archived SPHEREx cutout field near Proxima Centauri', frames=[])
-    return core + sorted(distinct.values(), key=lambda field: field['distance_pc'])
+    result = core + sorted(distinct.values(), key=lambda field: field['distance_pc'])
+    for field in result:
+        if astrometry := MOTION_ASTROMETRY.get(field['key']):
+            field.setdefault('astrometry_j2000', astrometry[:4])
+            field['astrometry_source'] = 'https://simbad.cds.unistra.fr/simbad/sim-id?Ident=' + astrometry[5]
+    return result
 
 
 def view_entry(key, bases=None):

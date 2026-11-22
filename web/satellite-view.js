@@ -1,4 +1,4 @@
-import {loadCatalogSky} from './satellite-stars.js?v=1';
+import {loadCatalogSky} from './satellite-stars.js?v=visible-sky';
 
 // A fixed detector viewpoint for the exposure selected in Images.
 export function fitDetector(bounds, width, height) {
@@ -72,7 +72,7 @@ export function skyRay(camera, x, y) {
   return {ra: (Math.atan2(b, a) / radians + 360) % 360, dec: Math.atan2(c, Math.hypot(a, b)) / radians};
 }
 
-export function installSatelliteView(view, {pinTarget, openContext, getTarget} = {}) {
+export function installSatelliteView(view, {pinTarget, openContext, getTarget, openSky} = {}) {
   const byId = id => document.getElementById(id);
   const dialog = document.createElement('dialog');
   dialog.id = 'satellite-camera';
@@ -80,7 +80,7 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget} =
   dialog.innerHTML = `
     <div class="satellite-heading">
       <h2 id="satellite-camera-title">Satellite View</h2>
-      <button type="button" id="satellite-close">Close</button>
+      <div class="satellite-heading-actions"><button type="button" data-ambient-toggle>Play hum</button> <button type="button" id="satellite-close">Close</button></div>
     </div>
     <p id="satellite-exposure"></p>
     <p class="micro"><a id="satellite-source" target="_blank" rel="noreferrer" hidden></a></p>
@@ -90,8 +90,11 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget} =
       <button type="button" id="satellite-look" aria-pressed="false">Look around</button>
       <button type="button" id="satellite-target">Center target</button>
       <button type="button" id="satellite-search">Search view center</button>
+      <button type="button" id="satellite-your-sky">Your Sky</button>
       <button type="button" id="satellite-context" disabled>Open in 3D Context</button>
       <label>Look-around field <select id="satellite-fov"><option value="90">90°</option><option value="60" selected>60°</option><option value="30">30°</option><option value="15">15°</option></select></label>
+      <label>Star brightness <input id="satellite-star-brightness" type="range" min="0" max="100" value="0"></label>
+      <label>Star flare <input id="satellite-star-flare" type="range" min="0" max="100" value="0"></label>
     </div>
     <div class="satellite-catalog"><label>Find a catalog star<input id="satellite-star-query" type="search" placeholder="Name or catalog ID, e.g. Sirius, HIP 71683"></label><label>Catalog<select id="satellite-star-source"><option value="all">All sources</option><option value="expanded">Added catalog stars</option><option value="Gaia DR3">Teammate Gaia DR3 sample</option><option value="Gliese">Gliese nearby stars</option><option value="Yale">Yale bright stars</option><option value="Hipparcos">Hipparcos</option><option value="BSC5P">Yale Bright Star (BSC5P)</option><option value="NASA">NASA exoplanet hosts</option></select></label><span id="satellite-catalog-count" class="micro"></span><div id="satellite-star-results"></div></div>
     <div class="satellite-stage">
@@ -110,6 +113,13 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget} =
   let data, pixels, selection, projection, camera, drag, catalogDraw, catalogLoad, catalogFailed;
   let target, targetName, turn = 0, mode = 'look', request = 0, resolving = false;
   let catalog = [], catalogRequest, visibleStars = [], frameTarget;
+  for (const name of ['brightness', 'flare']) byId('satellite-star-' + name).oninput = draw;
+
+  byId('satellite-your-sky').onclick = () => {
+    if (!camera) return;
+    const point = skyRay(camera, 0, 0);
+    openSky?.(point);
+  };
 
   function openCatalog() {
     if (!catalogRequest) {
@@ -124,14 +134,11 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget} =
     }
     if (catalogLoad) return;
     catalogFailed = false;
-    const skyCover = window.SpaceLoader?.cover(dialog.querySelector('.satellite-stage'), {
-      eyebrow: 'SATELLITE VIEW · ACQUIRING SKY', title: 'Loading the catalog sky',
-      detail: 'Streaming the 4K Deep Star Maps texture and catalog star directions.'});
     const skyTask = window.SpaceLoader?.begin('Loading catalog sky texture');
     catalogLoad = loadCatalogSky(sky).then(render => { catalogDraw = render; }).catch(() => {
       catalogFailed = true;
       catalogLoad = null;
-    }).finally(() => { skyCover?.done(); skyTask?.end(); if (dialog.open) draw(); });
+    }).finally(() => { skyTask?.end(); if (dialog.open) draw(); });
   }
 
   function chooseSource(source){
@@ -211,7 +218,8 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget} =
     byId('satellite-target').disabled = !target;
     byId('satellite-context').disabled = !target;
     if (mode === 'look') {
-      const hasCatalog = catalogDraw?.(camera, focal);
+      const brightness = Number(byId('satellite-star-brightness').value) / 100;
+      const hasCatalog = catalogDraw?.(camera, focal, 1.45 + brightness * 2.1);
       sky.hidden = !hasCatalog;
       if (!hasCatalog) {
         ctx.fillStyle = '#080e18';
@@ -222,7 +230,7 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget} =
       crosshair(canvas.width / 2, canvas.height / 2);
       if (target) drawTarget(screenPosition(camera, target, canvas.width, canvas.height, focal));
       showCenter(skyRay(camera, 0, 0), hasCatalog
-        ? 'Catalog sky · NASA Goddard SVS. Click a marked catalog star to select it. Right-click a direction to search SPHEREx.'
+        ? 'Catalog sky · Hipparcos/HYG and Milky Way contours. Click a star to select it. Right-click a direction to search SPHEREx.'
         : catalogFailed ? 'Catalog map unavailable. Drag the coordinate grid or right-click to search SPHEREx.'
           : 'Loading the catalog sky. Right-click to search SPHEREx.');
       return;
@@ -259,22 +267,33 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget} =
   }
 
   function drawCatalogStars() {
-    ctx.fillStyle = '#b5d0f2';
-    ctx.beginPath();
+    const brightness = Number(byId('satellite-star-brightness').value) / 100;
+    const flare = Number(byId('satellite-star-flare').value) / 100;
+    const pixel = canvas.width / Math.max(1, canvas.clientWidth);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
     for (const source of catalog) {
       const point = screenPosition(camera, source, canvas.width, canvas.height, focal);
       if (!point) continue;
       const [x, y] = point;
       if (x < -3 || y < -3 || x > canvas.width + 3 || y > canvas.height + 3) continue;
       visibleStars.push({source, point});
-      ctx.moveTo(x + 2.5, y);
-      ctx.arc(x, y, 2.5, 0, 2 * Math.PI);
+      const magnitude = source.v_mag ?? source.phot_g_mean_mag ?? 10;
+      if ((!brightness && !flare) || magnitude > 5.5) continue;
+      const strength = Math.min(1, Math.pow(10, -.2 * (magnitude - 1)));
+      const radius = pixel * (1.5 + 3 * flare * strength);
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      glow.addColorStop(0, `rgba(181,208,242,${strength * brightness * .22})`);
+      glow.addColorStop(.4, `rgba(181,208,242,${strength * flare * .13})`);
+      glow.addColorStop(1, 'rgba(181,208,242,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(x - radius, y - radius, 2 * radius, 2 * radius);
     }
-    ctx.fill();
+    ctx.restore();
   }
 
   function selectStar(point) {
-    let best, distance = 13;
+    let best, distance = 12 * canvas.width / Math.max(1, canvas.clientWidth);
     for (const star of visibleStars) {
       const d = Math.hypot(star.point[0] - point[0], star.point[1] - point[1]);
       if (d < distance) {
@@ -449,7 +468,8 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget} =
     look(...moves[event.key]);
   });
 
-  async function open() {
+  async function open(direction = null) {
+    if (!Number.isFinite(direction?.ra) || !Number.isFinite(direction?.dec)) direction = null;
     const token = ++request;
     view.stop();
     const saved = getTarget?.();
@@ -461,6 +481,7 @@ export function installSatelliteView(view, {pinTarget, openContext, getTarget} =
       const initial = target || {ra: 133.79512916666667, dec: -7.245147222222222};
       camera = aimAt({forward:[1,0,0],right:[0,1,0],up:[0,0,1]}, initial);
     } else if (changed) camera = aimAt(camera, target);
+    if (direction) camera = aimAt(camera, direction);
     resolving = false;
     mode = 'look';
     byId('satellite-look').disabled = false;

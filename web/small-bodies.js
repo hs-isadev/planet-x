@@ -208,7 +208,7 @@ function createDust(random) {
   geometry.setAttribute('size', new THREE.BufferAttribute(size, 1));
   const material = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: {pixel: {value: 1}, strength: {value: 1}},
+    uniforms: {pixel: {value: 1}, strength: {value: .45}},
     vertexShader: `
       attribute float bright; attribute float size; uniform float pixel; uniform float strength; varying float vAlpha;
       // Henyey-Greenstein phase function: how strongly dust scatters sunlight toward the viewer.
@@ -306,7 +306,7 @@ export function createSmallBodies(jupiter) {
       if (shade !== b.shade) { b.shade = shade; mesh.setColorAt(b.slot, tint.copy(b.base).multiplyScalar(shade)); mesh.instanceColor.needsUpdate = true; }
       b.pos.toArray(glintPos, b.index * 3);
       // reflected light falls off with distance from the Sun (1/r²) as well as with size
-      const lit = solid || b.index === hidden ? 0 : Math.min(1, 2.2 / Math.max(b.pos.lengthSq(), .3)) * shade * (b.group === 'named' ? 2.4 : .45);
+        const lit = solid || b.index === hidden ? 0 : Math.min(1, 2.2 / Math.max(b.pos.lengthSq(), .3)) * shade * (b.group === 'named' ? 1.25 : .22);
       tint.copy(b.base).multiplyScalar(lit).toArray(glintCol, b.index * 3);
       dummy.position.copy(b.pos);
       dummy.rotation.set(b.spin, b.spin * 1.7 + days * b.spinRate * .2, b.spin * .7);

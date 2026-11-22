@@ -6,20 +6,24 @@ uniform vec2 size;
 uniform float focal;
 uniform vec3 forward, right, up;
 uniform sampler2D stars;
+uniform float brightness;
 void main() {
   vec2 offset = (gl_FragCoord.xy - size * .5) / focal;
   vec3 ray = normalize(forward + offset.x * right + offset.y * up);
   float longitude = abs(ray.x) + abs(ray.y) < 1e-8 ? 0. : atan(ray.y, ray.x);
   float u = fract(.5 - longitude / 6.28318530718);
   float v = .5 - asin(clamp(ray.z, -1., 1.)) / 3.14159265359;
-  gl_FragColor = vec4(texture2D(stars, vec2(u, v)).rgb, 1.);
+  vec3 field = texture2D(stars, vec2(u, v)).rgb;
+  vec3 sky = max(field - vec3(.025, .025, .033), 0.);
+  vec3 color = vec3(.022, .030, .055) + pow(sky, vec3(.66)) * brightness;
+  gl_FragColor = vec4(min(color, 1.), 1.);
 }`;
 
 export async function loadCatalogSky(canvas) {
   const gl = canvas.getContext('webgl', {alpha: false, antialias: false});
   if (!gl) throw new Error('WebGL is unavailable');
   const image = new Image();
-  image.src = '/api/satellite-star-map.jpg';
+  image.src = '/assets/sky/satellite-sky.jpg';
   await image.decode();
 
   const program = gl.createProgram();
@@ -47,18 +51,18 @@ export async function loadCatalogSky(canvas) {
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.generateMipmap(gl.TEXTURE_2D);
   if (gl.getError() !== gl.NO_ERROR) throw new Error('This device cannot render the catalog texture');
-  const uniform = Object.fromEntries(['size', 'focal', 'forward', 'right', 'up']
+  const uniform = Object.fromEntries(['size', 'focal', 'forward', 'right', 'up', 'brightness']
     .map(name => [name, gl.getUniformLocation(program, name)]));
   canvas.addEventListener('webglcontextlost', () => { canvas.hidden = true; });
-  return (camera, focal) => {
+  return (camera, focal, brightness) => {
     if (gl.isContextLost()) return false;
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.uniform2f(uniform.size, canvas.width, canvas.height);
     gl.uniform1f(uniform.focal, focal);
+    gl.uniform1f(uniform.brightness, brightness);
     for (const axis of ['forward', 'right', 'up']) gl.uniform3fv(uniform[axis], camera[axis]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     return true;
